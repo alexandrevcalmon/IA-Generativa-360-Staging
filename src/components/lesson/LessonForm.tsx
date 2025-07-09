@@ -14,13 +14,13 @@ import { useToast } from "@/hooks/use-toast";
 
 const lessonSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
-  content: z.string().optional(),
+  content: z.string().default(""),
   video_url: z.string().url().optional().or(z.literal("")),
-  duration_minutes: z.number().min(0).optional(),
+  duration_minutes: z.number().min(0).default(0),
   is_free: z.boolean().default(false),
-  image_url: z.string().optional(),
-  video_file_url: z.string().optional(),
-  material_url: z.string().optional(),
+  image_url: z.string().default(""),
+  video_file_url: z.string().default(""),
+  material_url: z.string().default(""),
 });
 
 interface LessonFormProps {
@@ -40,7 +40,7 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
       title: "",
       content: "",
       video_url: "",
-      duration_minutes: undefined,
+      duration_minutes: 0,
       is_free: false,
       image_url: "",
       video_file_url: "",
@@ -55,7 +55,7 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
       title: lesson?.title || "",
       content: lesson?.content || "",
       video_url: lesson?.video_url || "",
-      duration_minutes: lesson?.duration_minutes || undefined,
+      duration_minutes: lesson?.duration_minutes ? lesson.duration_minutes / 60 : 0, // Converter segundos para minutos
       is_free: lesson?.is_free || false,
       image_url: lesson?.image_url || "",
       video_file_url: lesson?.video_file_url || "",
@@ -72,7 +72,7 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
         title: data.title,
         content: data.content || null,
         video_url: data.video_url || null,
-        duration_minutes: data.duration_minutes || null,
+        duration_minutes: data.duration_minutes > 0 ? Math.round(data.duration_minutes * 60) : null, // Converter para segundos
         order_index: lesson?.order_index || 0,
         is_free: data.is_free,
         resources: null,

@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Edit, Trash2, Plus, MoreVertical, Play, BookOpen, ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { Edit, Trash2, Plus, MoreVertical, Play, BookOpen, Eye, EyeOff } from "lucide-react";
 import { CourseModule, useDeleteModule } from "@/hooks/useCourseModules";
-import { useLessons, Lesson } from "@/hooks/useLessons";
+import { Lesson } from "@/hooks/useLessons";
 import { CreateLessonDialog } from "@/components/CreateLessonDialog";
-import { LessonItem } from "@/components/LessonItem";
+import { DraggableLessonsList } from "@/components/DraggableLessonsList";
 
 interface ModuleCardProps {
   module: CourseModule;
@@ -22,7 +22,6 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   
   const deleteModule = useDeleteModule();
-  const { data: lessons = [], isLoading: lessonsLoading } = useLessons(module.id);
 
   const handleDeleteModule = async () => {
     if (window.confirm("Tem certeza que deseja excluir este módulo?")) {
@@ -32,6 +31,10 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
 
   const handleEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson);
+    setCreateLessonDialogOpen(true);
+  };
+
+  const handleCreateLesson = () => {
     setCreateLessonDialogOpen(true);
   };
 
@@ -78,7 +81,7 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setCreateLessonDialogOpen(true)}>
+                  <DropdownMenuItem onClick={handleCreateLesson}>
                     <Plus className="mr-2 h-4 w-4" />
                     Nova Aula
                   </DropdownMenuItem>
@@ -103,7 +106,7 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Play className="h-4 w-4" />
-              <span>{lessons.length} aulas</span>
+              <span>{module.lessons?.length || 0} aulas</span>
             </div>
             <div className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
@@ -112,14 +115,8 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
           </div>
 
           {isExpanded && (
-            <div className="mt-4 space-y-2">
-              {lessonsLoading ? (
-                <div className="space-y-2">
-                  {[1,2].map((i) => (
-                    <div key={i} className="animate-pulse bg-gray-200 h-12 rounded"></div>
-                  ))}
-                </div>
-              ) : lessons.length === 0 ? (
+            <div className="mt-4">
+              {!module.lessons || module.lessons.length === 0 ? (
                 <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
                   <Play className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground mb-3">
@@ -128,31 +125,32 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setCreateLessonDialogOpen(true)}
+                    onClick={handleCreateLesson}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Primeira Aula
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {lessons.map((lesson, lessonIndex) => (
-                    <LessonItem
-                      key={lesson.id}
-                      lesson={lesson}
-                      index={lessonIndex}
-                      onEdit={handleEditLesson}
-                    />
-                  ))}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full mt-2"
-                    onClick={() => setCreateLessonDialogOpen(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Nova Aula
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      💡 Arraste para reordenar
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleCreateLesson}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Nova Aula
+                    </Button>
+                  </div>
+                  <DraggableLessonsList
+                    module={module}
+                    onEditLesson={handleEditLesson}
+                    onCreateLesson={handleCreateLesson}
+                  />
                 </div>
               )}
             </div>

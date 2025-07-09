@@ -212,6 +212,7 @@ const ProducerCourseDetails = () => {
                 onCreateModule={handleCreateModule}
                 onEditModule={handleEditModule}
                 onCreateLesson={handleCreateLesson}
+                onEditLesson={handleEditLesson}
               />
             </TabsContent>
             

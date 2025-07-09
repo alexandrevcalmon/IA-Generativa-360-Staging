@@ -31,11 +31,11 @@ import { useToast } from "@/hooks/use-toast";
 
 const courseSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
-  description: z.string().optional(),
-  category: z.string().optional(),
-  difficulty_level: z.enum(["beginner", "intermediate", "advanced"]).optional(),
-  estimated_hours: z.number().min(0).optional(),
-  thumbnail_url: z.string().url().optional().or(z.literal("")),
+  description: z.string().default(""),
+  category: z.string().default(""),
+  difficulty_level: z.enum(["beginner", "intermediate", "advanced"]).default("beginner"),
+  estimated_hours: z.number().min(0).default(0),
+  thumbnail_url: z.string().default(""),
   is_published: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
 });
@@ -64,8 +64,8 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
       title: course?.title || "",
       description: course?.description || "",
       category: course?.category || "",
-      difficulty_level: course?.difficulty_level as "beginner" | "intermediate" | "advanced" || undefined,
-      estimated_hours: course?.estimated_hours || undefined,
+      difficulty_level: course?.difficulty_level as "beginner" | "intermediate" | "advanced" || "beginner",
+      estimated_hours: course?.estimated_hours || 0,
       thumbnail_url: course?.thumbnail_url || "",
       is_published: course?.is_published || false,
       tags: course?.tags || [],
@@ -130,8 +130,8 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
         title: data.title, // This is guaranteed to be string due to schema validation
         description: data.description || null,
         category: data.category || null,
-        difficulty_level: data.difficulty_level || null,
-        estimated_hours: data.estimated_hours || null,
+        difficulty_level: data.difficulty_level === "beginner" && !course ? null : data.difficulty_level,
+        estimated_hours: data.estimated_hours > 0 ? data.estimated_hours : null,
         thumbnail_url: thumbnailUrl || null,
         is_published: data.is_published,
         tags: data.tags,
@@ -247,7 +247,7 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nível de Dificuldade</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || "beginner"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
@@ -274,8 +274,11 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
                       <Input 
                         type="number" 
                         placeholder="Ex: 40"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value ? Number(value) : 0);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

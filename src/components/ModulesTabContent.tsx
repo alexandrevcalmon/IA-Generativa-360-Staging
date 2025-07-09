@@ -5,15 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, BookOpen, Edit, Trash2, Play, ChevronDown, ChevronRight } from "lucide-react";
 import { CourseModule } from "@/hooks/useCourseModules";
+import { DraggableLessonsList } from "./DraggableLessonsList";
 
 interface ModulesTabContentProps {
   modules: CourseModule[];
   onCreateModule: () => void;
   onEditModule: (module: CourseModule) => void;
   onCreateLesson: (moduleId: string) => void;
+  onEditLesson?: (lesson: any) => void;
 }
 
-export const ModulesTabContent = ({ modules, onCreateModule, onEditModule, onCreateLesson }: ModulesTabContentProps) => {
+export const ModulesTabContent = ({ 
+  modules, 
+  onCreateModule, 
+  onEditModule, 
+  onCreateLesson,
+  onEditLesson 
+}: ModulesTabContentProps) => {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   
   console.log('[ModulesTabContent] Modules received:', modules);
@@ -26,6 +34,12 @@ export const ModulesTabContent = ({ modules, onCreateModule, onEditModule, onCre
       newExpanded.add(moduleId);
     }
     setExpandedModules(newExpanded);
+  };
+
+  const handleEditLesson = (lesson: any) => {
+    if (onEditLesson) {
+      onEditLesson(lesson);
+    }
   };
 
   if (modules.length === 0) {
@@ -117,22 +131,17 @@ export const ModulesTabContent = ({ modules, onCreateModule, onEditModule, onCre
                 {/* Exibir as aulas do módulo se existirem e estiver expandido */}
                 {lessonsCount > 0 && isExpanded && (
                   <div className="mb-4 pt-3 border-t">
-                    <h5 className="text-sm font-medium mb-3">Aulas:</h5>
-                    <div className="space-y-2">
-                      {module.lessons?.map((lesson, index) => (
-                        <div key={lesson.id} className="text-sm text-muted-foreground flex items-center gap-3 p-2 bg-gray-50 rounded-md">
-                          <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                            {index + 1}
-                          </span>
-                          <span className="flex-1 truncate">{lesson.title}</span>
-                          {lesson.duration_minutes && (
-                            <span className="text-xs text-gray-500 flex-shrink-0">
-                              {lesson.duration_minutes}min
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                    <div className="mb-3 flex items-center justify-between">
+                      <h5 className="text-sm font-medium">Aulas:</h5>
+                      <span className="text-xs text-muted-foreground">
+                        💡 Arraste para reordenar
+                      </span>
                     </div>
+                    <DraggableLessonsList
+                      module={module}
+                      onEditLesson={handleEditLesson}
+                      onCreateLesson={onCreateLesson}
+                    />
                   </div>
                 )}
                 
