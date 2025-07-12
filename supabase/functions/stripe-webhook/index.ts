@@ -51,8 +51,10 @@ serve(async (req) => {
     }
 
     console.log('✅ Signature verified successfully');
-    console.log('📋 Event type:', event.type);
-    console.log('📝 Event data:', JSON.stringify(event.data.object, null, 2));
+    // Em produção, não logar dados sensíveis ou payloads completos
+    // Apenas logar tipo de evento e erros críticos
+    // console.log('📋 Event type:', event.type);
+    // console.log('📝 Event data:', JSON.stringify(event.data.object, null, 2));
 
     try {
       switch (event.type) {

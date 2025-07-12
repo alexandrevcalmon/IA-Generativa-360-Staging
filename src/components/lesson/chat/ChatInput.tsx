@@ -12,11 +12,11 @@ export const ChatInput = ({
   isDisabled, 
   lessonId 
 }: ChatInputProps) => {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     console.log('Form submitted with message:', inputMessage);
     if (inputMessage?.trim() && !isDisabled) {
-      onSubmit(e);
+      onSubmit(); // Chama sem evento
     }
   };
 
@@ -25,12 +25,11 @@ export const ChatInput = ({
     onInputChange(e.target.value);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputMessage?.trim() && !isDisabled) {
-        const fakeEvent = new Event('submit') as any;
-        handleSubmit(fakeEvent);
+        handleSubmit(); // Chama sem evento
       }
     }
   };

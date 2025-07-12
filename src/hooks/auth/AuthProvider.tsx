@@ -3,11 +3,12 @@ import { createContext, ReactNode } from 'react';
 import { AuthContextType } from './types';
 import { useAuthInitialization } from './useAuthInitialization';
 import { useAuthMethods } from './useAuthMethods';
+import { logger } from '@/lib/logger';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log('🔧 AuthProvider: Initializing...');
+  logger.debug('AuthProvider: Initializing...');
   
   const authState = useAuthInitialization();
   
@@ -43,8 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isCompany = userRole === 'company';
   const isStudent = userRole === 'student';
   const isCollaborator = userRole === 'collaborator';
-
-  console.log('🔍 AuthProvider current state:', {
+  logger.debug('AuthProvider current state', {
     user: user?.email,
     userRole,
     isProducer,
@@ -54,8 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading: loading || !isInitialized,
     isInitialized
   });
-
-  console.log('[AuthProvider] user:', user, 'session:', session, 'userRole:', userRole, 'isInitialized:', isInitialized);
 
   const value = {
     user,
@@ -69,8 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     companyUserData,
     ...authMethods,
   };
-
-  console.log('🔧 AuthProvider: Providing context value');
+  logger.debug('AuthProvider: Providing context value');
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
