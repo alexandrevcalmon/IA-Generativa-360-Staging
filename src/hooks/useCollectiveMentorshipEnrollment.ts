@@ -13,20 +13,24 @@ export const useEnrollInCollectiveMentorship = () => {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       if (!user?.id || !companyData?.id) {
+        console.error('[MentorshipEnroll] user.id ou companyData.id indefinidos', { userId: user?.id, companyId: companyData?.id });
         throw new Error('User not authenticated or company not found');
       }
 
-      console.log('📝 Enrolling in collective mentorship session:', sessionId);
+      console.log('[MentorshipEnroll] Tentando inscrever', { userId: user.id, companyId: companyData.id, sessionId });
 
       // Get user profile data for enrollment
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('company_users')
         .select('name, email')
         .eq('auth_user_id', user.id)
         .eq('company_id', companyData.id)
         .maybeSingle();
 
+      console.log('[MentorshipEnroll] Resultado busca profile:', { profile, profileError });
+
       if (!profile) {
+        console.error('[MentorshipEnroll] User profile not found', { userId: user.id, companyId: companyData.id });
         throw new Error('User profile not found');
       }
 

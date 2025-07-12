@@ -44,9 +44,19 @@ export const useStudentCourses = () => {
   return useQuery({
     queryKey: ['student-courses', user?.id, userRole],
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
+      console.log('🔍 [useStudentCourses] Starting query with:', { 
+        userId: user?.id, 
+        userEmail: user?.email,
+        userRole,
+        hasUser: !!user 
+      });
 
-      console.log('Fetching courses for user:', user.id, 'with role:', userRole);
+      if (!user) {
+        console.error('❌ [useStudentCourses] User not authenticated');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('📚 [useStudentCourses] Fetching courses for user:', user.id, 'with role:', userRole);
 
       // Get published courses with improved error handling
       const { data: courses, error: coursesError } = await supabase
@@ -56,17 +66,39 @@ export const useStudentCourses = () => {
         .order('created_at', { ascending: false });
 
       if (coursesError) {
-        console.error('Error fetching courses:', coursesError);
+        console.error('❌ [useStudentCourses] Error fetching courses:', coursesError);
         throw coursesError;
       }
 
-      console.log('Found published courses:', courses?.length || 0);
+      console.log('✅ [useStudentCourses] Found published courses:', courses?.length || 0);
 
       // Get enrollment data for the current user using auth.uid()
-      const { data: enrollments } = await supabase
-        .from('enrollments')
-        .select('course_id, enrolled_at, progress_percentage')
-        .eq('user_id', user.id);
+      console.log('🎓 [useStudentCourses] Fetching enrollments for user:', user.id);
+      
+      let enrollments = null;
+      let enrollmentsError = null;
+      
+      try {
+        // Primeira tentativa: busca direta
+        const { data, error } = await supabase
+          .from('enrollments')
+          .select('course_id, enrolled_at, progress_percentage')
+          .eq('user_id', user.id);
+          
+        enrollments = data;
+        enrollmentsError = error;
+      } catch (error) {
+        console.error('❌ [useStudentCourses] Direct enrollment query failed:', error);
+        enrollmentsError = error;
+      }
+
+      if (enrollmentsError) {
+        console.error('❌ [useStudentCourses] Error fetching enrollments:', enrollmentsError);
+        console.warn('⚠️ [useStudentCourses] Continuing without enrollment data');
+        enrollments = []; // Use empty array as fallback
+      }
+
+      console.log('✅ [useStudentCourses] Found enrollments:', enrollments?.length || 0);
 
       const enrollmentMap = new Map(
         enrollments?.map(e => [e.course_id, e]) || []

@@ -70,25 +70,36 @@ export function AuthGuard({ children, requiredRole, redirectTo = '/auth' }: Auth
   }
 
   // Check role requirements
-  if (requiredRole && userRole !== requiredRole) {
-    console.warn('⚠️ Role mismatch - expected:', requiredRole, 'but got:', userRole);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
-          <p className="text-gray-600 mb-4">Você não tem permissão para acessar esta página.</p>
-          <p className="text-sm text-gray-500 mb-4">
-            Role atual: {userRole || 'indefinido'} | Role necessário: {requiredRole}
-          </p>
-          <button 
-            onClick={() => navigate('/', { replace: true })}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Voltar ao Início
-          </button>
+  if (requiredRole) {
+    // Só mostrar acesso negado se a role já foi carregada e não bate com a requerida
+    if (!userRole) {
+      // Ainda não carregou a role, mostrar loading
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-lg">Carregando permissões...</div>
         </div>
-      </div>
-    );
+      );
+    }
+    if (userRole !== requiredRole) {
+      console.warn('⚠️ Role mismatch - expected:', requiredRole, 'but got:', userRole);
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
+            <p className="text-gray-600 mb-4">Você não tem permissão para acessar esta página.</p>
+            <p className="text-sm text-gray-500 mb-4">
+              Role atual: {userRole || 'indefinido'} | Role necessário: {requiredRole}
+            </p>
+            <button 
+              onClick={() => navigate('/', { replace: true })}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Voltar ao Início
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   console.log('✅ AuthGuard access granted for:', user.email, 'with role:', userRole);

@@ -97,11 +97,11 @@ export const useCollaboratorAnalytics = () => {
               .eq('user_id', collaborator.auth_user_id)
               .not('completed_at', 'is', null);
 
-            // Get total points
+            // Get total points - using company_users.id (not auth_user_id)
             const { data: pointsData } = await supabase
               .from('student_points')
               .select('total_points, level, streak_days')
-              .eq('student_id', collaborator.auth_user_id)
+              .eq('student_id', collaborator.id) // Use company_users.id, not auth_user_id
               .maybeSingle();
 
             return {

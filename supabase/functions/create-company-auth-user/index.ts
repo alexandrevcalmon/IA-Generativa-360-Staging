@@ -117,7 +117,7 @@ serve(async (req) => {
     console.log(`[create-company-auth-user] Updating 'companies' table for ID ${companyId} with auth_user_id ${authUserId}.`);
     const { error: updateCompanyError } = await supabaseAdmin
       .from('companies')
-      .update({ auth_user_id: authUserId, needs_password_change: true, updated_at: new Date().toISOString() })
+      .update({ auth_user_id: authUserId, updated_at: new Date().toISOString() })
       .eq('id', companyId);
 
     if (updateCompanyError) {

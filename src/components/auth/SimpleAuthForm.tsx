@@ -136,10 +136,7 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
       </form>
 
       <div className="space-y-3 border-t pt-4">
-        <div className="text-center">
-          <TestUserDialog onUseCredentials={useTestCredentials} />
-        </div>
-        
+        {/* Removido botão de usuário demo */}
         <div className="text-center">
           <ForgotPasswordDialog />
         </div>

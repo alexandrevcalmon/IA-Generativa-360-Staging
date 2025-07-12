@@ -18,6 +18,11 @@ import Analytics from '@/pages/Analytics';
 import Learning from '@/pages/Learning';
 import LoginProdutor from '@/pages/LoginProdutor';
 import NotFound from '@/pages/NotFound';
+import Planos from '@/pages/Planos';
+import ActivateAccount from '@/pages/ActivateAccount';
+import Admin from '@/pages/Admin';
+import CompanyData from '@/pages/checkout/company-data';
+import CheckoutSuccess from '@/pages/checkout/success';
 
 // Producer pages
 import ProducerDashboard from '@/pages/ProducerDashboard';
@@ -76,6 +81,10 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login-produtor" element={<LoginProdutor />} />
+            <Route path="/planos" element={<Planos />} />
+            <Route path="/activate-account" element={<ActivateAccount />} />
+            <Route path="/checkout/company-data" element={<CompanyData />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
 
             {/* Legacy company dashboard redirect */}
             <Route path="/company-dashboard" element={<Navigate to="/company/dashboard" replace />} />

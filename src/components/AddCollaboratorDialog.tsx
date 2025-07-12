@@ -78,7 +78,7 @@ export function AddCollaboratorDialog({
             Adicionar Colaborador
           </DialogTitle>
           <DialogDescription>
-            Preencha os dados do novo colaborador. Um email de convite será enviado.
+            Preencha os dados básicos. O colaborador receberá um e-mail para definir senha e completar o cadastro.
           </DialogDescription>
         </DialogHeader>
 
@@ -112,13 +112,14 @@ export function AddCollaboratorDialog({
 
           <div className="space-y-2">
             <Label htmlFor="collaborator-position" className="flex items-center">
-              <Briefcase className="h-4 w-4 mr-1" /> Cargo (Opcional)
+              <Briefcase className="h-4 w-4 mr-1" /> Cargo *
             </Label>
             <Input
               id="collaborator-position"
               placeholder="Ex: Desenvolvedor, Designer"
               value={formData.position}
               onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+              required
             />
           </div>
 

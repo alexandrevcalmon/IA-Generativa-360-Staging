@@ -412,11 +412,6 @@ const ProducerCompanyDetails = () => {
                                 <Badge variant={collaborator.is_active ? "default" : "outline"} className="text-xs ml-2">
                                   {collaborator.is_active ? "Ativo" : "Inativo"}
                                 </Badge>
-                                {collaborator.needs_password_change && (
-                                   <Badge variant="outline" className="text-xs ml-2 border-yellow-500 text-yellow-600">
-                                      Pendente Senha
-                                   </Badge>
-                                )}
                               </div>
                             </div>
                           </div>

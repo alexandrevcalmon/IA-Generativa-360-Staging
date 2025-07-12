@@ -55,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isInitialized
   });
 
+  console.log('[AuthProvider] user:', user, 'session:', session, 'userRole:', userRole, 'isInitialized:', isInitialized);
+
   const value = {
     user,
     session,

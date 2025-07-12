@@ -220,3 +220,32 @@ export const useRegisterForMentorship = () => {
     }
   };
 };
+
+// Novo hook: mentorias em que o usuário está inscrito
+export const useMyMentorshipSessions = () => {
+  return useQuery({
+    queryKey: ['my-mentorship-sessions'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      // Buscar sessões em que o usuário está inscrito
+      const { data: registrations, error: regError } = await supabase
+        .from('producer_mentorship_participants')
+        .select('session_id')
+        .eq('participant_id', user.id);
+      if (regError) throw regError;
+      const sessionIds = registrations?.map(r => r.session_id) || [];
+      if (sessionIds.length === 0) return [];
+
+      // Buscar detalhes das sessões
+      const { data: sessions, error: sessError } = await supabase
+        .from('producer_mentorship_sessions')
+        .select('*')
+        .in('id', sessionIds)
+        .order('scheduled_at', { ascending: true });
+      if (sessError) throw sessError;
+      return sessions as MentorshipSession[];
+    },
+  });
+};

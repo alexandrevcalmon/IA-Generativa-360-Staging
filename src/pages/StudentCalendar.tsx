@@ -1,12 +1,11 @@
 
-import { useCalendarEvents, useUpcomingEvents } from '@/hooks/useCalendarEvents';
+import { useMyMentorshipSessions } from '@/hooks/useMentorshipSessions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Video, Users, GraduationCap, Building } from 'lucide-react';
 
 const StudentCalendar = () => {
-  const { data: allEvents, isLoading } = useCalendarEvents();
-  const { data: upcomingEvents } = useUpcomingEvents(10);
+  const { data: myMentorships, isLoading } = useMyMentorshipSessions();
 
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
@@ -43,10 +42,14 @@ const StudentCalendar = () => {
   }
 
   const today = new Date();
-  const todayEvents = allEvents?.filter(event => {
-    const eventDate = new Date(event.start_date);
+  const todayMentorships = myMentorships?.filter(session => {
+    const eventDate = new Date(session.scheduled_at);
     return eventDate.toDateString() === today.toDateString();
   }) || [];
+
+  const upcomingMentorships = (myMentorships || [])
+    .filter(session => new Date(session.scheduled_at) > today)
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
   return (
     <div className="flex flex-col h-full">
@@ -62,14 +65,14 @@ const StudentCalendar = () => {
           </div>
           <Badge className="bg-blue-100 text-blue-800 border-blue-200">
             <Calendar className="w-3 h-3 mr-1" />
-            {allEvents?.length || 0} eventos
+            {myMentorships?.length || 0} mentorias
           </Badge>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto p-6 bg-gray-50">
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Today's Events */}
+          {/* Mentorias de hoje */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -79,49 +82,38 @@ const StudentCalendar = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {todayEvents.length > 0 ? (
-                  todayEvents.map((event) => (
-                    <div key={event.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                {todayMentorships.length > 0 ? (
+                  todayMentorships.map((session) => (
+                    <div key={session.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
                       <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
-                        {getEventIcon(event.event_type)}
+                        <Users className="h-4 w-4" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900">{event.title}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            {getEventTypeText(event.event_type)}
-                          </Badge>
+                          <h4 className="font-medium text-gray-900">{session.title}</h4>
+                          <Badge variant="outline" className="text-xs">Mentoria</Badge>
                         </div>
-                        {event.description && (
-                          <p className="text-sm text-gray-600 mb-2">{event.description}</p>
+                        {session.description && (
+                          <p className="text-sm text-gray-600 mb-2">{session.description}</p>
                         )}
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span>
-                              {new Date(event.start_date).toLocaleTimeString('pt-BR', {
+                              {new Date(session.scheduled_at).toLocaleTimeString('pt-BR', {
                                 hour: '2-digit',
                                 minute: '2-digit'
                               })}
-                              {!event.all_day && (
-                                <> - {new Date(event.end_date).toLocaleTimeString('pt-BR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}</>
-                              )}
                             </span>
                           </div>
-                          {event.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              <span>{event.location}</span>
-                            </div>
-                          )}
-                          {event.meet_url && (
-                            <div className="flex items-center gap-1">
+                          {session.google_meet_url && (
+                            <button
+                              className="flex items-center gap-1 text-green-700 font-semibold hover:underline ml-2"
+                              onClick={() => window.open(session.google_meet_url, '_blank')}
+                            >
                               <Video className="h-3 w-3" />
-                              <span>Online</span>
-                            </div>
+                              <span>Acessar reunião</span>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -129,44 +121,42 @@ const StudentCalendar = () => {
                   ))
                 ) : (
                   <p className="text-gray-500 text-center py-4">
-                    Nenhum evento para hoje
+                    Nenhuma mentoria para hoje
                   </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Upcoming Events */}
+          {/* Próximas mentorias */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-green-600" />
-                Próximos Eventos
+                Próximas Mentorias
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {upcomingEvents && upcomingEvents.length > 0 ? (
-                  upcomingEvents.map((event) => (
-                    <div key={event.id} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                {upcomingMentorships.length > 0 ? (
+                  upcomingMentorships.map((session) => (
+                    <div key={session.id} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
                       <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                        {getEventIcon(event.event_type)}
+                        <Users className="h-4 w-4" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900">{event.title}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            {getEventTypeText(event.event_type)}
-                          </Badge>
+                          <h4 className="font-medium text-gray-900">{session.title}</h4>
+                          <Badge variant="outline" className="text-xs">Mentoria</Badge>
                         </div>
-                        {event.description && (
-                          <p className="text-sm text-gray-600 mb-2">{event.description}</p>
+                        {session.description && (
+                          <p className="text-sm text-gray-600 mb-2">{session.description}</p>
                         )}
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             <span>
-                              {new Date(event.start_date).toLocaleDateString('pt-BR', {
+                              {new Date(session.scheduled_at).toLocaleDateString('pt-BR', {
                                 day: 'numeric',
                                 month: 'short',
                               })}
@@ -175,17 +165,20 @@ const StudentCalendar = () => {
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span>
-                              {new Date(event.start_date).toLocaleTimeString('pt-BR', {
+                              {new Date(session.scheduled_at).toLocaleTimeString('pt-BR', {
                                 hour: '2-digit',
                                 minute: '2-digit'
                               })}
                             </span>
                           </div>
-                          {event.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              <span>{event.location}</span>
-                            </div>
+                          {session.google_meet_url && (
+                            <button
+                              className="flex items-center gap-1 text-green-700 font-semibold hover:underline ml-2"
+                              onClick={() => window.open(session.google_meet_url, '_blank')}
+                            >
+                              <Video className="h-3 w-3" />
+                              <span>Acessar reunião</span>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -193,7 +186,7 @@ const StudentCalendar = () => {
                   ))
                 ) : (
                   <p className="text-gray-500 text-center py-4">
-                    Nenhum evento próximo
+                    Nenhuma mentoria futura
                   </p>
                 )}
               </div>
