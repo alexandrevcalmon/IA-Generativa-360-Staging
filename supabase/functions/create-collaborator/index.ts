@@ -21,12 +21,39 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
   }
 
-  const { company_id, name, email, phone, position } = requestBody;
-  console.log('[create-collaborator] Request body parsed:', { company_id, name, email, phone, position });
+  const { 
+    company_id, 
+    name, 
+    email, 
+    phone, 
+    position,
+    needs_complete_registration = true
+  } = requestBody;
+  
+  console.log('[create-collaborator] Request body parsed (simplified flow):', { 
+    company_id, 
+    name, 
+    email, 
+    phone, 
+    position,
+    needs_complete_registration
+  });
 
-  if (!company_id || !name || !email) {
-    console.error('[create-collaborator] Missing required parameters: company_id, name, or email.');
-    return new Response(JSON.stringify({ error: 'Missing required parameters: company_id, name, or email' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+  // Validar apenas campos básicos obrigatórios
+  if (!company_id || !name || !email || !position) {
+    console.error('[create-collaborator] Missing required parameters');
+    return new Response(JSON.stringify({ 
+      error: 'Campos obrigatórios: company_id, name, email, position' 
+    }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+  }
+
+  // Validar formato do e-mail
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    console.error('[create-collaborator] Invalid email format:', email);
+    return new Response(JSON.stringify({ error: 'Formato de e-mail inválido' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   try {
@@ -41,34 +68,110 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('[create-collaborator] Authorization header missing.');
-      return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), { 
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
-    const supabaseUserClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: authHeader } } });
+    
+    const supabaseUserClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '', 
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '', 
+      { global: { headers: { Authorization: authHeader } } }
+    );
 
     console.log('[create-collaborator] Fetching calling user.');
     const { data: { user: callingUser }, error: callingUserError } = await supabaseUserClient.auth.getUser();
 
     if (callingUserError || !callingUser) {
-      console.error('[create-collaborator] Error fetching calling user or user not found:', callingUserError?.message);
-      return new Response(JSON.stringify({ error: 'Unauthorized: Could not verify calling user' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.error('[create-collaborator] Error fetching calling user:', callingUserError?.message);
+      return new Response(JSON.stringify({ error: 'Unauthorized: Could not verify calling user' }), { 
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
     console.log(`[create-collaborator] Calling user: ${callingUser.id}, email: ${callingUser.email}`);
 
-    console.log(`[create-collaborator] Verifying if calling user ${callingUser.id} is a producer.`);
-    const { data: profile, error: profileError } = await supabaseAdmin // Use admin client for profile check for security
+    // Verificar se o usuário é um producer ou company
+    console.log(`[create-collaborator] Verifying if calling user ${callingUser.id} is a producer or company.`);
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', callingUser.id)
       .single();
 
-    if (profileError || profile?.role !== 'producer') {
-      console.error(`[create-collaborator] Calling user ${callingUser.id} is not a producer. Profile role: ${profile?.role}. Error:`, profileError?.message);
-      return new Response(JSON.stringify({ error: 'Forbidden: Calling user is not a producer' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (profileError || (profile?.role !== 'producer' && profile?.role !== 'company')) {
+      console.error(`[create-collaborator] Calling user ${callingUser.id} is not a producer or company. Profile role: ${profile?.role}`);
+      return new Response(JSON.stringify({ error: 'Forbidden: Calling user is not a producer or company' }), { 
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
-    console.log(`[create-collaborator] Calling user ${callingUser.id} confirmed as producer.`);
+    console.log(`[create-collaborator] Calling user ${callingUser.id} confirmed as ${profile.role}.`);
 
-    // Check for existing collaborator in company_users
-    console.log(`[create-collaborator] Checking for existing collaborator in company_users. Email: ${email}`);
+    // Se for empresa, verificar se está tentando adicionar colaborador para sua própria empresa
+    if (profile.role === 'company') {
+      const { data: userCompany, error: userCompanyError } = await supabaseAdmin
+        .from('companies')
+        .select('id')
+        .eq('auth_user_id', callingUser.id)
+        .single();
+
+      if (userCompanyError || !userCompany) {
+        console.error(`[create-collaborator] Company user ${callingUser.id} does not have associated company`);
+        return new Response(JSON.stringify({ error: 'Company user does not have associated company' }), { 
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+
+      if (userCompany.id !== company_id) {
+        console.error(`[create-collaborator] Company user ${callingUser.id} trying to add collaborator to different company`);
+        return new Response(JSON.stringify({ error: 'Company users can only add collaborators to their own company' }), { 
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+
+      console.log(`[create-collaborator] Company user ${callingUser.id} authorized to add collaborator to company ${company_id}`);
+    }
+
+    // Verificar limite de assentos da empresa
+    console.log(`[create-collaborator] Checking company seat limit for company: ${company_id}`);
+    const { data: company, error: companyError } = await supabaseAdmin
+      .from('companies')
+      .select('max_collaborators')
+      .eq('id', company_id)
+      .single();
+
+    if (companyError || !company) {
+      console.error('[create-collaborator] Error fetching company:', companyError?.message);
+      return new Response(JSON.stringify({ error: 'Empresa não encontrada' }), { 
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Contar colaboradores ativos
+    const { count: activeCount, error: countError } = await supabaseAdmin
+      .from('company_users')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', company_id)
+      .eq('is_active', true);
+
+    if (countError) {
+      console.error('[create-collaborator] Error counting active collaborators:', countError.message);
+      return new Response(JSON.stringify({ error: 'Erro ao verificar limite de colaboradores' }), { 
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    const maxCollaborators = company.max_collaborators || 5;
+    const currentActive = activeCount || 0;
+
+    if (currentActive >= maxCollaborators) {
+      console.error(`[create-collaborator] Seat limit reached: ${currentActive}/${maxCollaborators}`);
+      return new Response(JSON.stringify({ 
+        error: `Limite de colaboradores atingido (${currentActive}/${maxCollaborators}). Atualize seu plano para adicionar mais colaboradores.` 
+      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Verificar colaborador existente
+    console.log(`[create-collaborator] Checking for existing collaborator: ${email}`);
     const { data: existingCompanyUser, error: existingCompanyUserError } = await supabaseAdmin
       .from('company_users')
       .select('auth_user_id, company_id, is_active, name')
@@ -76,116 +179,175 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingCompanyUserError) {
-      console.error(`[create-collaborator] Error checking existing company_users for ${email}:`, existingCompanyUserError.message);
-      // This could be a transient DB error. Depending on policy, might be okay to proceed to auth user check.
-      // For now, let's return an error to be safe.
-      return new Response(JSON.stringify({ error: `DB error checking existing collaborator: ${existingCompanyUserError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.error(`[create-collaborator] Error checking existing company_users:`, existingCompanyUserError.message);
+      return new Response(JSON.stringify({ error: `Erro ao verificar colaborador existente: ${existingCompanyUserError.message}` }), { 
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
 
     if (existingCompanyUser) {
-      console.log(`[create-collaborator] Found existing company_user record for ${email}: AuthID ${existingCompanyUser.auth_user_id}, CompanyID ${existingCompanyUser.company_id}, Active: ${existingCompanyUser.is_active}, Name: ${existingCompanyUser.name}`);
+      console.log(`[create-collaborator] Found existing company_user: ${existingCompanyUser.auth_user_id}`);
       if (existingCompanyUser.company_id === company_id) {
         if (existingCompanyUser.is_active) {
-          console.warn(`[create-collaborator] User ${email} is already an active collaborator in company ${company_id}.`);
-          return new Response(JSON.stringify({ error: `O usuário ${email} já é um colaborador ativo desta empresa.` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          console.warn(`[create-collaborator] User ${email} is already an active collaborator.`);
+          return new Response(JSON.stringify({ error: `O usuário ${email} já é um colaborador ativo desta empresa.` }), { 
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
         } else {
-          // Reactivate existing user
-          console.log(`[create-collaborator] Reactivating inactive collaborator ${email} (AuthID: ${existingCompanyUser.auth_user_id}) for company ${company_id}.`);
+          // Reativar colaborador existente
+          console.log(`[create-collaborator] Reactivating inactive collaborator: ${email}`);
           const { data: reactivatedData, error: reactivateError } = await supabaseAdmin
             .from('company_users')
-            .update({ name: name, phone: phone, position: position, is_active: true, needs_password_change: false, updated_at: new Date().toISOString() })
+            .update({ 
+              name, 
+              phone: phone || null, 
+              position,
+              is_active: true, 
+              needs_complete_registration: true,
+              updated_at: new Date().toISOString() 
+            })
             .eq('auth_user_id', existingCompanyUser.auth_user_id)
             .eq('company_id', company_id)
             .select()
             .single();
 
           if (reactivateError) {
-            console.error(`[create-collaborator] Error reactivating collaborator ${existingCompanyUser.auth_user_id}:`, reactivateError.message);
-            return new Response(JSON.stringify({ error: `Erro ao reativar colaborador: ${reactivateError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            console.error(`[create-collaborator] Error reactivating collaborator:`, reactivateError.message);
+            return new Response(JSON.stringify({ error: `Erro ao reativar colaborador: ${reactivateError.message}` }), { 
+              status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            });
           }
-          console.log(`[create-collaborator] Collaborator ${existingCompanyUser.auth_user_id} reactivated successfully.`);
 
-          // Ensure profile is also updated/present
-          console.log(`[create-collaborator] Upserting profile for reactivated collaborator ${existingCompanyUser.auth_user_id}.`);
-          const { error: profileUpsertError } = await supabaseAdmin.from('profiles').upsert({ id: existingCompanyUser.auth_user_id, email: email, name: name, role: 'collaborator', updated_at: new Date().toISOString() }, { onConflict: 'id' });
-          if (profileUpsertError) console.error(`[create-collaborator] Error upserting profile on reactivation for ${existingCompanyUser.auth_user_id}:`, profileUpsertError.message);
-          else console.log(`[create-collaborator] Profile upserted for reactivated collaborator ${existingCompanyUser.auth_user_id}.`);
-
-          return new Response(JSON.stringify({ data: reactivatedData, isReactivation: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          return new Response(JSON.stringify({ data: reactivatedData, isReactivation: true }), { 
+            status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
         }
       } else {
-        console.warn(`[create-collaborator] User ${email} is a collaborator in a different company (${existingCompanyUser.company_id}). Cannot add to company ${company_id}.`);
-        return new Response(JSON.stringify({ error: `O usuário ${email} já é colaborador de outra empresa.` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        console.warn(`[create-collaborator] User ${email} is a collaborator in a different company.`);
+        return new Response(JSON.stringify({ error: `O usuário ${email} já é colaborador de outra empresa.` }), { 
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
       }
     }
 
-    // If no existing company_user, proceed to create/link auth user
+    // Criar novo colaborador
     let authUserId: string;
     let isNewAuthUser = false;
 
-    console.log(`[create-collaborator] Checking for existing Supabase auth user with email: ${email}`);
+    console.log(`[create-collaborator] Checking for existing auth user: ${email}`);
     const { data: { users: userList }, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers();
     if (listUsersError) {
-      console.error(`[create-collaborator] Error listing users to find ${email}:`, listUsersError.message);
-      return new Response(JSON.stringify({ error: `Error checking existing users: ${listUsersError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.error(`[create-collaborator] Error listing users:`, listUsersError.message);
+      return new Response(JSON.stringify({ error: `Error checking existing users: ${listUsersError.message}` }), { 
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
+    
     const existingAuthUser = userList?.find(u => u.email === email);
 
     if (existingAuthUser) {
       authUserId = existingAuthUser.id;
-      console.log(`[create-collaborator] Auth user already exists with email ${email}. ID: ${authUserId}. Updating metadata.`);
+      console.log(`[create-collaborator] Auth user already exists: ${authUserId}`);
+      
+      // Atualizar metadata
       const { error: updateMetaError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
-        user_metadata: { ...existingAuthUser.user_metadata, role: 'collaborator', company_id: company_id, name: name }
+        user_metadata: { 
+          ...existingAuthUser.user_metadata, 
+          role: 'collaborator', 
+          company_id: company_id, 
+          name: name 
+        }
       });
-      if (updateMetaError) console.error(`[create-collaborator] Error updating metadata for existing auth user ${authUserId}:`, updateMetaError.message); // Non-fatal for this flow.
-      else console.log(`[create-collaborator] Metadata updated for existing auth user ${authUserId}.`);
-    } else {
-      const tempPassword = Deno.env.get('NEW_COLLABORATOR_DEFAULT_PASSWORD') || 'ia360graus';
-      console.log(`[create-collaborator] No existing auth user. Creating new one for email: ${email}`);
-      const { data: newAuthUserData, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-        email: email, password: tempPassword, email_confirm: true,
-        user_metadata: { role: 'collaborator', company_id: company_id, name: name }
-      });
-      if (createAuthError || !newAuthUserData?.user) {
-        console.error(`[create-collaborator] Error creating new auth user for ${email}:`, createAuthError?.message || "User object not returned.");
-        return new Response(JSON.stringify({ error: `Erro ao criar usuário de autenticação: ${createAuthError?.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (updateMetaError) {
+        console.error(`[create-collaborator] Error updating metadata:`, updateMetaError.message);
       }
+    } else {
+      // Criar novo usuário via inviteUserByEmail
+      console.log(`[create-collaborator] Creating new auth user via invite: ${email}`);
+      const redirectTo = 'https://staging.grupocalmon.com/activate-account';
+      
+      const { data: newAuthUserData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        data: { 
+          role: 'collaborator', 
+          company_id: company_id, 
+          name: name 
+        },
+        redirectTo: redirectTo
+      });
+
+      if (inviteError || !newAuthUserData?.user) {
+        console.error(`[create-collaborator] Error inviting user:`, inviteError?.message);
+        return new Response(JSON.stringify({ error: `Erro ao enviar convite: ${inviteError?.message}` }), { 
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      
       authUserId = newAuthUserData.user.id;
       isNewAuthUser = true;
-      console.log(`[create-collaborator] New auth user created successfully for ${email}. ID: ${authUserId}`);
+      console.log(`[create-collaborator] New auth user invited successfully: ${authUserId}`);
     }
 
-    console.log(`[create-collaborator] Inserting record into 'company_users' for auth_user_id ${authUserId}, company_id ${company_id}.`);
+    // Inserir registro na tabela company_users (apenas campos básicos)
+    console.log(`[create-collaborator] Inserting company_users record for: ${authUserId}`);
     const { data: companyUserData, error: companyUserInsertError } = await supabaseAdmin
       .from('company_users')
-      .insert([{ auth_user_id: authUserId, company_id: company_id, name: name, email: email, phone: phone, position: position, is_active: true, needs_password_change: true }])
+      .insert([{ 
+        auth_user_id: authUserId, 
+        company_id: company_id, 
+        name: name, 
+        email: email, 
+        phone: phone || null, 
+        position: position,
+        pais: 'Brasil',
+        is_active: true, 
+        needs_complete_registration: true
+      }])
       .select()
       .single();
 
     if (companyUserInsertError) {
-      console.error(`[create-collaborator] Error inserting into company_users for auth_user_id ${authUserId}:`, companyUserInsertError.message);
+      console.error(`[create-collaborator] Error inserting company_users:`, companyUserInsertError.message);
       if (isNewAuthUser) {
-        console.warn(`[create-collaborator] company_users insert failed for new auth user ${authUserId}. Deleting the new auth user.`);
+        console.warn(`[create-collaborator] Deleting orphaned auth user: ${authUserId}`);
         await supabaseAdmin.auth.admin.deleteUser(authUserId);
-        console.log(`[create-collaborator] Orphaned new auth user ${authUserId} deleted.`);
       }
-      return new Response(JSON.stringify({ error: `Erro ao adicionar colaborador à empresa: ${companyUserInsertError.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: `Erro ao adicionar colaborador: ${companyUserInsertError.message}` }), { 
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
-    console.log(`[create-collaborator] Record inserted into company_users successfully for auth_user_id ${authUserId}.`);
 
-    // Upsert profile for the collaborator
-    console.log(`[create-collaborator] Upserting 'profiles' table for ID ${authUserId}.`);
-    const profileToUpsert: any = { id: authUserId, role: 'collaborator', email: email, name: name, updated_at: new Date().toISOString() };
+    // Upsert profile
+    console.log(`[create-collaborator] Upserting profile for: ${authUserId}`);
+    const profileToUpsert: any = { 
+      id: authUserId, 
+      role: 'collaborator', 
+      email: email, 
+      name: name, 
+      updated_at: new Date().toISOString() 
+    };
     if (isNewAuthUser) profileToUpsert.created_at = new Date().toISOString();
-    const { error: upsertProfileError } = await supabaseAdmin.from('profiles').upsert(profileToUpsert, { onConflict: 'id' });
-    if (upsertProfileError) console.error(`[create-collaborator] Error upserting profile for ${authUserId}:`, upsertProfileError.message);
-    else console.log(`[create-collaborator] Profile record for ${authUserId} upserted successfully.`);
+    
+    const { error: upsertProfileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert(profileToUpsert, { onConflict: 'id' });
+      
+    if (upsertProfileError) {
+      console.error(`[create-collaborator] Error upserting profile:`, upsertProfileError.message);
+    }
 
-    console.log(`[create-collaborator] Process for ${email} completed successfully. New Auth User: ${isNewAuthUser}`);
-    return new Response(JSON.stringify({ data: companyUserData, isReactivation: false, isNewAuthUser: isNewAuthUser }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.log(`[create-collaborator] Process completed successfully for: ${email} (simplified flow)`);
+    return new Response(JSON.stringify({ 
+      data: companyUserData, 
+      isReactivation: false, 
+      isNewAuthUser: isNewAuthUser,
+      invitationSent: isNewAuthUser,
+      needsCompleteRegistration: true
+    }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-  } catch (e: any) {
-    console.error('[create-collaborator] Unhandled error in function:', e.message, e.stack);
-    return new Response(JSON.stringify({ error: 'Internal server error', details: e.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+  } catch (error: any) {
+    console.error('[create-collaborator] Unexpected error:', error.message);
+    return new Response(JSON.stringify({ error: `Erro interno: ${error.message}` }), { 
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
   }
 });

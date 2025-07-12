@@ -23,7 +23,7 @@ export const createDefaultSignInService = (toast: any) => {
 
         const { data: companyRecord, error: companyRecordError } = await supabase
           .from('companies')
-          .select('id, name, needs_password_change, auth_user_id')
+          .select('id, name, auth_user_id')
           .eq('auth_user_id', user.id)
           .maybeSingle();
 
@@ -58,12 +58,11 @@ export const createDefaultSignInService = (toast: any) => {
             console.warn(`[DefaultSignIn] Error updating profile:`, profileUpdateError.message);
           }
 
-          const needsPwdChange = companyRecord.needs_password_change || false;
           toast({ 
             title: "Login de Empresa bem-sucedido!", 
-            description: needsPwdChange ? "Bem-vindo! Sua senha precisa ser alterada." : "Bem-vindo!" 
+            description: "Bem-vindo!" 
           });
-          return { needsPasswordChange: needsPwdChange };
+          return { needsPasswordChange: false };
         }
       }
 
@@ -77,7 +76,6 @@ export const createDefaultSignInService = (toast: any) => {
         .from('company_users')
         .select(`
           id, 
-          needs_password_change, 
           company_id, 
           name,
           companies:company_id(name)
@@ -124,8 +122,8 @@ export const createDefaultSignInService = (toast: any) => {
         }
 
         // Default to student role
-        if (userFinalRole !== 'producer') {
-          userFinalRole = 'student';
+        if (userFinalRole !== 'producer' && userFinalRole !== 'collaborator') {
+          userFinalRole = 'collaborator';
         }
 
         // Update user metadata

@@ -9,7 +9,7 @@ export function Footer() {
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <img 
-                src="/lovable-uploads/4e37cba3-373f-4630-ac8b-6fdea4e6d0e8.png" 
+                src="/Logomarca Calmon Academy.png" 
                 alt="Calmon Academy" 
                 className="h-8 w-auto"
               />

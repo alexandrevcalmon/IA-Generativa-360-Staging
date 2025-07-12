@@ -8,7 +8,7 @@ export const getResetPasswordRedirectUrl = () => `${window.location.origin}/auth
 export const checkCompanyUser = async (userId: string) => {
   const { data: collaborator, error: collaboratorError } = await supabase
     .from('company_users')
-    .select('id, needs_password_change, company_id, name')
+    .select('id, company_id, name')
     .eq('auth_user_id', userId)
     .maybeSingle();
   

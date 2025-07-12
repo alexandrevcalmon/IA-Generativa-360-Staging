@@ -37,7 +37,7 @@ export const createUserAuxiliaryDataService = () => {
       // Second priority: Check if user is a company owner
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
-        .select('*, needs_password_change')
+        .select('*')
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
@@ -53,7 +53,7 @@ export const createUserAuxiliaryDataService = () => {
           companyData,
           collaboratorData: null,
           producerData: null,
-          needsPasswordChange: companyData.needs_password_change || false
+          needsPasswordChange: false
         };
       }
 
@@ -79,7 +79,7 @@ export const createUserAuxiliaryDataService = () => {
       // Fourth priority: Check if user is a company collaborator
       const { data: collaboratorData, error: collaboratorError } = await supabase
         .from('company_users')
-        .select('*, needs_password_change, company_id')
+        .select('*, company_id')
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
@@ -92,6 +92,10 @@ export const createUserAuxiliaryDataService = () => {
           .maybeSingle();
 
         console.log('[UserAuxiliaryDataService] User is a company collaborator');
+
+        // Atualizar role em profiles para 'collaborator'
+        await supabase.from('profiles').upsert({ id: user.id, role: 'collaborator' });
+
         return {
           role: 'collaborator',
           profileData,
@@ -101,7 +105,7 @@ export const createUserAuxiliaryDataService = () => {
             company_name: companyInfo?.name || 'Unknown Company'
           },
           producerData: null,
-          needsPasswordChange: collaboratorData.needs_password_change || false
+          needsPasswordChange: false
         };
       }
 

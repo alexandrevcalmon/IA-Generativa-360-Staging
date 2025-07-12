@@ -9,5 +9,6 @@ export function useAuth() {
     console.error('Stack trace:', new Error().stack);
     throw new Error('useAuth must be used within an AuthProvider. Make sure your component is wrapped with AuthProvider.');
   }
+  console.log('[useAuth] context:', context);
   return context;
 }

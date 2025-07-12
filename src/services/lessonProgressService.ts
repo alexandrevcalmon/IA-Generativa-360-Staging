@@ -1,6 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getPointsForEvent } from '@/hooks/gamification/gamificationRules';
+import { awardPointsToStudent } from '@/hooks/gamification/useStudentPoints';
 
 interface ProgressUpdate {
   lessonId: string;
@@ -19,12 +21,14 @@ class LessonProgressService {
   }
 
   public async updateProgress({ lessonId, userId, completed, watchTimeSeconds }: ProgressUpdate) {
+    console.log('[Progresso] updateProgress chamado:', { lessonId, userId, completed, watchTimeSeconds, timestamp: new Date().toISOString() });
     const updateKey = this.getUpdateKey(userId, lessonId);
     const now = Date.now();
     
     // Throttle updates - minimum 3 seconds between updates
     const lastUpdate = this.lastUpdateTimes.get(updateKey) || 0;
     if (now - lastUpdate < 3000) {
+      console.log('[Progresso] Ignorando update por throttling:', { updateKey, now, lastUpdate });
       return null;
     }
 
@@ -39,6 +43,7 @@ class LessonProgressService {
         try {
           this.lastUpdateTimes.set(updateKey, Date.now());
           
+          // Buscar progresso existente
           const { data: existingProgress } = await supabase
             .from('lesson_progress')
             .select('*')
@@ -68,6 +73,42 @@ class LessonProgressService {
             .single();
 
           if (error) throw error;
+
+          // Lógica de gamificação centralizada
+          if (completed && data && !existingProgress?.completed) {
+            try {
+              console.log('[Gamificação] Buscando company_users.id para', userId);
+              const { data: companyUser, error: companyUserError } = await supabase
+                .from('company_users')
+                .select('id')
+                .eq('auth_user_id', userId)
+                .maybeSingle();
+              console.log('[Gamificação] Resultado da busca company_users:', companyUser, companyUserError);
+              if (companyUserError || !companyUser) {
+                console.error('[Gamificação] Não foi possível encontrar o company_users.id para o usuário', userId, companyUserError);
+              } else {
+                const studentId = companyUser.id;
+                const points = getPointsForEvent('lesson_completed');
+                console.log('[Gamificação] Pronto para atribuir pontos:', { studentId, points, lessonId });
+                if (points > 0) {
+                  try {
+                    await awardPointsToStudent({
+                      studentId,
+                      points,
+                      actionType: 'lesson_completed',
+                      description: 'Conclusão de lição',
+                      referenceId: lessonId
+                    });
+                    console.log('[Gamificação] Pontos atribuídos com sucesso para', studentId);
+                  } catch (err) {
+                    console.error('[Gamificação] Erro ao atribuir pontos:', err);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('[Gamificação] Erro inesperado na lógica de gamificação:', err);
+            }
+          }
 
           // Show completion toast only once
           if (completed && data) {

@@ -7,6 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCompanyData } from "@/hooks/useCompanyData";
 import { useCompanyCourses } from "@/hooks/useCompanyCourses";
 import { useCompanyMentorships } from "@/hooks/useCompanyMentorships";
+import { useSubscription } from '@/hooks/useSubscription';
+import { useCollaboratorAnalytics } from '@/hooks/useCollaboratorAnalytics';
+import { CompanyDashboardStats } from '@/components/company/CompanyDashboardStats';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { 
   Users, 
   BookOpen, 
@@ -18,11 +22,14 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getPlanInfo } from "@/lib/stripe";
 
 const CompanyDashboard = () => {
   const { data: companyData, isLoading: companyLoading } = useCompanyData();
   const { data: courses = [], isLoading: coursesLoading } = useCompanyCourses();
   const { data: mentorships = [], isLoading: mentorshipsLoading } = useCompanyMentorships();
+  const subscription = useSubscription();
+  const { data: collaboratorAnalytics = [], isLoading: analyticsLoading } = useCollaboratorAnalytics();
 
   const isLoading = companyLoading || coursesLoading || mentorshipsLoading;
 
@@ -31,6 +38,31 @@ const CompanyDashboard = () => {
   const totalCompletions = courses.reduce((sum, course) => sum + course.completed_students, 0);
   const completionRate = totalEnrollments > 0 ? Math.round((totalCompletions / totalEnrollments) * 100) : 0;
   const upcomingMentorships = mentorships.filter(m => m.status === 'scheduled').length;
+
+  // Gráfico: evolução de novos colaboradores
+  const evolutionData = collaboratorAnalytics
+    .map(c => ({
+      date: new Date(c.updated_at).toLocaleDateString('pt-BR'),
+      count: 1
+    }))
+    .reduce((acc, curr) => {
+      const found = acc.find(a => a.date === curr.date);
+      if (found) found.count += 1;
+      else acc.push({ ...curr });
+      return acc;
+    }, []);
+  // Top 5 colaboradores mais ativos
+  const topActive = [...collaboratorAnalytics]
+    .sort((a, b) => b.total_watch_time_minutes - a.total_watch_time_minutes)
+    .slice(0, 5);
+  // Últimos colaboradores cadastrados
+  const lastRegistered = [...collaboratorAnalytics]
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, 5);
+  // Progresso médio
+  const avgProgress = collaboratorAnalytics.length > 0
+    ? Math.round(collaboratorAnalytics.reduce((sum, c) => sum + (c.lessons_completed || 0), 0) / collaboratorAnalytics.length)
+    : 0;
 
   const stats = [
     {
@@ -86,6 +118,11 @@ const CompanyDashboard = () => {
     );
   }
 
+  if (companyData) {
+    // Log para depuração do plano
+    console.log('[Dashboard] companyData:', companyData);
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -111,14 +148,6 @@ const CompanyDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6 bg-gray-50">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Info Banner */}
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Este é um ambiente de demonstração. Os dados mostrados são exemplos para visualização das funcionalidades da plataforma.
-            </AlertDescription>
-          </Alert>
-
           {/* Stats Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => (
@@ -138,139 +167,115 @@ const CompanyDashboard = () => {
             ))}
           </div>
 
-          {/* Company Info */}
-          {companyData && (
+          {/* Stats Analíticos dos Colaboradores */}
+          <CompanyDashboardStats collaborators={collaboratorAnalytics} />
+          {/* Gráficos Analíticos */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Evolução de Novos Colaboradores */}
             <Card>
               <CardHeader>
-                <CardTitle>Informações da Empresa</CardTitle>
-                <CardDescription>
-                  Dados do seu plano e limites de uso
-                </CardDescription>
+                <CardTitle>Evolução de Novos Colaboradores</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600">Plano Atual</p>
-                    <p className="text-lg font-semibold capitalize">
-                      {companyData.subscription_plan_data?.name || companyData.subscription_plan || 'Básico'}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600">Colaboradores</p>
-                    <p className="text-lg font-semibold">
-                      {companyData.current_students} / {companyData.max_students}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600">Status</p>
-                    <Badge variant={companyData.is_active ? "default" : "secondary"}>
-                      {companyData.is_active ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </div>
-                </div>
+              <CardContent style={{ height: 250 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
-          )}
-
-          {/* Quick Actions */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Courses Overview */}
+            {/* Top 5 Colaboradores Mais Ativos */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  Cursos em Destaque
-                </CardTitle>
-                <CardDescription>
-                  Cursos mais populares entre seus colaboradores
-                </CardDescription>
+                <CardTitle>Top 5 Colaboradores Mais Ativos</CardTitle>
               </CardHeader>
-              <CardContent>
-                {courses.length > 0 ? (
-                  <div className="space-y-4">
-                    {courses.slice(0, 3).map((course) => (
-                      <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{course.title}</h4>
-                          <p className="text-sm text-gray-600">
-                            {course.enrolled_students} matriculados
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-green-600">
-                            {course.enrolled_students > 0 
-                              ? Math.round((course.completed_students / course.enrolled_students) * 100) 
-                              : 0}% concluído
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <Button asChild className="w-full" variant="outline">
-                      <Link to="/company/courses">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ver Todos os Cursos
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600">Nenhum curso disponível</p>
-                  </div>
-                )}
+              <CardContent style={{ height: 250 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topActive.map(c => ({ name: c.collaborator.name, minutos: c.total_watch_time_minutes }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="minutos" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
-
-            {/* Upcoming Mentorships */}
+            {/* Progresso Médio dos Colaboradores */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Próximas Mentorias
-                </CardTitle>
-                <CardDescription>
-                  Sessões de mentoria agendadas
-                </CardDescription>
+                <CardTitle>Progresso Médio (Lições Completas)</CardTitle>
               </CardHeader>
-              <CardContent>
-                {mentorships.length > 0 ? (
-                  <div className="space-y-4">
-                    {mentorships
-                      .filter(m => m.status === 'scheduled')
-                      .slice(0, 3)
-                      .map((mentorship) => (
-                      <div key={mentorship.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{mentorship.title}</h4>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {new Date(mentorship.scheduled_at).toLocaleDateString('pt-BR')}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {mentorship.participants_count}/{mentorship.max_participants}
-                          </p>
-                          <p className="text-xs text-gray-500">participantes</p>
-                        </div>
-                      </div>
-                    ))}
-                    <Button asChild className="w-full" variant="outline">
-                      <Link to="/company/mentorships">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ver Todas as Mentorias
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600">Nenhuma mentoria agendada</p>
-                  </div>
-                )}
+              <CardContent className="flex flex-col items-center justify-center" style={{ height: 250 }}>
+                <div className="text-5xl font-bold text-blue-600">{avgProgress}</div>
+                <div className="text-gray-500 mt-2">lições completas por colaborador</div>
               </CardContent>
             </Card>
           </div>
+          {/* Últimos Colaboradores Cadastrados */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Últimos Colaboradores Cadastrados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="divide-y divide-gray-200">
+                {lastRegistered.map(c => (
+                  <li key={c.collaborator.id} className="py-2 flex justify-between items-center">
+                    <span>{c.collaborator.name}</span>
+                    <span className="text-xs text-gray-500">{new Date(c.updated_at).toLocaleDateString('pt-BR')}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+          {/* Informações do Plano Real */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações do Plano</CardTitle>
+              <CardDescription>Plano real integrado ao Stripe</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Plano Atual</p>
+                  <p className="text-lg font-semibold capitalize">
+                    {companyData?.subscription_plan_data?.name || 'N/A'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Preço</p>
+                  <p className="text-lg font-semibold">
+                    {companyData?.subscription_plan_data?.price !== undefined ? `R$ ${companyData.subscription_plan_data.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Limite de Alunos</p>
+                  <p className="text-lg font-semibold">
+                    {companyData?.subscription_plan_data?.max_students ?? 'N/A'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Colaboradores</p>
+                  <p className="text-lg font-semibold">
+                    {subscription.currentCollaborators} / {subscription.maxCollaborators}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Status</p>
+                  <Badge variant={subscription.isActive ? "default" : "secondary"}>
+                    {subscription.subscriptionStatus}
+                  </Badge>
+                  {subscription.subscriptionEndsAt && (
+                    <p className="text-xs text-gray-500 mt-1">Vence em: {new Date(subscription.subscriptionEndsAt).toLocaleDateString('pt-BR')}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -100,43 +100,28 @@ export const MentorshipCard = ({
           </div>
           
           {!isPast && (
-            <div className="flex flex-col gap-2 ml-4">
+            <div className="flex flex-col gap-2 ml-4 w-56 min-w-[180px]">
+              {/* Botão único: Participar (preto) ou Acessar Reunião (verde) */}
               {mentorship.type === 'collective' && new Date(mentorship.scheduled_at) > new Date() && (
-                <>
-                  {mentorship.is_enrolled ? (
-                    <Button 
-                      variant="outline"
-                      size="sm" 
-                      onClick={() => onUnenroll?.(mentorship.id)}
-                      disabled={unenrolling}
-                      className="flex items-center space-x-1"
-                    >
-                      <UserMinus className="h-4 w-4" />
-                      <span>Cancelar Inscrição</span>
-                    </Button>
-                  ) : (
-                    <Button 
-                      size="sm" 
-                      onClick={() => onEnroll?.(mentorship.id)}
-                      disabled={enrolling}
-                      className="flex items-center space-x-1"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      <span>Inscrever-se</span>
-                    </Button>
-                  )}
-                </>
-              )}
-
-              {(mentorship.meet_url || mentorship.google_meet_url) && (
-                <Button 
-                  size="sm" 
-                  className="flex items-center space-x-1"
-                  onClick={() => window.open(mentorship.meet_url || mentorship.google_meet_url, '_blank')}
-                >
-                  <Video className="h-4 w-4" />
-                  <span>Entrar na Sessão</span>
-                </Button>
+                (mentorship.meet_url || mentorship.google_meet_url) ? (
+                  <Button
+                    size="sm"
+                    className="flex items-center space-x-1 w-full bg-black text-white font-semibold hover:bg-gray-800"
+                    onClick={() => window.open(mentorship.meet_url || mentorship.google_meet_url, '_blank')}
+                  >
+                    <Video className="h-4 w-4" />
+                    <span>Participar</span>
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="flex items-center space-x-1 w-full bg-gray-400 text-white font-semibold"
+                    disabled
+                  >
+                    <Video className="h-4 w-4" />
+                    <span>Link em breve</span>
+                  </Button>
+                )
               )}
             </div>
           )}

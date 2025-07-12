@@ -1,0 +1,10 @@
+# Redireciona todas as rotas para index.html, exceto arquivos e pastas reais
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  # Não reescreve se for arquivo ou pasta real
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Redireciona tudo para index.html
+  RewriteRule ^ index.html [L]
+</IfModule>

@@ -27,7 +27,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
-  Bot
+  Bot,
+  Trophy
 } from 'lucide-react';
 import { UserMenu } from './UserMenu';
 
@@ -144,6 +145,11 @@ export function AppSidebar() {
       title: 'Gamificação',
       url: '/student/gamification',
       icon: BarChart3,
+    },
+    {
+      title: 'Ranking',
+      url: '/ranking',
+      icon: Trophy,
     },
     {
       title: 'Meu Progresso',
