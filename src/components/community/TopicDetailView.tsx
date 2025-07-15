@@ -18,15 +18,21 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToggleTopicLike, useGetTopicLikes } from '@/hooks/useToggleTopicLike';
-import { useCommunityReplies, useCreateCommunityReply } from '@/hooks/useCommunityReplies';
+import { useCommunityReplies, useCreateCommunityReply, useToggleReplyLike, useUpdateCommunityReply, useDeleteCommunityReply } from '@/hooks/useCommunityReplies';
 import { useAuth } from '@/hooks/auth';
 import { toast } from 'sonner';
 
-export const TopicDetailView = () => {
+const TopicDetailView = () => {
   const { topicId } = useParams<{ topicId: string }>();
   const navigate = useNavigate();
   const { user, companyUserData } = useAuth();
   const [replyContent, setReplyContent] = useState('');
+  const { isProducer } = useAuth();
+  const { mutate: toggleReplyLike } = useToggleReplyLike();
+  const { mutate: updateReply } = useUpdateCommunityReply();
+  const { mutate: deleteReply } = useDeleteCommunityReply();
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   // Fetch topic details
   const { data: topic, isLoading: topicLoading } = useQuery({
@@ -69,18 +75,23 @@ export const TopicDetailView = () => {
       return;
     }
 
+    // Fallback: usar dados do user se companyUserData não estiver disponível
+    let authorName = companyUserData?.name || user.user_metadata?.name || user.email || 'Usuário';
+    let authorEmail = companyUserData?.email || user.email || '';
+    let companyName = companyUserData?.companies?.name || companyUserData?.company_name || undefined;
+
     if (!companyUserData) {
-      toast.error('Dados do usuário não encontrados');
-      return;
+      console.warn('[TopicDetailView] companyUserData não encontrado, usando fallback do user:', user.email);
+      toast.warning('Seu cadastro está incompleto, mas sua resposta será enviada normalmente.');
     }
 
     createReply({
       topic_id: topicId,
       content: replyContent.trim(),
       author_id: user.id,
-      author_name: companyUserData.name,
-      author_email: companyUserData.email,
-      company_name: companyUserData.companies?.name,
+      author_name: authorName,
+      author_email: authorEmail,
+      company_name: companyName,
       is_solution: false
     }, {
       onSuccess: () => {
@@ -115,148 +126,210 @@ export const TopicDetailView = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="flex flex-col items-center w-full px-2 md:px-0">
       {/* Back button */}
-      <Button variant="outline" onClick={() => navigate('/student/community')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar para Comunidade
-      </Button>
+      <div className="w-full max-w-3xl mb-4">
+        <Button variant="outline" onClick={() => navigate('/student/community')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar para Comunidade
+        </Button>
+      </div>
 
       {/* Topic */}
-      <Card className={topic.is_pinned ? 'border-purple-200 bg-purple-50' : ''}>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <CardTitle className="text-2xl">{topic.title}</CardTitle>
-                {topic.is_pinned && (
-                  <Badge className="bg-purple-100 text-purple-800">
-                    <Pin className="w-3 h-3 mr-1" />
-                    Fixado
-                  </Badge>
-                )}
-                {topic.is_locked && (
-                  <Badge variant="outline" className="border-red-200 text-red-700">
-                    <Lock className="w-3 h-3 mr-1" />
-                    Bloqueado
-                  </Badge>
-                )}
-                <Badge variant="outline">{topic.category}</Badge>
-              </div>
-              <div className="flex items-center gap-2 mb-4">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {topic.author_name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span>Por {topic.author_name}</span>
-                  {topic.company_name && <span>• {topic.company_name}</span>}
-                  <span>• {new Date(topic.created_at).toLocaleDateString('pt-BR')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="prose max-w-none mb-6">
-            <p className="whitespace-pre-wrap">{topic.content}</p>
-          </div>
-
-          <div className="flex items-center gap-6 text-sm text-gray-600 border-t pt-4">
-            <div className="flex items-center gap-1">
-              <MessageCircle className="h-4 w-4" />
-              <span>{topic.replies_count} respostas</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={`flex items-center gap-1 p-0 h-auto font-normal ${
-                likesData?.isLiked ? 'text-purple-600' : 'text-gray-600'
-              }`}
-            >
-              <ThumbsUp className={`h-4 w-4 ${likesData?.isLiked ? 'fill-current' : ''}`} />
-              <span>{likesData?.likesCount || topic.likes_count} curtidas</span>
-            </Button>
-            <div className="flex items-center gap-1">
-              <Eye className="h-4 w-4" />
-              <span>{topic.views_count} visualizações</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Replies */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Respostas ({replies.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {repliesLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
-              <p className="text-gray-600">Carregando respostas...</p>
-            </div>
-          ) : replies.length > 0 ? (
-            replies.map((reply) => (
-              <div key={reply.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+      <div className="w-full max-w-3xl mb-6">
+        <Card className={topic.is_pinned ? 'border-purple-200 bg-purple-50' : ''}>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="text-xs">
-                      {reply.author_name.charAt(0).toUpperCase()}
+                  <CardTitle className="text-2xl">{topic.title}</CardTitle>
+                  {topic.is_pinned && (
+                    <Badge className="bg-purple-100 text-purple-800">
+                      <Pin className="w-3 h-3 mr-1" />
+                      Fixado
+                    </Badge>
+                  )}
+                  {topic.is_locked && (
+                    <Badge variant="outline" className="border-red-200 text-red-700">
+                      <Lock className="w-3 h-3 mr-1" />
+                      Bloqueado
+                    </Badge>
+                  )}
+                  <Badge variant="outline">{topic.category}</Badge>
+                </div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {topic.author_name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="font-medium">{reply.author_name}</span>
-                    {reply.company_name && <span>• {reply.company_name}</span>}
-                    <span>• {new Date(reply.created_at).toLocaleDateString('pt-BR')}</span>
+                    <span>Por {topic.author_name}</span>
+                    {topic.company_name && <span>• {topic.company_name}</span>}
+                    <span>• {new Date(topic.created_at).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
-                <p className="text-gray-700 whitespace-pre-wrap ml-8">{reply.content}</p>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-center py-4">Ainda não há respostas. Seja o primeiro a responder!</p>
-          )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="prose max-w-none mb-6">
+              <p className="whitespace-pre-wrap">{topic.content}</p>
+            </div>
 
-          {/* Reply form */}
-          {user && !topic.is_locked && (
-            <div className="border-t pt-4 mt-6">
-              <h4 className="font-medium text-gray-900 mb-2">Adicionar Resposta</h4>
-              <Textarea
-                placeholder="Digite sua resposta..."
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                rows={4}
-                className="mb-3"
-              />
-              <Button 
-                onClick={handleReply} 
-                disabled={!replyContent.trim() || creatingReply}
+            <div className="flex items-center gap-6 text-sm text-gray-600 border-t pt-4">
+              <div className="flex items-center gap-1">
+                <MessageCircle className="h-4 w-4" />
+                <span>{topic.replies_count} respostas</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLike}
+                className={`flex items-center gap-1 p-0 h-auto font-normal ${
+                  likesData?.isLiked ? 'text-purple-600' : 'text-gray-600'
+                }`}
               >
-                <Send className="h-4 w-4 mr-2" />
-                {creatingReply ? 'Enviando...' : 'Enviar Resposta'}
+                <ThumbsUp className={`h-4 w-4 ${likesData?.isLiked ? 'fill-current' : ''}`} />
+                <span>{likesData?.likesCount || topic.likes_count} curtidas</span>
               </Button>
+              <div className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                <span>{topic.views_count} visualizações</span>
+              </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      </div>
 
-          {!user && (
-            <div className="border-t pt-4 mt-6 text-center">
-              <p className="text-gray-600">Faça login para participar da discussão.</p>
-            </div>
-          )}
+      {/* Replies */}
+      <div className="w-full max-w-3xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Respostas ({replies.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {repliesLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                <p className="text-gray-600">Carregando respostas...</p>
+              </div>
+            ) : replies.length > 0 ? (
+              replies.map((reply) => (
+                <div key={reply.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-xs">
+                        {reply.author_name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span className="font-medium">{reply.author_name}</span>
+                      {reply.company_name && <span>• {reply.company_name}</span>}
+                      <span>• {new Date(reply.created_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  </div>
+                  {/* Conteúdo da resposta ou edição inline */}
+                  {editingReplyId === reply.id ? (
+                    <div className="ml-8 flex flex-col gap-2">
+                      <Textarea
+                        value={editContent}
+                        onChange={e => setEditContent(e.target.value)}
+                        rows={3}
+                        className="mb-2"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => {
+                          updateReply({ id: reply.id, content: editContent, topic_id: reply.topic_id }, {
+                            onSuccess: () => setEditingReplyId(null)
+                          });
+                        }}>Salvar</Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingReplyId(null)}>Cancelar</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-700 whitespace-pre-wrap ml-8 flex-1">{reply.content}</p>
+                      <div className="flex items-center gap-2 ml-4">
+                        {/* Botão de curtir */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleReplyLike({ replyId: reply.id, isLiked: reply.isLiked })}
+                          className={`p-1 ${reply.isLiked ? 'text-purple-600' : 'text-gray-600'}`}
+                          title={reply.isLiked ? 'Descurtir' : 'Curtir'}
+                        >
+                          <ThumbsUp className={`h-4 w-4 ${reply.isLiked ? 'fill-current' : ''}`} />
+                          <span className="ml-1 text-xs">{reply.likes_count}</span>
+                        </Button>
+                        {/* Ações de moderação: produtor pode editar/excluir, autor pode editar e excluir se não houver curtidas nem respostas-filhas */}
+                        {(isProducer || (user && user.id === reply.author_id)) && (
+                          <Button size="icon" variant="ghost" title="Editar resposta" onClick={() => {
+                            setEditingReplyId(reply.id);
+                            setEditContent(reply.content);
+                          }}>
+                            ✏️
+                          </Button>
+                        )}
+                        {/* Excluir: produtor sempre pode, autor só se não houver curtidas nem respostas-filhas */}
+                        {(isProducer || (user && user.id === reply.author_id && reply.likes_count === 0 /* && !reply.hasChildren */)) && (
+                          <Button size="icon" variant="ghost" title="Excluir resposta" onClick={() => {
+                            if (window.confirm('Tem certeza que deseja excluir esta resposta?')) {
+                              deleteReply({ id: reply.id, topic_id: reply.topic_id });
+                            }
+                          }}>
+                            🗑️
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">Ainda não há respostas. Seja o primeiro a responder!</p>
+            )}
 
-          {topic.is_locked && (
-            <div className="border-t pt-4 mt-6 text-center">
-              <p className="text-gray-600 flex items-center justify-center gap-2">
-                <Lock className="h-4 w-4" />
-                Este tópico está bloqueado para novas respostas.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {/* Reply form */}
+            {user && !topic.is_locked && (
+              <div className="border-t pt-4 mt-6">
+                <h4 className="font-medium text-gray-900 mb-2">Adicionar Resposta</h4>
+                <Textarea
+                  placeholder="Digite sua resposta..."
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  rows={4}
+                  className="mb-3"
+                />
+                <Button 
+                  onClick={handleReply} 
+                  disabled={!replyContent.trim() || creatingReply}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {creatingReply ? 'Enviando...' : 'Enviar Resposta'}
+                </Button>
+              </div>
+            )}
+
+            {!user && (
+              <div className="border-t pt-4 mt-6 text-center">
+                <p className="text-gray-600">Faça login para participar da discussão.</p>
+              </div>
+            )}
+
+            {topic.is_locked && (
+              <div className="border-t pt-4 mt-6 text-center">
+                <p className="text-gray-600 flex items-center justify-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Este tópico está bloqueado para novas respostas.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
+
+export default TopicDetailView;

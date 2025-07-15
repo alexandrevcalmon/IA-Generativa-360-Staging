@@ -27,9 +27,12 @@ import {
   List
 } from "lucide-react";
 import { useState } from "react";
+import { useCourseProgress } from '@/hooks/useCourseProgress';
+import { useAuth } from '@/hooks/auth';
 
 const Courses = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { user } = useAuth();
 
   const courses = [
     {
@@ -127,85 +130,87 @@ const Courses = () => {
   const categories = ["Todos", "IA Generativa", "Técnicas", "Bem-estar", "Desenvolvimento", "Ética", "Automação"];
   const levels = ["Todos os níveis", "Iniciante", "Intermediário", "Avançado"];
 
-  const CourseCard = ({ course, isListView = false }: { course: any, isListView?: boolean }) => (
-    <Card className={`hover-lift transition-all duration-200 ${isListView ? 'flex flex-row' : ''}`}>
-      <div className={`${isListView ? 'w-48 flex-shrink-0' : 'w-full'}`}>
-        <div className={`relative ${isListView ? 'h-32' : 'h-48'} bg-gradient-to-r from-blue-500 to-purple-500 rounded-t-lg ${isListView ? 'rounded-l-lg rounded-tr-none' : ''} flex items-center justify-center`}>
-          <Play className="h-12 w-12 text-white" />
-          {course.progress > 0 && (
-            <Badge className="absolute top-2 right-2 bg-green-500">
-              {course.progress === 100 ? 'Concluído' : `${course.progress}%`}
-            </Badge>
-          )}
-        </div>
-      </div>
-      
-      <div className={`${isListView ? 'flex-1' : ''}`}>
-        <CardHeader className={isListView ? 'pb-2' : ''}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className={`${isListView ? 'text-lg' : 'text-xl'} mb-2`}>
-                {course.title}
-              </CardTitle>
-              <CardDescription className={`${isListView ? 'line-clamp-2' : 'line-clamp-3'} mb-3`}>
-                {course.description}
-              </CardDescription>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2 mb-3">
-            {course.tags.slice(0, 3).map((tag: string, index: number) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {tag}
+  const CourseCard = ({ course, isListView = false }: { course: any, isListView?: boolean }) => {
+    const { data: progressData, isLoading: progressLoading } = useCourseProgress(String(course.id), user?.id);
+    return (
+      <Card className={`hover-lift transition-all duration-200 ${isListView ? 'flex flex-row' : ''}`}>
+        <div className={`${isListView ? 'w-48 flex-shrink-0' : 'w-full'}`}>
+          <div className={`relative ${isListView ? 'h-32' : 'h-48'} bg-gradient-to-r from-blue-500 to-purple-500 rounded-t-lg ${isListView ? 'rounded-l-lg rounded-tr-none' : ''} flex items-center justify-center`}>
+            <Play className="h-12 w-12 text-white" />
+            {progressData.progressPercentage > 0 && (
+              <Badge className="absolute top-2 right-2 bg-green-500">
+                {progressData.progressPercentage === 100 ? 'Concluído' : `${Math.round(progressData.progressPercentage)}%`}
               </Badge>
-            ))}
+            )}
           </div>
-        </CardHeader>
-
-        <CardContent className={isListView ? 'pt-0' : ''}>
-          <div className={`${isListView ? 'flex items-center justify-between' : 'space-y-3'}`}>
-            <div className={`${isListView ? 'flex items-center space-x-4 text-sm' : 'space-y-2 text-sm'}`}>
-              <div className="flex items-center text-gray-600">
-                <Clock className="h-4 w-4 mr-1" />
-                {course.duration}
-              </div>
-              <div className="flex items-center text-gray-600">
-                <Users className="h-4 w-4 mr-1" />
-                {course.students.toLocaleString()}
-              </div>
-              <div className="flex items-center text-gray-600">
-                <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
-                {course.rating}
+        </div>
+        <div className={`${isListView ? 'flex-1' : ''}`}>
+          <CardHeader className={isListView ? 'pb-2' : ''}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className={`${isListView ? 'text-lg' : 'text-xl'} mb-2`}>
+                  {course.title}
+                </CardTitle>
+                <CardDescription className={`${isListView ? 'line-clamp-2' : 'line-clamp-3'} mb-3`}>
+                  {course.description}
+                </CardDescription>
               </div>
             </div>
             
-            <div className={`${isListView ? 'flex items-center space-x-3' : 'flex justify-between items-center'}`}>
-              <div className={`${isListView ? 'text-right' : ''}`}>
-                <Badge variant="outline" className="mb-2">
-                  {course.level}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {course.tags.slice(0, 3).map((tag: string, index: number) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tag}
                 </Badge>
-                <p className="text-xs text-gray-600">{course.instructor}</p>
+              ))}
+            </div>
+          </CardHeader>
+
+          <CardContent className={isListView ? 'pt-0' : ''}>
+            <div className={`${isListView ? 'flex items-center justify-between' : 'space-y-3'}`}>
+              <div className={`${isListView ? 'flex items-center space-x-4 text-sm' : 'space-y-2 text-sm'}`}>
+                <div className="flex items-center text-gray-600">
+                  <Clock className="h-4 w-4 mr-1" />
+                  {course.duration}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Users className="h-4 w-4 mr-1" />
+                  {course.students.toLocaleString()}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
+                  {course.rating}
+                </div>
               </div>
               
-              <Button className="ai-gradient text-white">
-                {course.progress > 0 ? 'Continuar' : 'Começar'}
-              </Button>
-            </div>
-          </div>
-          
-          {course.progress > 0 && course.progress < 100 && (
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>Progresso</span>
-                <span>{course.progress}%</span>
+              <div className={`${isListView ? 'flex items-center space-x-3' : 'flex justify-between items-center'}`}>
+                <div className={`${isListView ? 'text-right' : ''}`}>
+                  <Badge variant="outline" className="mb-2">
+                    {course.level}
+                  </Badge>
+                  <p className="text-xs text-gray-600">{course.instructor}</p>
+                </div>
+                
+                <Button className="ai-gradient text-white">
+                  {progressData.progressPercentage > 0 ? 'Continuar' : 'Começar'}
+                </Button>
               </div>
-              <Progress value={course.progress} className="h-2" />
             </div>
-          )}
-        </CardContent>
-      </div>
-    </Card>
-  );
+            
+            {progressData.progressPercentage > 0 && progressData.progressPercentage < 100 && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Progresso</span>
+                  <span>{Math.round(progressData.progressPercentage)}% ({progressData.completedLessons} de {progressData.totalLessons})</span>
+                </div>
+                <Progress value={progressData.progressPercentage} className="h-2" />
+              </div>
+            )}
+          </CardContent>
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <>

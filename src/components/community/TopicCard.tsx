@@ -82,7 +82,13 @@ export const TopicCard = ({ topic, onEdit, showModeratorActions = false }: Topic
   };
 
   return (
-    <Card className={topic.is_pinned ? 'border-purple-200 bg-purple-50' : ''}>
+    <Card className={
+      topic.is_pinned
+        ? 'border-purple-200 bg-purple-50'
+        : topic.replies_count > 0
+        ? 'border-green-200 bg-green-50'
+        : ''
+    }>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -188,9 +194,9 @@ export const TopicCard = ({ topic, onEdit, showModeratorActions = false }: Topic
             variant="ghost"
             size="sm"
             onClick={handleViewTopic}
-            className="flex items-center gap-1 p-0 h-auto font-normal text-gray-600 hover:text-purple-600"
+            className={`flex items-center gap-1 p-0 h-auto font-normal ${topic.replies_count > 0 ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className={`h-4 w-4 ${topic.replies_count > 0 ? 'text-green-600' : ''}`} />
             <span>{topic.replies_count} respostas</span>
           </Button>
           <Button

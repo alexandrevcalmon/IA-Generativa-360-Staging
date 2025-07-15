@@ -19,30 +19,58 @@ export const useUpdateCompanyCollaborator = () => {
       companyId: string;
       data: UpdateCollaboratorData
     }) => {
-      // TODO: Implement email change in auth.users (requires admin privileges or specific flow).
-      if (data.email) {
-        console.warn("Attempting to change email in company_users. Auth.users email update is not yet implemented.");
-        // Consider if you want to prevent email changes from here or allow them only in company_users table.
-      }
-
-      const { data: updatedData, error } = await supabase
-        .from("company_users")
-        .update(data)
-        .eq("id", collaboratorId)
-        .select()
+      // Busca o registro atual para obter o auth_user_id
+      const { data: current, error: fetchError } = await supabase
+        .from('company_users')
+        .select('auth_user_id')
+        .eq('id', collaboratorId)
         .single();
-
-      if (error) {
-        console.error("Error updating company collaborator:", error);
-        throw error;
+      if (fetchError || !current?.auth_user_id) {
+        throw new Error('Não foi possível localizar o usuário autenticado do colaborador.');
       }
-      return updatedData;
+      // Se for alteração de e-mail, chama a Edge Function
+      if (data.email) {
+        const res = await fetch('/functions/v1/update-collaborator-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`
+          },
+          body: JSON.stringify({
+            auth_user_id: current.auth_user_id,
+            new_email: data.email,
+            company_id: companyId
+          })
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          throw new Error(result.error || 'Erro ao atualizar e-mail do colaborador.');
+        }
+        // Remove o campo email do update local, pois já foi sincronizado
+        const { email, ...rest } = data;
+        data = rest;
+      }
+      // Atualiza outros campos em company_users
+      if (Object.keys(data).length > 0) {
+        const { data: updatedData, error } = await supabase
+          .from('company_users')
+          .update(data)
+          .eq('id', collaboratorId)
+          .select()
+          .single();
+        if (error) {
+          throw error;
+        }
+        return updatedData;
+      }
+      // Se só mudou o e-mail, retorna o registro atualizado
+      return { id: collaboratorId };
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["companyCollaborators", variables.companyId] });
       toast({
         title: "Colaborador atualizado!",
-        description: `Os dados de ${data.name} foram atualizados.`,
+        description: `Os dados foram atualizados com sucesso.`,
       });
     },
     onError: (error: Error) => {

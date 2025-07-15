@@ -2,6 +2,7 @@
 import { Session, User } from '@supabase/supabase-js';
 import { fetchUserRoleAuxiliaryData } from './userRoleService';
 import { createSessionValidationService } from './sessionValidationService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthStateHandlerProps {
   setSession: (session: Session | null) => void;
@@ -53,6 +54,21 @@ export function createAuthStateHandler(props: AuthStateHandlerProps) {
     // Update session and user immediately for all other events
     setSession(session);
     setUser(session.user);
+    // Garante que o usuário exista na tabela users (não bloqueia o fluxo)
+    if (session.user?.id && session.user?.email) {
+      supabase
+        .from('users')
+        .upsert([{
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email
+        }], { onConflict: 'id' })
+        .then(({ error }) => {
+          if (error) {
+            console.error('Erro ao garantir usuário na tabela users:', error);
+          }
+        });
+    }
     
     // Fetch role data asynchronously with simplified error handling
     setTimeout(async () => {

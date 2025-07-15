@@ -11,6 +11,11 @@ interface LessonSidebarProps {
   duration: number;
   prevLesson?: { id: string; title: string };
   nextLesson?: { id: string; title: string };
+  nextLessonBlocked?: boolean;
+  nextLessonBlockedReason?: string;
+  nextLessonBlockedAction?: React.ReactNode;
+  quizzesByLesson?: Record<string, any[]>;
+  allAttempts?: any[];
 }
 
 export const LessonSidebar = ({ 
@@ -19,7 +24,12 @@ export const LessonSidebar = ({
   watchTime, 
   duration, 
   prevLesson, 
-  nextLesson 
+  nextLesson,
+  nextLessonBlocked,
+  nextLessonBlockedReason,
+  nextLessonBlockedAction,
+  quizzesByLesson,
+  allAttempts
 }: LessonSidebarProps) => {
   return (
     <div className="space-y-4 w-full">
@@ -43,6 +53,12 @@ export const LessonSidebar = ({
           courseId={courseId}
           prevLesson={prevLesson}
           nextLesson={nextLesson}
+          nextLessonBlocked={nextLessonBlocked}
+          nextLessonBlockedReason={nextLessonBlockedReason}
+          nextLessonBlockedAction={nextLessonBlockedAction}
+          currentLessonId={currentLesson.id}
+          quizzesByLesson={quizzesByLesson}
+          allAttempts={allAttempts}
         />
       </div>
     </div>

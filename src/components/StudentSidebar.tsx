@@ -40,11 +40,6 @@ const studentMenuItems = [
     icon: BookOpen,
   },
   {
-    title: "Calendário",
-    url: "/student/calendar",
-    icon: Calendar,
-  },
-  {
     title: "Comunidade",
     url: "/student/community",
     icon: MessageCircle,

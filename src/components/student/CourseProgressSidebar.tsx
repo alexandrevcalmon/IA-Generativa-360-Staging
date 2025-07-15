@@ -1,14 +1,16 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { StudentCourse } from '@/hooks/useStudentCourses';
+import { useCourseProgress } from '@/hooks/useCourseProgress';
+import { useAuth } from '@/hooks/auth';
 
 interface CourseProgressSidebarProps {
-  course: StudentCourse;
-  allLessons: Array<{ completed: boolean }>;
+  courseId: string;
 }
 
-export const CourseProgressSidebar = ({ course, allLessons }: CourseProgressSidebarProps) => {
+export const CourseProgressSidebar = ({ courseId }: CourseProgressSidebarProps) => {
+  const { user } = useAuth();
+  const { data: progressData, isLoading } = useCourseProgress(courseId, user?.id);
   return (
     <Card>
       <CardHeader>
@@ -19,15 +21,15 @@ export const CourseProgressSidebar = ({ course, allLessons }: CourseProgressSide
           <div className="flex justify-between text-sm">
             <span>Aulas concluídas</span>
             <span>
-              {allLessons.filter(l => l.completed).length}/{allLessons.length}
+              {progressData.completedLessons}/{progressData.totalLessons}
             </span>
           </div>
           <Progress 
-            value={course?.progress_percentage || 0} 
+            value={progressData.progressPercentage} 
             className="h-2" 
           />
           <p className="text-sm text-gray-600">
-            {Math.round(course?.progress_percentage || 0)}% do curso concluído
+            {Math.round(progressData.progressPercentage)}% do curso concluído
           </p>
         </div>
       </CardContent>

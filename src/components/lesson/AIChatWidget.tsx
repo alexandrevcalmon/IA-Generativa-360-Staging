@@ -47,8 +47,8 @@ export const AIChatWidget = ({ lessonId, companyId, className }: AIChatWidgetPro
     setInputMessage(value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
     
     if (!inputMessage.trim() || !currentSessionId) {
       return;

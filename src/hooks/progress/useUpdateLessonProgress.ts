@@ -39,6 +39,7 @@ export const useUpdateLessonProgress = () => {
         queryClient.invalidateQueries({ queryKey: ['student-course'] });
         queryClient.invalidateQueries({ queryKey: ['student-points'] });
         queryClient.invalidateQueries({ queryKey: ['points-history'] });
+        queryClient.invalidateQueries({ queryKey: ['course-progress'] }); // Forçar atualização do progresso do curso
         console.log('🔄 Invalidated relevant queries after progress update');
       }
     },

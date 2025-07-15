@@ -110,15 +110,88 @@ export const useStudentPoints = () => {
   };
 };
 
-// Função utilitária para atribuir pontos ao usuário
-export async function awardPointsToStudent({ studentId, points, actionType, description, referenceId }: {
+// Função utilitária para checar e atualizar limites diários
+async function checkAndUpdateDailyLimit({ studentId, actionType, maxPerDay }: { studentId: string, actionType: string, maxPerDay: number }) {
+  // Buscar o auth.uid() correspondente ao studentId
+  let userId = null;
+  // Tenta obter o auth.uid() do contexto do Supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user && user.id) {
+    userId = user.id;
+  } else {
+    // Fallback: buscar na tabela company_users
+    const { data: companyUser } = await supabase
+      .from('company_users')
+      .select('auth_user_id')
+      .eq('id', studentId)
+      .maybeSingle();
+    userId = companyUser?.auth_user_id;
+  }
+  if (!userId) throw new Error('Não foi possível determinar o auth.uid() para limites diários');
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: limit, error } = await supabase
+    .from('user_daily_gamification_limits')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('action_type', actionType)
+    .eq('action_date', today)
+    .maybeSingle();
+  if (error) throw error;
+  if (limit && limit.count >= maxPerDay) return false;
+  if (limit) {
+    const { error: updateError } = await supabase
+      .from('user_daily_gamification_limits')
+      .update({ count: limit.count + 1 })
+      .eq('id', limit.id);
+    if (updateError) throw updateError;
+  } else {
+    const { error: insertError } = await supabase
+      .from('user_daily_gamification_limits')
+      .insert({ user_id: userId, action_type: actionType, action_date: today, count: 1 });
+    if (insertError) throw insertError;
+  }
+  return true;
+}
+
+// Função utilitária para atribuir/remover pontos ao usuário, com suporte a limites e metadados
+export async function awardPointsToStudent({ studentId, points, actionType, description, referenceId, meta, checkLimit, limitPerDay, uniquePerReference }: {
   studentId: string;
   points: number;
   actionType: string;
   description?: string;
   referenceId?: string;
+  meta?: any;
+  checkLimit?: boolean;
+  limitPerDay?: number;
+  uniquePerReference?: boolean;
 }) {
-  console.log('[Gamificação] awardPointsToStudent chamado para', { studentId, points, actionType, description, referenceId });
+  console.log('[Gamificação] awardPointsToStudent chamado para', { studentId, points, actionType, description, referenceId, meta });
+
+  // Checar limite diário se necessário
+  if (checkLimit && limitPerDay) {
+    const allowed = await checkAndUpdateDailyLimit({ studentId, actionType, maxPerDay: limitPerDay });
+    if (!allowed) {
+      console.log('[Gamificação] Limite diário atingido para', actionType, studentId);
+      return { skipped: true, reason: 'daily_limit' };
+    }
+  }
+
+  // Evitar duplicidade por referência (ex: quiz_passed, primeira resposta, primeira curtida)
+  if (uniquePerReference && referenceId) {
+    const { data: existing, error: existingError } = await supabase
+      .from('points_history')
+      .select('id')
+      .eq('student_id', studentId)
+      .eq('action_type', actionType)
+      .eq('reference_id', referenceId)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existing) {
+      console.log('[Gamificação] Pontos já atribuídos para esta referência:', { actionType, referenceId });
+      return { skipped: true, reason: 'already_awarded' };
+    }
+  }
+
   // Atualizar student_points
   const { data: current, error: fetchError } = await supabase
     .from('student_points')
@@ -159,6 +232,7 @@ export async function awardPointsToStudent({ studentId, points, actionType, desc
       action_type: actionType,
       description,
       reference_id: referenceId,
+      meta,
       earned_at: new Date().toISOString(),
     });
   if (histError) throw histError;

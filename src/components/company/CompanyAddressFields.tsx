@@ -12,6 +12,7 @@ interface CompanyAddressFieldsProps {
 export function CompanyAddressFields({ formData, setFormData }: CompanyAddressFieldsProps) {
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepError, setCepError] = useState<string | null>(null);
+  const [ufReadOnly, setUfReadOnly] = useState(false);
 
   const handleCepBlur = async () => {
     const cep = (formData.address_zip_code || '').replace(/\D/g, '');
@@ -23,6 +24,7 @@ export function CompanyAddressFields({ formData, setFormData }: CompanyAddressFi
       const data = await res.json();
       if (data.erro) {
         setCepError('CEP não encontrado. Preencha manualmente.');
+        setUfReadOnly(false);
         return;
       }
       setFormData(prev => ({
@@ -32,8 +34,10 @@ export function CompanyAddressFields({ formData, setFormData }: CompanyAddressFi
         address_city: data.localidade || '',
         address_state: data.uf || '',
       }));
+      setUfReadOnly(true);
     } catch (e) {
       setCepError('Erro ao buscar CEP. Tente novamente.');
+      setUfReadOnly(false);
     } finally {
       setLoadingCep(false);
     }
@@ -109,13 +113,55 @@ export function CompanyAddressFields({ formData, setFormData }: CompanyAddressFi
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-address_state">Estado (UF)</Label>
-          <Input
-            id="edit-address_state"
-            placeholder="SP"
-            value={formData.address_state || ""}
-            onChange={(e) => setFormData(prev => ({ ...prev, address_state: e.target.value }))}
-            required
-          />
+          <div className="flex items-center gap-2">
+            <select
+              id="edit-address_state"
+              value={formData.address_state || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, address_state: e.target.value }))}
+              required
+              className="flex-grow border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
+              disabled={ufReadOnly}
+            >
+              <option value="">Selecione o estado</option>
+              <option value="AC">Acre</option>
+              <option value="AL">Alagoas</option>
+              <option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option>
+              <option value="BA">Bahia</option>
+              <option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option>
+              <option value="ES">Espírito Santo</option>
+              <option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option>
+              <option value="MT">Mato Grosso</option>
+              <option value="MS">Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option>
+              <option value="PA">Pará</option>
+              <option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option>
+              <option value="PE">Pernambuco</option>
+              <option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option>
+              <option value="RN">Rio Grande do Norte</option>
+              <option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option>
+              <option value="RR">Roraima</option>
+              <option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option>
+              <option value="SE">Sergipe</option>
+              <option value="TO">Tocantins</option>
+            </select>
+            {ufReadOnly && (
+              <button
+                type="button"
+                className="text-xs text-blue-600 underline whitespace-nowrap ml-2"
+                onClick={() => setUfReadOnly(false)}
+                style={{ flexShrink: 0 }}
+              >
+                Editar manualmente
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </fieldset>
