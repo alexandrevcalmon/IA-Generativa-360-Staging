@@ -14,6 +14,10 @@ export interface StudentCourse {
   progress_percentage: number;
   enrolled_at?: string;
   modules: StudentModule[];
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  is_sequential?: boolean;
 }
 
 export interface StudentModule {
@@ -36,6 +40,21 @@ export interface StudentLesson {
   is_free: boolean;
   completed: boolean;
   watch_time_seconds: number;
+  is_optional?: boolean;
+}
+
+export type StudentLessonOrQuiz = StudentLesson | StudentQuizItem;
+
+export interface StudentQuizItem {
+  id: string;
+  type: 'quiz';
+  lesson_id: string;
+  title: string;
+  status: 'Aprovado' | 'Não Respondido' | 'Reprovado';
+  completed: boolean;
+  passing_score: number;
+  user_score?: number;
+  attempts?: number;
 }
 
 export const useStudentCourses = () => {
@@ -61,7 +80,10 @@ export const useStudentCourses = () => {
       // Get published courses with improved error handling
       const { data: courses, error: coursesError } = await supabase
         .from('courses')
-        .select('*')
+        .select(`
+          *,
+          is_sequential
+        `)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
@@ -114,7 +136,13 @@ export const useStudentCourses = () => {
           // Get modules with better error handling
           const { data: modules, error: modulesError } = await supabase
             .from('course_modules')
-            .select('*')
+            .select(`
+              *,
+              lessons(
+                *,
+                is_optional
+              )
+            `)
             .eq('course_id', course.id)
             .eq('is_published', true)
             .order('order_index');
@@ -141,39 +169,77 @@ export const useStudentCourses = () => {
               }
 
               // Get progress for each lesson with improved handling - using auth user ID directly
-              const lessonsWithProgress = await Promise.all(
+              const lessonsWithProgressAndQuizzes = await Promise.all(
                 (lessons || []).map(async (lesson) => {
+                  // Busca progresso da aula
+                  let lessonProgress = { completed: false, watch_time_seconds: 0 };
                   try {
-                    const { data: lessonProgress, error: progressError } = await supabase
+                    const { data: progress, error: progressError } = await supabase
                       .from('lesson_progress')
                       .select('completed, watch_time_seconds')
                       .eq('lesson_id', lesson.id)
-                      .eq('user_id', user.id) // Use auth user ID directly
+                      .eq('user_id', user.id)
                       .maybeSingle();
-
-                    if (progressError) {
-                      console.warn('Warning: Could not fetch lesson progress for lesson', lesson.id, ':', progressError);
+                    if (!progressError && progress) lessonProgress = progress;
+                  } catch {}
+                  // Monta lesson normal
+                  const lessonItem: StudentLessonOrQuiz = {
+                    ...lesson,
+                    completed: lessonProgress.completed || false,
+                    watch_time_seconds: lessonProgress.watch_time_seconds || 0,
+                    type: 'lesson',
+                  };
+                  // Busca quizzes relacionados
+                  const { data: quizzes } = await supabase
+                    .from('quizzes')
+                    .select('*')
+                    .eq('lesson_id', lesson.id)
+                    .order('created_at');
+                  const quizItems: StudentQuizItem[] = [];
+                  if (quizzes && quizzes.length > 0) {
+                    for (const quiz of quizzes) {
+                      // Busca tentativas do usuário
+                      const { data: attempts } = await supabase
+                        .from('quiz_attempts')
+                        .select('score, passed')
+                        .eq('quiz_id', quiz.id)
+                        .eq('user_id', user.id)
+                        .order('attempt_number', { ascending: false })
+                        .limit(1);
+                      let status: 'Aprovado' | 'Não Respondido' | 'Reprovado' = 'Não Respondido';
+                      let completed = false;
+                      let user_score = undefined;
+                      if (attempts && attempts.length > 0) {
+                        user_score = attempts[0].score;
+                        if (attempts[0].passed) {
+                          status = 'Aprovado';
+                          completed = true;
+                        } else {
+                          status = 'Reprovado';
+                        }
+                      }
+                      quizItems.push({
+                        id: quiz.id,
+                        type: 'quiz',
+                        lesson_id: lesson.id,
+                        title: quiz.title,
+                        status,
+                        completed,
+                        passing_score: quiz.passing_score || 75,
+                        user_score,
+                      });
                     }
-
-                    return {
-                      ...lesson,
-                      completed: lessonProgress?.completed || false,
-                      watch_time_seconds: lessonProgress?.watch_time_seconds || 0,
-                    };
-                  } catch (error) {
-                    console.warn('Exception while fetching progress for lesson', lesson.id, ':', error);
-                    return {
-                      ...lesson,
-                      completed: false,
-                      watch_time_seconds: 0,
-                    };
                   }
+                  // Retorna lesson + quizzes
+                  return [lessonItem, ...quizItems];
                 })
               );
+              // Achata a lista
+              const flatLessons = lessonsWithProgressAndQuizzes.flat();
 
               return {
                 ...module,
-                lessons: lessonsWithProgress,
+                lessons: flatLessons,
               };
             })
           );
@@ -181,7 +247,7 @@ export const useStudentCourses = () => {
           // Calculate progress percentage based on completed lessons
           const totalLessons = modulesWithLessons.reduce((total, module) => total + module.lessons.length, 0);
           const completedLessons = modulesWithLessons.reduce((total, module) => 
-            total + module.lessons.filter(lesson => lesson.completed).length, 0
+            total + module.lessons.filter(item => item.completed).length, 0
           );
           const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 

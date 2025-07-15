@@ -4,9 +4,22 @@ export const GAMIFICATION_RULES = {
   module_completed: 20,
   course_completed: 50,
   mentorship_participation: 10,
-  community_post: 2,
+  quiz_passed: 20, // Novo: pontos ao passar no quiz
+  community_topic_created: 10, // Novo: criar tópico
+  community_topic_liked: 1, // Novo: curtir tópico (dar ou receber)
+  community_topic_unliked: -1, // Novo: remover curtida (dar ou receber)
+  community_reply_created: 10, // Novo: resposta completa
+  community_reply_liked: 1, // Novo: curtir resposta (dar ou receber)
+  community_reply_unliked: -1, // Novo: remover curtida (dar ou receber)
   streak_bonus: [5, 10, 20], // Exemplo: 3, 7, 30 dias
   achievement_unlocked: 20,
+};
+
+// Utilitário para limites diários (pode ser usado nos hooks)
+export const DAILY_LIMITS = {
+  community_topic_liked: 20, // máximo de 20 curtidas/dia (dar e receber)
+  community_reply_liked: 20, // máximo de 20 curtidas/dia (dar e receber)
+  community_reply_created: 10, // máximo de 10 respostas pontuadas/dia
 };
 
 // Conquistas iniciais

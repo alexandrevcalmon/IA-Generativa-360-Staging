@@ -96,22 +96,20 @@ serve(async (req) => {
         console.log('[create-company-auth-user] Successfully updated metadata for existing auth user.');
       }
     } else {
-      const tempPassword = Deno.env.get('NEW_COMPANY_USER_DEFAULT_PASSWORD') || 'ia360graus';
-      console.log(`[create-company-auth-user] No existing auth user. Creating new one for email: ${email}`);
-      const { data: newAuthUserData, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-        email: email,
-        password: tempPassword,
-        email_confirm: true, // Auto-confirm for simplicity in this flow
-        user_metadata: { role: 'company', company_id: companyId, company_name: effectiveCompanyName, name: contactName || effectiveCompanyName }
+      // Usar inviteUserByEmail para enviar e-mail de ativação
+      const redirectTo = Deno.env.get('SUPABASE_ACTIVATION_REDIRECT_URL') || 'https://staging.grupocalmon.com/activate-account';
+      console.log(`[create-company-auth-user] No existing auth user. Inviting new one for email: ${email}`);
+      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        data: { role: 'company', company_id: companyId, company_name: effectiveCompanyName, name: contactName || effectiveCompanyName },
+        redirectTo
       });
-
-      if (createAuthError || !newAuthUserData?.user) {
-        console.error('[create-company-auth-user] Error creating new auth user:', createAuthError?.message || 'User object not returned.');
-        return new Response(JSON.stringify({ error: `Failed to create auth user: ${createAuthError?.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (inviteError || !inviteData?.user) {
+        console.error('[create-company-auth-user] Error inviting new auth user:', inviteError?.message || 'User object not returned.');
+        return new Response(JSON.stringify({ error: `Failed to invite auth user: ${inviteError?.message}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      authUserId = newAuthUserData.user.id;
+      authUserId = inviteData.user.id;
       isNewUser = true;
-      console.log(`[create-company-auth-user] New auth user created successfully. ID: ${authUserId}`);
+      console.log(`[create-company-auth-user] New auth user invited successfully. ID: ${authUserId}`);
     }
 
     console.log(`[create-company-auth-user] Updating 'companies' table for ID ${companyId} with auth_user_id ${authUserId}.`);

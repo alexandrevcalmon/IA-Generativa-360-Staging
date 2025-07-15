@@ -11,6 +11,15 @@ const MEDALS = [
   { color: 'bg-orange-500', label: '🥉' },
 ];
 
+const PERIODS = [
+  { label: 'Hoje', value: 'today', field: 'points_today' },
+  { label: 'Semana', value: 'week', field: 'points_week' },
+  { label: 'Mês', value: 'month', field: 'points_month' },
+  { label: '6 meses', value: '6months', field: 'points_semester' },
+  { label: 'Ano', value: 'year', field: 'points_year' },
+  { label: 'Geral', value: 'all', field: 'total_points' },
+];
+
 const PAGE_SIZE = 20;
 
 export default function Ranking() {
@@ -21,15 +30,17 @@ export default function Ranking() {
   const [total, setTotal] = useState(0);
   const [myPosition, setMyPosition] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('all');
 
   // Busca ranking paginado e filtrado
   useEffect(() => {
     setLoading(true);
     const fetchRanking = async () => {
+      const periodField = PERIODS.find(p => p.value === period)?.field || 'total_points';
       let query = supabase
-        .from('global_collaborator_ranking')
+        .from('global_collaborator_ranking_period')
         .select('*', { count: 'exact' })
-        .order('total_points', { ascending: false })
+        .order(periodField, { ascending: false })
         .order('collaborator_name', { ascending: true })
         .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
       if (search) {
@@ -43,7 +54,7 @@ export default function Ranking() {
       setLoading(false);
     };
     fetchRanking();
-  }, [page, search]);
+  }, [page, search, period]);
 
   // Busca posição do usuário logado
   useEffect(() => {
@@ -73,6 +84,17 @@ export default function Ranking() {
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">Ranking de Colaboradores</CardTitle>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {PERIODS.map(p => (
+                <button
+                  key={p.value}
+                  className={`px-3 py-1 rounded-full border ${period === p.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'} transition`}
+                  onClick={() => { setPage(1); setPeriod(p.value); }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <Input
               placeholder="Buscar por nome ou empresa..."
               value={search}

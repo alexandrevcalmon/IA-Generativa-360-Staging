@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, GripVertical, Plus } from "lucide-react";
 import { CourseModule } from "@/hooks/useCourseModules";
-import { useDeleteLesson, useUpdateLessonOrder } from "@/hooks/useLessons";
+import { useDeleteLesson, useUpdateLessonOrder, useLesson } from "@/hooks/useLessons";
 import { formatDuration } from "@/utils/timeUtils";
 import { 
   AlertDialog, 
@@ -38,6 +38,8 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from "@/components/ui/alert-dialog";
+import { useLessonQuizzes, useDeleteQuiz } from '@/hooks/useQuizzes';
+import { GenerateQuizDialog } from '@/components/producer/GenerateQuizDialog';
 
 interface SortableLessonItemProps {
   lesson: any;
@@ -243,13 +245,16 @@ export const DraggableLessonsList = ({ module, onEditLesson, onCreateLesson }: D
         <SortableContext items={lessons.map(lesson => lesson.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
             {lessons.map((lesson, index) => (
-              <SortableLessonItem
-                key={lesson.id}
-                lesson={lesson}
-                index={index}
-                onEdit={onEditLesson}
-                onDelete={handleDeleteLesson}
-              />
+              <div key={lesson.id}>
+                <SortableLessonItem
+                  lesson={lesson}
+                  index={index}
+                  onEdit={onEditLesson}
+                  onDelete={handleDeleteLesson}
+                />
+                {/* Expansão de quizzes da aula */}
+                <LessonQuizzesList lessonId={lesson.id} />
+              </div>
             ))}
           </div>
         </SortableContext>
@@ -257,3 +262,92 @@ export const DraggableLessonsList = ({ module, onEditLesson, onCreateLesson }: D
     </div>
   );
 }; 
+
+// Mock visual do componente de quizzes por aula
+function LessonQuizzesList({ lessonId }: { lessonId: string }) {
+  const { data: quizzes, isLoading, error } = useLessonQuizzes(lessonId);
+  const { data: lesson } = useLesson(lessonId);
+  const deleteQuiz = useDeleteQuiz();
+  const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
+  const [quizTitleToDelete, setQuizTitleToDelete] = useState<string | null>(null);
+  const [createQuizOpen, setCreateQuizOpen] = useState(false);
+  const [editQuiz, setEditQuiz] = useState<any | null>(null);
+
+  // Conteúdo para IA: título + conteúdo/descrição da aula
+  const quizContent = lesson ? `${lesson.title}\n${lesson.content || ''}` : '';
+
+  return (
+    <div style={{ marginLeft: 32, marginTop: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontWeight: 500, fontSize: 14 }}>Quizzes desta aula:</span>
+        <button
+          style={{ fontSize: 12, padding: '4px 12px', border: '1px solid #ccc', borderRadius: 6, background: '#f9f9f9', cursor: 'pointer' }}
+          onClick={() => setCreateQuizOpen(true)}
+        >
+          + Adicionar Quiz
+        </button>
+      </div>
+      {/* Modal de criação de quiz */}
+      <GenerateQuizDialog
+        open={createQuizOpen}
+        onOpenChange={setCreateQuizOpen}
+        content={quizContent}
+        lessonId={lessonId}
+        onQuizApproved={() => setCreateQuizOpen(false)}
+      />
+      {/* Modal de edição de quiz */}
+      {editQuiz && (
+        <GenerateQuizDialog
+          open={!!editQuiz}
+          onOpenChange={() => setEditQuiz(null)}
+          content={quizContent}
+          lessonId={lessonId}
+          quiz={editQuiz}
+          onQuizApproved={() => setEditQuiz(null)}
+        />
+      )}
+      {isLoading && <span style={{ fontSize: 13, color: '#888' }}>Carregando quizzes...</span>}
+      {error && <span style={{ fontSize: 13, color: 'red' }}>Erro ao carregar quizzes</span>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {quizzes && quizzes.length === 0 && !isLoading && (
+          <span style={{ fontSize: 13, color: '#888' }}>Nenhum quiz cadastrado para esta aula.</span>
+        )}
+        {quizzes && quizzes.map((quiz) => (
+          <Card key={quiz.id} style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <CardContent className="py-3 px-4 flex items-center gap-4">
+              <span style={{ fontWeight: 500, fontSize: 13 }}>{quiz.title}</span>
+              <span style={{ fontSize: 12, color: quiz.status === 'Aprovado' ? 'green' : 'orange', fontWeight: 500 }}>{quiz.status || 'Rascunho'}</span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                <button style={{ fontSize: 12, padding: '2px 10px', border: '1px solid #b6e0fe', borderRadius: 4, background: '#e6f7ff', cursor: 'pointer' }} onClick={() => setEditQuiz(quiz)}>Editar</button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button style={{ fontSize: 12, padding: '2px 10px', border: '1px solid #ffc1c1', borderRadius: 4, background: '#fff1f0', color: '#d32f2f', cursor: 'pointer' }} onClick={() => { setQuizToDelete(quiz.id); setQuizTitleToDelete(quiz.title); }}>Excluir</button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir Quiz</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja excluir o quiz "{quizTitleToDelete}"? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setQuizToDelete(null)}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => {
+                        if (quizToDelete) {
+                          console.log('[UI] Confirmando exclusão do quiz:', quizToDelete);
+                          deleteQuiz.mutate(quizToDelete);
+                        }
+                        setQuizToDelete(null);
+                        setQuizTitleToDelete(null);
+                      }} className="bg-red-600 hover:bg-red-700">Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+} 

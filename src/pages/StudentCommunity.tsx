@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,11 @@ const StudentCommunity = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<CommunityTopic | null>(null);
 
-  const { data: topics = [], isLoading } = useCommunityTopics();
+  const { data: topics = [], isLoading, refetch } = useCommunityTopics();
+
+  useEffect(() => {
+    refetch();
+  }, []);
 
   // Filter topics based on search and category
   const filteredTopics = topics.filter(topic => {

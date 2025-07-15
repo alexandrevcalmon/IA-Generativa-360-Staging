@@ -18,6 +18,7 @@ export interface Lesson {
   image_url?: string | null;
   video_file_url?: string | null;
   material_url?: string | null;
+  is_optional?: boolean;
 }
 
 export const useLessons = (moduleId: string) => {
@@ -28,21 +29,42 @@ export const useLessons = (moduleId: string) => {
     queryFn: async () => {
       console.log('Fetching lessons for module:', moduleId);
       
+      const { data: lessons, error: lessonsError } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          is_optional
+        `)
+        .eq('module_id', moduleId)
+        .order('order_index', { ascending: true });
+
+      if (lessonsError) {
+        console.error('Error fetching lessons:', lessonsError);
+        throw lessonsError;
+      }
+      
+      console.log('Lessons fetched successfully:', lessons?.length);
+      return lessons as Lesson[];
+    },
+    enabled: !!moduleId && !!user,
+  });
+};
+
+export const useLesson = (lessonId: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['lesson', lessonId],
+    queryFn: async () => {
+      if (!lessonId) return null;
       const { data, error } = await supabase
         .from('lessons')
         .select('*')
-        .eq('module_id', moduleId)
-        .order('order_index', { ascending: true }); // Mudança aqui: ordenar por order_index
-
-      if (error) {
-        console.error('Error fetching lessons:', error);
-        throw error;
-      }
-      
-      console.log('Lessons fetched successfully:', data?.length);
-      return data as Lesson[];
+        .eq('id', lessonId)
+        .single();
+      if (error) throw error;
+      return data as Lesson;
     },
-    enabled: !!moduleId && !!user,
+    enabled: !!lessonId && !!user,
   });
 };
 

@@ -17,6 +17,7 @@ export interface Lesson {
   image_url?: string | null;
   video_file_url?: string | null;
   material_url?: string | null;
+  is_optional?: boolean;
 }
 
 export const useLessonsByModule = (moduleId: string) => {
@@ -27,9 +28,12 @@ export const useLessonsByModule = (moduleId: string) => {
     queryFn: async () => {
       console.log('Fetching lessons for module:', moduleId);
       
-      const { data, error } = await supabase
+      const { data: lessons, error } = await supabase
         .from('lessons')
-        .select('*')
+        .select(`
+          *,
+          is_optional
+        `)
         .eq('module_id', moduleId)
         .order('order_index', { ascending: true });
 

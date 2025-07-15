@@ -9,6 +9,8 @@ import { CourseModule, useDeleteModule } from "@/hooks/useCourseModules";
 import { Lesson } from "@/hooks/useLessons";
 import { CreateLessonDialog } from "@/components/CreateLessonDialog";
 import { DraggableLessonsList } from "@/components/DraggableLessonsList";
+import { GenerateQuizDialog } from '@/components/producer/GenerateQuizDialog';
+import { useCreateQuiz } from '@/hooks/useQuizzes';
 
 interface ModuleCardProps {
   module: CourseModule;
@@ -20,8 +22,10 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [createLessonDialogOpen, setCreateLessonDialogOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   
   const deleteModule = useDeleteModule();
+  const createQuizMutation = useCreateQuiz();
 
   const handleDeleteModule = async () => {
     if (window.confirm("Tem certeza que deseja excluir este módulo?")) {
@@ -38,6 +42,15 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
     setCreateLessonDialogOpen(true);
   };
 
+  const handleQuizApproved = (questions: any[]) => {
+    createQuizMutation.mutate({
+      moduleId: module.id,
+      title: `Quiz do módulo: ${module.title}`,
+      description: module.description?.slice(0, 100) || '',
+      questions,
+    });
+  };
+
   return (
     <>
       <Card className="hover:shadow-md transition-shadow">
@@ -49,6 +62,15 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
                   <CardTitle className="text-lg font-semibold">
                     {index + 1}. {module.title}
                   </CardTitle>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setQuizDialogOpen(true)}
+                    className="ml-2"
+                  >
+                    Gerar Quiz com IA
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -166,6 +188,13 @@ export const ModuleCard = ({ module, index, onEdit }: ModuleCardProps) => {
         }}
         moduleId={module.id}
         lesson={editingLesson}
+      />
+      <GenerateQuizDialog
+        open={quizDialogOpen}
+        onOpenChange={setQuizDialogOpen}
+        content={`${module.title}\n${module.description || ''}`}
+        moduleId={module.id}
+        onQuizApproved={handleQuizApproved}
       />
     </>
   );

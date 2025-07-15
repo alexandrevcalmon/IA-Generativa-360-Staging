@@ -79,6 +79,16 @@ serve(async (req) => {
           }
           console.log('📅 Subscription dates:', { startsAt: now.toISOString(), endsAt: subscriptionEndsAt.toISOString() });
 
+          // Validação de UF (address_state)
+          const validUFs = [
+            "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"
+          ];
+          let uf = (companyData.address_state || '').toUpperCase().trim();
+          if (!validUFs.includes(uf)) {
+            console.warn('⚠️ UF inválido recebido no webhook:', uf, '- será salvo como vazio.');
+            uf = '';
+          }
+
           // Criar empresa no banco
           console.log('🗄️ Inserting company into Supabase');
           const { data: company, error: companyError } = await supabase
@@ -94,7 +104,7 @@ serve(async (req) => {
               address_complement: companyData.address_complement,
               address_district: companyData.address_district,
               address_city: companyData.address_city,
-              address_state: companyData.address_state,
+              address_state: uf,
               address_zip_code: companyData.address_zip_code,
               contact_name: companyData.contact_name,
               contact_email: companyData.contact_email,

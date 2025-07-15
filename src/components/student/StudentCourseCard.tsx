@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { BookOpen, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StudentCourse } from "@/hooks/useStudentCourses";
+import { useCourseProgress } from '@/hooks/useCourseProgress';
+import { useAuth } from '@/hooks/auth';
 
 interface StudentCourseCardProps {
   course: StudentCourse;
@@ -14,6 +16,8 @@ interface StudentCourseCardProps {
 }
 
 export const StudentCourseCard = ({ course, isListView = false, index }: StudentCourseCardProps) => {
+  const { user } = useAuth();
+  const { data: progressData, isLoading } = useCourseProgress(String(course.id), user?.id);
   // Placeholder images for courses
   const placeholderImages = [
     "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
@@ -55,9 +59,9 @@ export const StudentCourseCard = ({ course, isListView = false, index }: Student
               console.log('Image loaded successfully:', course.thumbnail_url || 'placeholder');
             }}
           />
-          {course.progress_percentage > 0 && (
+          {progressData.progressPercentage > 0 && (
             <Badge className="absolute top-2 right-2 bg-green-500">
-              {course.progress_percentage === 100 ? 'Concluído' : `${Math.round(course.progress_percentage)}%`}
+              {progressData.progressPercentage === 100 ? 'Concluído' : `${Math.round(progressData.progressPercentage)}%`}
             </Badge>
           )}
         </div>
@@ -101,19 +105,19 @@ export const StudentCourseCard = ({ course, isListView = false, index }: Student
             <div className={`${isListView ? 'flex items-center gap-2' : 'flex justify-between items-center'}`}>
               <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2">
                 <Link to={`/student/courses/${course.id}`}>
-                  {course.progress_percentage > 0 ? 'Continuar' : 'Começar Curso'}
+                  {progressData.progressPercentage > 0 ? 'Continuar' : 'Começar Curso'}
                 </Link>
               </Button>
             </div>
           </div>
           
-          {course.progress_percentage > 0 && course.progress_percentage < 100 && (
+          {progressData.progressPercentage > 0 && progressData.progressPercentage < 100 && (
             <div className="mt-4">
               <div className="flex justify-between text-sm mb-1">
                 <span>Progresso</span>
-                <span>{Math.round(course.progress_percentage)}%</span>
+                <span>{Math.round(progressData.progressPercentage)}% ({progressData.completedLessons} de {progressData.totalLessons})</span>
               </div>
-              <Progress value={course.progress_percentage} className="h-2" />
+              <Progress value={progressData.progressPercentage} className="h-2" />
             </div>
           )}
         </CardContent>

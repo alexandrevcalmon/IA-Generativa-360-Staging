@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Star, Zap, Award, TrendingUp, Calendar } from 'lucide-react';
+import Ranking from './Ranking';
 
 const StudentGamification = () => {
   const { data: studentPoints } = useStudentPoints();
@@ -77,6 +78,11 @@ const StudentGamification = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Ranking Global */}
+          <div>
+            <Ranking />
+          </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Achievements */}

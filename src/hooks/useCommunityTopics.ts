@@ -2,6 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { awardPointsToStudent } from '@/hooks/gamification/useStudentPoints';
+import { GAMIFICATION_RULES, DAILY_LIMITS } from '@/hooks/gamification/gamificationRules';
+import { useStudentProfile } from '@/hooks/useStudentProfile';
 
 export interface CommunityTopic {
   id: string;
@@ -68,28 +71,39 @@ export const useCommunityTopics = () => {
 
 export const useCreateCommunityTopic = () => {
   const queryClient = useQueryClient();
+  const { data: studentProfile } = useStudentProfile();
 
   return useMutation({
     mutationFn: async (topicData: Omit<CommunityTopic, 'id' | 'created_at' | 'updated_at' | 'likes_count' | 'replies_count' | 'views_count'>) => {
       console.log('📝 Creating community topic:', topicData.title);
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('❌ No authenticated user for topic creation');
         throw new Error('User not authenticated');
       }
-
       const { data, error } = await supabase
         .from('community_topics')
         .insert(topicData)
         .select()
         .single();
-
       if (error) {
         console.error('❌ Error creating community topic:', error);
         throw error;
       }
-      
+      // Após criar o tópico, atribuir pontos
+      if (studentProfile?.id) {
+        await awardPointsToStudent({
+          studentId: studentProfile.id,
+          points: GAMIFICATION_RULES.community_topic_created,
+          actionType: 'community_topic_created',
+          description: `Criou um tópico: ${topicData.title}`,
+          referenceId: data.id,
+          meta: { topicId: data.id, title: topicData.title },
+          checkLimit: true,
+          limitPerDay: DAILY_LIMITS.community_topic_created,
+          uniquePerReference: true,
+        });
+      }
       console.log('✅ Community topic created successfully:', data.id);
       return data;
     },
@@ -139,21 +153,37 @@ export const useUpdateCommunityTopic = () => {
 
 export const useDeleteCommunityTopic = () => {
   const queryClient = useQueryClient();
+  const { data: studentProfile } = useStudentProfile();
 
   return useMutation({
     mutationFn: async (topicId: string) => {
       console.log('🗑️ Deleting community topic:', topicId);
-      
+      // Buscar o tópico para pegar o autor
+      const { data: topic } = await supabase
+        .from('community_topics')
+        .select('id, author_id, title')
+        .eq('id', topicId)
+        .maybeSingle();
       const { error } = await supabase
         .from('community_topics')
         .delete()
         .eq('id', topicId);
-
       if (error) {
         console.error('❌ Error deleting community topic:', error);
         throw error;
       }
-      
+      // Remover pontos do autor se for o mesmo usuário logado
+      if (studentProfile?.id && topic?.author_id === studentProfile.id) {
+        await awardPointsToStudent({
+          studentId: studentProfile.id,
+          points: -GAMIFICATION_RULES.community_topic_created,
+          actionType: 'community_topic_deleted',
+          description: `Tópico removido: ${topic?.title || topicId}`,
+          referenceId: topicId,
+          meta: { topic_id: topicId },
+          uniquePerReference: true
+        });
+      }
       console.log('✅ Community topic deleted successfully:', topicId);
     },
     onSuccess: () => {

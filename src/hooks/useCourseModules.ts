@@ -28,6 +28,7 @@ export interface Lesson {
   order_index: number;
   is_free: boolean;
   resources: any;
+  is_optional?: boolean;
 }
 
 export const useCourseModules = (courseId: string) => {
@@ -54,7 +55,8 @@ export const useCourseModules = (courseId: string) => {
             duration_minutes,
             order_index,
             is_free,
-            resources
+            resources,
+            is_optional
           )
         `)
         .eq('course_id', courseId)

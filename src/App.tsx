@@ -56,6 +56,8 @@ import StudentCommunity from '@/pages/StudentCommunity';
 import StudentGamification from '@/pages/StudentGamification';
 import StudentProfile from '@/pages/StudentProfile';
 import StudentAnalytics from '@/pages/StudentAnalytics';
+import StudentQuizView from '@/pages/StudentQuizView';
+import TopicDetailView from '@/components/community/TopicDetailView';
 
 // Layouts
 import ProdutorLayout from '@/components/ProdutorLayout';
@@ -122,9 +124,11 @@ function App() {
               <Route path="courses" element={<StudentCourses />} />
               <Route path="courses/:courseId" element={<StudentCourseDetail />} />
               <Route path="courses/:courseId/lessons/:lessonId" element={<StudentLessonView />} />
+              <Route path="courses/:courseId/quizzes/:quizId" element={<StudentQuizView />} />
               <Route path="calendar" element={<StudentCalendar />} />
               <Route path="mentorship" element={<StudentMentorship />} />
               <Route path="community" element={<StudentCommunity />} />
+              <Route path="community/topic/:topicId" element={<TopicDetailView />} />
               <Route path="gamification" element={<StudentGamification />} />
               <Route path="profile" element={<StudentProfile />} />
               <Route path="analytics" element={<StudentAnalytics />} />
