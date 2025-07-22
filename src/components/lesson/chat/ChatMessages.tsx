@@ -28,27 +28,27 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
             }`}
           >
             {message.role === 'assistant' && (
-              <Bot className="h-6 w-6 mt-1 text-blue-600 flex-shrink-0" />
+              <Bot className="h-6 w-6 mt-1 text-emerald-400 flex-shrink-0" />
             )}
             <div
               className={`max-w-[75%] p-3 rounded-lg text-sm leading-relaxed break-words ${
                 message.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-sm'
-                  : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                  ? 'bg-emerald-600 text-white rounded-br-sm shadow-sm'
+                  : 'bg-slate-800/50 text-slate-200 rounded-bl-sm border border-slate-700/50 shadow-sm'
               }`}
             >
               <div className="whitespace-pre-wrap">{message.content}</div>
             </div>
             {message.role === 'user' && (
-              <User className="h-6 w-6 mt-1 text-gray-600 flex-shrink-0" />
+              <User className="h-6 w-6 mt-1 text-slate-400 flex-shrink-0" />
             )}
           </div>
         ))}
         
         {isLoading && (
           <div className="flex gap-2 justify-start">
-            <Bot className="h-6 w-6 mt-1 text-blue-600 flex-shrink-0" />
-            <div className="bg-gray-100 p-3 rounded-lg rounded-bl-sm text-sm flex items-center gap-2">
+            <Bot className="h-6 w-6 mt-1 text-emerald-400 flex-shrink-0" />
+            <div className="bg-slate-800/50 border border-slate-700/50 p-3 rounded-lg rounded-bl-sm text-sm flex items-center gap-2 text-slate-300">
               <Loader2 className="h-4 w-4 animate-spin" />
               Analisando conteúdo...
             </div>

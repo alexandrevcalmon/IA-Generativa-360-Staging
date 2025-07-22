@@ -3,7 +3,6 @@
 // pois o Stripe não envia tokens de autorização do Supabase
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@14.21.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,210 +10,296 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2024-12-18.acacia',
-    })
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
+    const body = await req.text()
     const signature = req.headers.get('stripe-signature')
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
-    const body = await req.text();
+    if (!signature || !webhookSecret) {
+      return new Response(
+        JSON.stringify({ error: 'Missing signature or webhook secret' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    console.log('🔧 Debug - Received signature:', signature);
-    console.log('🔧 Debug - Webhook secret (masked):', webhookSecret ? webhookSecret.substring(0, 10) + '...' : 'MISSING');
-    console.log('🔧 Debug - Body length:', body.length);
-    console.log('🔧 Debug - Body preview:', body.substring(0, 100));
+    // Initialize Stripe com versão mais recente
+    const stripeModule = await import('https://esm.sh/stripe@15.0.0')
+    const stripe = new stripeModule.default(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2025-06-30.basil',
+    })
 
-    let event: Stripe.Event;
-
+    // Verify webhook signature
+    let event
     try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      // Usar constructEventAsync em vez de constructEvent
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
+      console.error('Webhook signature verification failed:', err)
       return new Response(
-        JSON.stringify({ error: 'Invalid signature' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('✅ Signature verified successfully');
-    // Em produção, não logar dados sensíveis ou payloads completos
-    // Apenas logar tipo de evento e erros críticos
-    // console.log('📋 Event type:', event.type);
-    // console.log('📝 Event data:', JSON.stringify(event.data.object, null, 2));
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    try {
-      switch (event.type) {
-        case 'checkout.session.completed': {
-          console.log('🔧 Processing checkout.session.completed');
-          const session = event.data.object as Stripe.Checkout.Session;
-          console.log('📝 Session metadata:', session.metadata);
-          const companyData = JSON.parse(session.metadata?.company_data || '{}');
-          console.log('📝 Parsed companyData:', companyData);
-          const planId = session.metadata?.plan_id;
-          const maxCollaborators = parseInt(session.metadata?.max_collaborators || '0');
-          const subscriptionPeriod = session.metadata?.subscription_period;
-          console.log('📋 Plan info:', { planId, maxCollaborators, subscriptionPeriod });
+    // Handle the event
+    switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object
+        
+        // Parse company data from metadata
+        const companyData = {
+          name: session.metadata?.company_name || '',
+          contact_name: session.metadata?.contact_name || '',
+          contact_email: session.metadata?.contact_email || '',
+          contact_phone: session.metadata?.contact_phone || '',
+          cnpj: session.metadata?.cnpj || '',
+          address: session.metadata?.address || '',
+          city: session.metadata?.city || '',
+          state: session.metadata?.state || '',
+          zip_code: session.metadata?.zip_code || '',
+          plan_id: session.metadata?.plan_id || '',
+          stripe_customer_id: session.customer as string,
+          stripe_subscription_id: session.subscription as string,
+        }
 
-          // Calcular data de término da assinatura
-          const now = new Date();
-          const subscriptionEndsAt = new Date(now);
-          if (subscriptionPeriod === 'semestral') {
-            subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 6);
-          } else if (subscriptionPeriod === 'anual') {
-            subscriptionEndsAt.setFullYear(subscriptionEndsAt.getFullYear() + 1);
-          }
-          console.log('📅 Subscription dates:', { startsAt: now.toISOString(), endsAt: subscriptionEndsAt.toISOString() });
+        // Get plan information
+        const planId = session.metadata?.plan_id
+        const maxCollaborators = parseInt(session.metadata?.max_collaborators || '0')
+        const subscriptionPeriod = parseInt(session.metadata?.subscription_period || '30')
 
-          // Validação de UF (address_state)
-          const validUFs = [
-            "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"
-          ];
-          let uf = (companyData.address_state || '').toUpperCase().trim();
-          if (!validUFs.includes(uf)) {
-            console.warn('⚠️ UF inválido recebido no webhook:', uf, '- será salvo como vazio.');
-            uf = '';
-          }
+        // Calculate subscription dates
+        const now = new Date()
+        const subscriptionEndsAt = new Date(now.getTime() + (subscriptionPeriod * 24 * 60 * 60 * 1000))
 
-          // Criar empresa no banco
-          console.log('🗄️ Inserting company into Supabase');
-          const { data: company, error: companyError } = await supabase
-            .from('companies')
-            .insert({
-              name: companyData.name,
-              official_name: companyData.official_name,
-              cnpj: companyData.cnpj,
-              email: companyData.email,
-              phone: companyData.phone,
-              address_street: companyData.address_street,
-              address_number: companyData.address_number,
-              address_complement: companyData.address_complement,
-              address_district: companyData.address_district,
-              address_city: companyData.address_city,
-              address_state: uf,
-              address_zip_code: companyData.address_zip_code,
-              contact_name: companyData.contact_name,
-              contact_email: companyData.contact_email,
-              contact_phone: companyData.contact_phone,
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: session.subscription as string,
-              subscription_status: 'active',
-              max_collaborators: maxCollaborators,
-              subscription_period: subscriptionPeriod,
-              subscription_ends_at: subscriptionEndsAt.toISOString(),
-              created_via_stripe: true,
-            })
-            .select()
-            .single();
+        // Prepare data for the robust function
+        const webhookCompanyData = {
+          ...companyData,
+          subscription_starts_at: now.toISOString(),
+          subscription_ends_at: subscriptionEndsAt.toISOString(),
+          max_collaborators: maxCollaborators.toString()
+        }
 
-          if (companyError) {
-            console.error('❌ Error creating company:', companyError);
-            throw companyError;
-          }
+        console.log(`[stripe-webhook] Processing checkout.session.completed for email: ${companyData.contact_email}`)
+        
+        // Use the robust function to create or update company
+        const { data: companyResult, error: companyError } = await supabase.rpc(
+          'create_or_update_company_from_webhook',
+          { company_data: webhookCompanyData }
+        )
 
-          console.log('✅ Company created successfully:', company.id);
+        if (companyError) {
+          console.error('Error in create_or_update_company_from_webhook:', companyError)
+          return new Response(
+            JSON.stringify({ 
+              error: 'Failed to create or update company',
+              details: companyError.message 
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
 
-          // Chamar função de convite de usuário admin
-          try {
-            const invitePayload = {
-              email: companyData.contact_email,
-              companyId: company.id,
-              companyName: companyData.name,
-              contactName: companyData.contact_name
-            };
-            const inviteUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/create-company-auth-user`;
-            const inviteRes = await fetch(inviteUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-              },
-              body: JSON.stringify(invitePayload)
-            });
-            const inviteResult = await inviteRes.json();
-            if (!inviteRes.ok) {
-              console.error('❌ Erro ao convidar usuário admin:', inviteResult);
-            } else {
-              console.log('✅ Convite enviado para usuário admin:', inviteResult);
+        if (!companyResult.success) {
+          console.error('Company creation/update failed:', companyResult.error)
+          return new Response(
+            JSON.stringify({ 
+              error: companyResult.error,
+              details: companyResult.details 
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        console.log(`[stripe-webhook] Company ${companyResult.action}: ${companyResult.company_name} (${companyResult.company_id})`)
+
+        // Get the company record for further processing
+        const { data: company, error: getCompanyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', companyResult.company_id)
+          .single()
+
+        if (getCompanyError) {
+          console.error('Error getting company after creation/update:', getCompanyError)
+          // Continue anyway as the company was created/updated successfully
+        }
+
+        // Check if auth user already exists for this company
+        let authUserExists = false
+        if (company?.auth_user_id) {
+          console.log(`[stripe-webhook] Company already has auth_user_id: ${company.auth_user_id}`)
+          authUserExists = true
+        } else {
+          // Check if there's an existing auth user with this email
+          console.log(`[stripe-webhook] Checking for existing auth user with email: ${companyData.contact_email}`)
+          const { data: { users: userList }, error: listUsersError } = await supabase.auth.admin.listUsers()
+          
+          if (!listUsersError && userList) {
+            const existingUser = userList.find(user => user.email === companyData.contact_email)
+            if (existingUser) {
+              console.log(`[stripe-webhook] Found existing auth user: ${existingUser.id}`)
+              // Link existing user to company
+              const { error: linkError } = await supabase
+                .from('companies')
+                .update({ 
+                  auth_user_id: existingUser.id,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', companyResult.company_id)
+
+              if (linkError) {
+                console.error('Error linking existing user to company:', linkError)
+              } else {
+                console.log(`[stripe-webhook] Successfully linked existing user to company`)
+                authUserExists = true
+              }
             }
-          } catch (inviteErr) {
-            console.error('❌ Erro inesperado ao chamar função de convite:', inviteErr);
           }
-          break;
         }
 
-        case 'customer.subscription.updated':
-        case 'customer.subscription.deleted': {
-          console.log('🔧 Processing subscription update/delete');
-          const subscription = event.data.object as Stripe.Subscription;
-          const status = subscription.status;
-          console.log('📋 Subscription status:', status);
+        // Create auth user if it doesn't exist
+        if (!authUserExists) {
+          console.log(`[stripe-webhook] Creating new auth user for company: ${companyResult.company_id}`)
+          const { data: inviteResult, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+            companyData.contact_email,
+            {
+              data: {
+                role: 'company',
+                company_id: companyResult.company_id,
+                company_name: companyData.name,
+                contact_name: companyData.contact_name,
+              }
+            }
+          )
 
-          const { error } = await supabase
-            .from('companies')
-            .update({
-              subscription_status: status,
-              subscription_ends_at: subscription.ended_at ? new Date(subscription.ended_at * 1000).toISOString() : null,
-            })
-            .eq('stripe_subscription_id', subscription.id);
+          if (inviteError) {
+            console.error('Error inviting company admin:', inviteError)
+            // Continue anyway as the company was created/updated successfully
+          } else if (inviteResult?.user) {
+            // Link the auth_user_id to the company
+            console.log(`[stripe-webhook] Linking new auth user ${inviteResult.user.id} to company ${companyResult.company_id}`)
+            const { error: updateError } = await supabase
+              .from('companies')
+              .update({ 
+                auth_user_id: inviteResult.user.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', companyResult.company_id)
 
-          if (error) {
-            console.error('❌ Error updating subscription:', error);
-            throw error;
+            if (updateError) {
+              console.error('Error linking auth user to company:', updateError)
+            } else {
+              console.log(`[stripe-webhook] Successfully linked new auth user to company`)
+            }
+
+            // Create profile for the user
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: inviteResult.user.id,
+                role: 'company',
+                email: companyData.contact_email,
+                name: companyData.contact_name || companyData.name,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' })
+
+            if (profileError) {
+              console.error('Error creating profile:', profileError)
+            }
           }
-
-          console.log('✅ Subscription updated successfully:', subscription.id);
-          break;
         }
 
-        default:
-          console.log(`Unhandled event type ${event.type}`);
-      }
+        break
 
-      return new Response(
-        JSON.stringify({ received: true }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      case 'invoice.payment_succeeded':
+        const invoice = event.data.object
+        console.log(`[stripe-webhook] Processing invoice.payment_succeeded for subscription: ${invoice.subscription}`)
+        
+        // Use the sync function to handle the update safely
+        const { data: syncResult, error: syncError } = await supabase.rpc(
+          'sync_company_with_stripe_webhook',
+          {
+            subscription_id: invoice.subscription,
+            customer_id: invoice.customer,
+            status: 'active'
+          }
+        )
+
+        if (syncError) {
+          console.error('Error syncing company with webhook:', syncError)
+          return new Response(
+            JSON.stringify({ 
+              error: 'Failed to sync company from invoice',
+              details: syncError.message 
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
         }
-      )
-    } catch (error) {
-      console.error('❌ Error processing webhook:', error);
-      return new Response(
-        JSON.stringify({
-          error: 'Webhook processing failed',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+
+        if (!syncResult.success) {
+          console.error('Sync failed:', syncResult.error)
+          return new Response(
+            JSON.stringify({ 
+              error: syncResult.error,
+              details: syncResult.details 
+            }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
         }
-      )
+
+        console.log(`[stripe-webhook] Successfully synced company: ${syncResult.company_name} (${syncResult.company_id})`)
+        break
+
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object
+        const status = subscription.status
+
+        // Update subscription status in database
+        const { error: updateError } = await supabase
+          .from('companies')
+          .update({
+            subscription_status: status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id)
+
+        if (updateError) {
+          console.error('Error updating subscription:', updateError)
+          return new Response(
+            JSON.stringify({ error: 'Failed to update subscription' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        break
+
+      default:
+        // Unhandled event type
+        console.log(`[stripe-webhook] Unhandled event type: ${event.type}`)
+        break
     }
+
+    return new Response(
+      JSON.stringify({ received: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
-    console.error('❌ Error in stripe-webhook:', error)
+    console.error('Webhook error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: 'Webhook processing failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 }) 

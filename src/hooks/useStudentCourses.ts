@@ -25,22 +25,32 @@ export interface StudentModule {
   title: string;
   description: string;
   order_index: number;
+  is_published: boolean;
+  created_at: string;
+  image_url: string;
   lessons: StudentLesson[];
 }
 
 export interface StudentLesson {
   id: string;
   title: string;
-  content: string;
-  video_url: string;
-  video_file_url: string;
-  material_url: string;
-  duration_minutes: number;
+  content?: string;
+  video_url?: string;
+  video_file_url?: string;
+  material_url?: string;
+  duration_minutes?: number;
   order_index: number;
   is_free: boolean;
   completed: boolean;
   watch_time_seconds: number;
   is_optional?: boolean;
+  resources?: any;
+  image_url?: string;
+  // Campos do Bunny.net
+  bunny_video_id?: string | null;
+  bunny_library_id?: number | null;
+  bunny_video_status?: 'pending' | 'processing' | 'ready' | 'error' | null;
+  bunny_embed_url?: string | null;
 }
 
 export type StudentLessonOrQuiz = StudentLesson | StudentQuizItem;
@@ -137,10 +147,31 @@ export const useStudentCourses = () => {
           const { data: modules, error: modulesError } = await supabase
             .from('course_modules')
             .select(`
-              *,
+              id,
+              title,
+              description,
+              order_index,
+              is_published,
+              created_at,
+              image_url,
               lessons(
-                *,
-                is_optional
+                id,
+                module_id,
+                title,
+                content,
+                video_url,
+                video_file_url,
+                material_url,
+                image_url,
+                duration_minutes,
+                order_index,
+                is_free,
+                resources,
+                is_optional,
+                bunny_video_id,
+                bunny_library_id,
+                bunny_video_status,
+                bunny_embed_url
               )
             `)
             .eq('course_id', course.id)
@@ -152,21 +183,28 @@ export const useStudentCourses = () => {
             // Continue with empty modules rather than failing
           }
 
+          console.log(`[useStudentCourses] Raw modules data for course ${course.id}:`, modules);
+
           const modulesWithLessons = await Promise.all(
             (modules || []).map(async (module) => {
               console.log('Processing module:', module.title);
 
-              // Get lessons with error handling
-              const { data: lessons, error: lessonsError } = await supabase
-                .from('lessons')
-                .select('*')
-                .eq('module_id', module.id)
-                .order('order_index');
-
-              if (lessonsError) {
-                console.error('Error fetching lessons for module', module.id, ':', lessonsError);
-                // Continue with empty lessons rather than failing
-              }
+              // Use lessons from the first query instead of making a second query
+              const lessons = module.lessons || [];
+              
+              console.log(`[useStudentCourses] Module ${module.title} has ${lessons.length} lessons`);
+              lessons.forEach((lesson, index) => {
+                console.log(`[useStudentCourses] Lesson ${index + 1}:`, {
+                  id: lesson.id,
+                  title: lesson.title,
+                  bunny_video_id: lesson.bunny_video_id,
+                  bunny_library_id: lesson.bunny_library_id,
+                  bunny_video_status: lesson.bunny_video_status,
+                  bunny_embed_url: lesson.bunny_embed_url,
+                  video_url: lesson.video_url,
+                  video_file_url: lesson.video_file_url
+                });
+              });
 
               // Get progress for each lesson with improved handling - using auth user ID directly
               const lessonsWithProgressAndQuizzes = await Promise.all(
@@ -294,18 +332,58 @@ export const useStudentCourse = (courseId: string) => {
       // Get modules with lessons
       const { data: modules } = await supabase
         .from('course_modules')
-        .select('*')
+        .select(`
+          id,
+          title,
+          description,
+          order_index,
+          is_published,
+          created_at,
+          image_url,
+          lessons(
+            id,
+            module_id,
+            title,
+            content,
+            video_url,
+            video_file_url,
+            material_url,
+            image_url,
+            duration_minutes,
+            order_index,
+            is_free,
+            resources,
+            is_optional,
+            bunny_video_id,
+            bunny_library_id,
+            bunny_video_status,
+            bunny_embed_url
+          )
+        `)
         .eq('course_id', courseId)
         .eq('is_published', true)
         .order('order_index');
 
+      console.log(`[useStudentCourse] Raw modules data for course ${courseId}:`, modules);
+
       const modulesWithLessons = await Promise.all(
         (modules || []).map(async (module) => {
-          const { data: lessons } = await supabase
-            .from('lessons')
-            .select('*')
-            .eq('module_id', module.id)
-            .order('order_index');
+          // Use lessons from the first query instead of making a second query
+          const lessons = module.lessons || [];
+          
+          console.log(`[useStudentCourse] Module ${module.title} has ${lessons.length} lessons`);
+          lessons.forEach((lesson, index) => {
+            console.log(`[useStudentCourse] Lesson ${index + 1}:`, {
+              id: lesson.id,
+              title: lesson.title,
+              bunny_video_id: lesson.bunny_video_id,
+              bunny_library_id: lesson.bunny_library_id,
+              bunny_video_status: lesson.bunny_video_status,
+              bunny_embed_url: lesson.bunny_embed_url,
+              video_url: lesson.video_url,
+              video_file_url: lesson.video_file_url
+            });
+          });
 
           const lessonsWithProgress = await Promise.all(
             (lessons || []).map(async (lesson) => {

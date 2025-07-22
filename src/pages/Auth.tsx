@@ -22,15 +22,18 @@ export default function Auth() {
     console.error('Auth context error:', error);
     // If auth context is not available, show a fallback
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
+        <Card className="w-full max-w-md bg-gray-800/50 backdrop-blur-xl border border-gray-700/30 shadow-2xl">
           <CardContent className="p-12 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-red-600 mb-4" />
-            <h3 className="text-lg font-medium mb-2">Erro de Autenticação</h3>
-            <p className="text-muted-foreground mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2 text-white">Erro de Autenticação</h3>
+            <p className="text-gray-300 mb-4">
               Erro no sistema de autenticação. Tente recarregar a página.
             </p>
-            <Button onClick={() => window.location.reload()}>
+            <Button 
+              onClick={() => window.location.reload()}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white"
+            >
               Recarregar Página
             </Button>
           </CardContent>
@@ -62,13 +65,13 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
+      <Card className="w-full max-w-md bg-gray-800/50 backdrop-blur-xl border border-gray-700/30 shadow-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-3xl font-bold text-white mb-2">
             Calmon Academy
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-300 text-lg">
             Entre em sua conta
           </CardDescription>
           
@@ -80,11 +83,11 @@ export default function Auth() {
             defaultRole={role}
           />
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <Button 
               variant="link" 
               onClick={() => navigate('/')}
-              className="text-gray-600 hover:text-emerald-600"
+              className="text-gray-300 hover:text-white transition-colors text-base"
             >
               ← Voltar para o início
             </Button>

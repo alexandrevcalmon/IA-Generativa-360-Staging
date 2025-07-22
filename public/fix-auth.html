@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrigir Sessão - IA Generativa 360</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .icon {
+            width: 80px;
+            height: 80px;
+            background: #fef3c7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .icon svg {
+            width: 40px;
+            height: 40px;
+            color: #f59e0b;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        p {
+            color: #6b7280;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin: 10px;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .button.danger {
+            background: #ef4444;
+        }
+        .button.danger:hover {
+            background: #dc2626;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+        </div>
+        
+        <h1>Corrigir Sessão</h1>
+        <p>
+            Sua sessão de autenticação está com problemas. Isso pode acontecer quando o token de acesso expira ou fica corrompido.
+        </p>
+        
+        <div>
+            <button class="button" onclick="clearSession()">
+                🧹 Limpar Sessão
+            </button>
+            <button class="button danger" onclick="forceRedirect()">
+                🔄 Ir para Login
+            </button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function clearSession() {
+            try {
+                showStatus('🧹 Limpando dados da sessão...', 'info');
+                
+                // Limpar todos os dados do localStorage relacionados ao Supabase
+                const keys = Object.keys(localStorage);
+                let removedCount = 0;
+                
+                keys.forEach(key => {
+                    if (key.includes('supabase') || key.includes('auth') || key.includes('sb-')) {
+                        localStorage.removeItem(key);
+                        removedCount++;
+                    }
+                });
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                
+                showStatus(`✅ Sessão limpa! ${removedCount} itens removidos. Redirecionando...`, 'success');
+                
+                setTimeout(() => {
+                    window.location.href = '/auth';
+                }, 2000);
+                
+            } catch (error) {
+                showStatus('❌ Erro ao limpar sessão: ' + error.message, 'error');
+            }
+        }
+
+        function forceRedirect() {
+            showStatus('🔄 Redirecionando para página de login...', 'info');
+            setTimeout(() => {
+                window.location.href = '/auth';
+            }, 1000);
+        }
+
+        // Mostrar informações sobre a sessão atual
+        window.addEventListener('load', () => {
+            const authKeys = Object.keys(localStorage).filter(key => 
+                key.includes('supabase') || key.includes('auth') || key.includes('sb-')
+            );
+            
+            if (authKeys.length > 0) {
+                showStatus(`📋 Encontrados ${authKeys.length} itens de autenticação no navegador.`, 'info');
+            } else {
+                showStatus('ℹ️ Nenhum item de autenticação encontrado.', 'info');
+            }
+        });
+    </script>
+</body>
+</html> 

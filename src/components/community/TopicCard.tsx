@@ -84,48 +84,54 @@ export const TopicCard = ({ topic, onEdit, showModeratorActions = false }: Topic
   return (
     <Card className={
       topic.is_pinned
-        ? 'border-purple-200 bg-purple-50'
+        ? '!border-purple-500/30 !bg-purple-500/10'
         : topic.replies_count > 0
-        ? 'border-green-200 bg-green-50'
-        : ''
+        ? '!border-emerald-500/30 !bg-emerald-500/10'
+        : '!border-slate-700/50 !bg-slate-900/20'
     }>
-      <CardHeader>
+      <CardHeader className={
+        topic.is_pinned
+          ? '!bg-purple-500/10 !text-white !border-b !border-purple-500/20'
+          : topic.replies_count > 0
+          ? '!bg-emerald-500/10 !text-white !border-b !border-emerald-500/20'
+          : '!bg-slate-900/20 !text-white !border-b !border-slate-700/50'
+      }>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <CardTitle 
-                className="text-lg cursor-pointer hover:text-purple-600 transition-colors"
+                className="!text-lg cursor-pointer hover:!text-emerald-400 transition-colors !text-white"
                 onClick={handleViewTopic}
               >
                 {topic.title}
               </CardTitle>
               {topic.is_pinned && (
-                <Badge className="bg-purple-100 text-purple-800">
+                <Badge className="!bg-purple-500/20 !text-purple-300 !border-purple-500/30">
                   <Pin className="w-3 h-3 mr-1" />
                   Fixado
                 </Badge>
               )}
               {topic.is_locked && (
-                <Badge variant="outline" className="border-red-200 text-red-700">
+                <Badge variant="outline" className="!border-red-500/30 !text-red-300">
                   <Lock className="w-3 h-3 mr-1" />
                   Bloqueado
                 </Badge>
               )}
-              <Badge variant="outline">{topic.category}</Badge>
+              <Badge variant="outline" className="!border-slate-600 !text-slate-300">{topic.category}</Badge>
             </div>
             <p 
-              className="text-gray-600 mb-3 cursor-pointer hover:text-gray-800 transition-colors"
+              className="!text-slate-300 mb-3 cursor-pointer hover:!text-slate-200 transition-colors"
               onClick={handleViewTopic}
             >
               {topic.content.substring(0, 200)}...
             </p>
             <div className="flex items-center gap-2 mb-2">
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs">
+                <AvatarFallback className="!text-xs !bg-slate-700 !text-white">
                   {topic.author_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
+              <div className="flex items-center gap-4 text-sm !text-slate-400">
                 <span>Por {topic.author_name}</span>
                 {topic.company_name && <span>• {topic.company_name}</span>}
                 <span>• {new Date(topic.created_at).toLocaleDateString('pt-BR')}</span>
@@ -135,24 +141,24 @@ export const TopicCard = ({ topic, onEdit, showModeratorActions = false }: Topic
           {canModerate && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="!text-slate-300 hover:!bg-slate-800/50">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="!bg-slate-800 !border-slate-700">
                 {onEdit && (
-                  <DropdownMenuItem onClick={() => onEdit(topic)}>
+                  <DropdownMenuItem onClick={() => onEdit(topic)} className="!text-white hover:!bg-slate-700">
                     <Edit className="h-4 w-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
                 )}
                 {showModeratorActions && isProducer && (
                   <>
-                    <DropdownMenuItem onClick={handleTogglePin}>
+                    <DropdownMenuItem onClick={handleTogglePin} className="!text-white hover:!bg-slate-700">
                       <Pin className="h-4 w-4 mr-2" />
                       {topic.is_pinned ? 'Desfixar' : 'Fixar'}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleToggleLock}>
+                    <DropdownMenuItem onClick={handleToggleLock} className="!text-white hover:!bg-slate-700">
                       <Lock className="h-4 w-4 mr-2" />
                       {topic.is_locked ? 'Desbloquear' : 'Bloquear'}
                     </DropdownMenuItem>
@@ -160,23 +166,23 @@ export const TopicCard = ({ topic, onEdit, showModeratorActions = false }: Topic
                 )}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="!text-white hover:!bg-slate-700">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Deletar
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="!bg-slate-800 !border-slate-700">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Deletar tópico</AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogTitle className="!text-white">Deletar tópico</AlertDialogTitle>
+                      <AlertDialogDescription className="!text-slate-300">
                         Tem certeza que deseja deletar este tópico? Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogCancel className="!bg-slate-700 !text-white hover:!bg-slate-600">Cancelar</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="!bg-red-600 hover:!bg-red-700 !text-white"
                       >
                         Deletar
                       </AlertDialogAction>
@@ -188,29 +194,37 @@ export const TopicCard = ({ topic, onEdit, showModeratorActions = false }: Topic
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-6 text-sm text-gray-600">
-          <Button
-            variant="ghost"
-            size="sm"
+      <CardContent className={
+        topic.is_pinned
+          ? '!bg-purple-500/10'
+          : topic.replies_count > 0
+          ? '!bg-emerald-500/10'
+          : '!bg-slate-900/20'
+      }>
+        <div className="flex items-center gap-6 text-sm !text-slate-400">
+          <div
             onClick={handleViewTopic}
-            className={`flex items-center gap-1 p-0 h-auto font-normal ${topic.replies_count > 0 ? 'text-green-600' : 'text-gray-600'} hover:text-green-700`}
-          >
-            <MessageCircle className={`h-4 w-4 ${topic.replies_count > 0 ? 'text-green-600' : ''}`} />
-            <span>{topic.replies_count} respostas</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLike}
-            className={`flex items-center gap-1 p-0 h-auto font-normal ${
-              likesData?.isLiked ? 'text-purple-600' : 'text-gray-600'
+            className={`flex items-center gap-1 cursor-pointer transition-all duration-200 rounded-md px-2 py-1 ${
+              topic.replies_count > 0 
+                ? '!text-emerald-400 hover:!text-emerald-300 hover:!bg-emerald-500/10' 
+                : '!text-slate-400 hover:!text-slate-300 hover:!bg-slate-700/30'
             }`}
           >
-            <ThumbsUp className={`h-4 w-4 ${likesData?.isLiked ? 'fill-current' : ''}`} />
+            <MessageCircle className={`h-4 w-4 ${topic.replies_count > 0 ? '!text-emerald-400' : '!text-slate-400'}`} />
+            <span>{topic.replies_count} respostas</span>
+          </div>
+          <div
+            onClick={handleLike}
+            className={`flex items-center gap-1 cursor-pointer transition-all duration-200 rounded-md px-2 py-1 ${
+              likesData?.isLiked 
+                ? '!text-purple-400 hover:!text-purple-300 hover:!bg-purple-500/10' 
+                : '!text-slate-400 hover:!text-slate-300 hover:!bg-slate-700/30'
+            }`}
+          >
+            <ThumbsUp className={`h-4 w-4 ${likesData?.isLiked ? 'fill-current !text-purple-400' : '!text-slate-400'}`} />
             <span>{likesData?.likesCount || topic.likes_count} curtidas</span>
-          </Button>
-          <div className="flex items-center gap-1">
+          </div>
+          <div className="flex items-center gap-1 !text-slate-400">
             <Eye className="h-4 w-4" />
             <span>{topic.views_count} visualizações</span>
           </div>

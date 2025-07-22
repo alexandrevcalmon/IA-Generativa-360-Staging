@@ -1,28 +1,24 @@
-
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { CollaboratorManagement } from "@/components/collaborator/CollaboratorManagement";
 import { useCompanyData } from "@/hooks/useCompanyData";
+import { CollaboratorManagement } from "@/components/collaborator/CollaboratorManagement";
 
 const CompanyCollaborators = () => {
   const { data: companyData } = useCompanyData();
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="border-b bg-white px-6 py-4">
-        <div className="flex items-center space-x-4">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Colaboradores</h1>
-            <p className="text-gray-600">
-              Gerencie os colaboradores da {companyData?.name || 'empresa'}
-            </p>
-          </div>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="container mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent">
+            Colaboradores
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Gerencie os colaboradores da {companyData?.name || 'empresa'}
+          </p>
         </div>
-      </header>
 
-      <div className="flex-1 overflow-auto p-6 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
+        {/* Content */}
+        <div className="space-y-6">
           <CollaboratorManagement />
         </div>
       </div>
@@ -31,4 +27,3 @@ const CompanyCollaborators = () => {
 };
 
 export default CompanyCollaborators;
-

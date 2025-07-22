@@ -29,6 +29,11 @@ export interface Lesson {
   is_free: boolean;
   resources: any;
   is_optional?: boolean;
+  // Campos do Bunny.net
+  bunny_video_id?: string | null;
+  bunny_library_id?: number | null;
+  bunny_video_status?: 'pending' | 'processing' | 'ready' | 'error' | null;
+  bunny_embed_url?: string | null;
 }
 
 export const useCourseModules = (courseId: string) => {
@@ -56,7 +61,11 @@ export const useCourseModules = (courseId: string) => {
             order_index,
             is_free,
             resources,
-            is_optional
+            is_optional,
+            bunny_video_id,
+            bunny_library_id,
+            bunny_video_status,
+            bunny_embed_url
           )
         `)
         .eq('course_id', courseId)

@@ -96,12 +96,12 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-white">
             {module ? "Editar Módulo" : "Criar Novo Módulo"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-300">
             {module 
               ? "Edite as informações do módulo abaixo." 
               : "Preencha as informações para criar um novo módulo."
@@ -116,9 +116,13 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Título *</FormLabel>
+                  <FormLabel className="text-gray-300">Título *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do módulo" {...field} />
+                    <Input 
+                      placeholder="Nome do módulo" 
+                      {...field} 
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,11 +134,11 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel className="text-gray-300">Descrição</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Descreva o conteúdo do módulo"
-                      className="min-h-[80px]"
+                      className="min-h-[80px] bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
                       {...field} 
                     />
                   </FormControl>
@@ -173,13 +177,14 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
               name="order_index"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ordem</FormLabel>
+                  <FormLabel className="text-gray-300">Ordem</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
                       placeholder="0"
                       {...field}
                       onChange={(e) => field.onChange(Number(e.target.value))}
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </FormControl>
                   <FormMessage />
@@ -191,10 +196,10 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
               control={form.control}
               name="is_published"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-600 p-4 bg-gray-800/50">
                   <div className="space-y-0.5">
-                    <FormLabel>Publicar Módulo</FormLabel>
-                    <div className="text-sm text-muted-foreground">
+                    <FormLabel className="text-gray-300">Publicar Módulo</FormLabel>
+                    <div className="text-sm text-gray-400">
                       Torne o módulo visível para os alunos
                     </div>
                   </div>
@@ -209,12 +214,13 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
             />
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700">
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
                 disabled={createModuleMutation.isPending || updateModuleMutation.isPending}
+                className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white border-0 shadow-lg"
               >
                 {module ? "Atualizar" : "Criar"} Módulo
               </Button>

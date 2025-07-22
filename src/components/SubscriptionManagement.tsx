@@ -1,242 +1,207 @@
-import { useSubscription } from '@/hooks/useSubscription';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  CreditCard, 
-  Users, 
-  Calendar, 
-  AlertTriangle, 
-  CheckCircle, 
-  ExternalLink,
-  Loader2,
-  Settings
-} from 'lucide-react';
-import { getPlanInfo } from '@/lib/stripe';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Calendar, CreditCard, AlertTriangle, RefreshCw, Settings, X } from 'lucide-react';
+import { useSubscriptionManagement } from '@/hooks/useSubscriptionManagement';
+import { useAuth } from '@/hooks/auth';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-export function SubscriptionManagement() {
-  const navigate = useNavigate();
-  const {
-    isActive,
-    isLoading,
-    planId,
-    maxCollaborators,
-    currentCollaborators,
-    subscriptionStatus,
-    subscriptionEndsAt,
-    daysUntilExpiry,
-    error,
-  } = useSubscription();
+interface SubscriptionManagementProps {
+  className?: string;
+}
 
-  const planInfo = planId ? getPlanInfo(planId) : null;
+export function SubscriptionManagement({ className }: SubscriptionManagementProps) {
+  const { user, companyUserData } = useAuth();
+  const { cancelSubscription, openCustomerPortal, isLoading } = useSubscriptionManagement({
+    onSuccess: () => {
+      // Refresh user data after cancellation
+      window.location.reload();
+    }
+  });
+
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+
+  if (!user || !companyUserData) {
+    return null;
+  }
+
+  const subscription = companyUserData.subscription;
+  const isActive = subscription?.status === 'active';
+  const isCanceled = subscription?.status === 'canceled';
+  const isExpired = subscription?.status === 'expired';
+
+  const handleCancelSubscription = async () => {
+    await cancelSubscription(cancelReason);
+    setIsCancelDialogOpen(false);
+    setCancelReason('');
+  };
 
   const getStatusBadge = () => {
-    switch (subscriptionStatus) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Ativa</Badge>;
-      case 'past_due':
-        return <Badge className="bg-orange-100 text-orange-800">Pagamento Pendente</Badge>;
-      case 'canceled':
-        return <Badge className="bg-red-100 text-red-800">Cancelada</Badge>;
-      case 'incomplete':
-        return <Badge className="bg-yellow-100 text-yellow-800">Incompleta</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">Inativa</Badge>;
+    if (isExpired) {
+      return <Badge variant="destructive">Expirada</Badge>;
     }
+    if (isCanceled) {
+      return <Badge variant="secondary">Cancelada</Badge>;
+    }
+    if (isActive) {
+      return <Badge variant="default">Ativa</Badge>;
+    }
+    return <Badge variant="outline">Desconhecido</Badge>;
   };
 
-  const handleManageSubscription = () => {
-    // Redirecionar para o portal de cobrança do Stripe
-    // Em produção, você criaria um endpoint para gerar o link do portal
-    window.open('https://billing.stripe.com/p/login/test_123', '_blank');
+  const getStatusMessage = () => {
+    if (isExpired) {
+      return "Sua assinatura expirou. Renove para continuar usando os serviços.";
+    }
+    if (isCanceled) {
+      return "Sua assinatura foi cancelada e será encerrada no final do período atual.";
+    }
+    if (isActive) {
+      return "Sua assinatura está ativa e funcionando normalmente.";
+    }
+    return "Status da assinatura desconhecido.";
   };
-
-  const handleUpgradePlan = () => {
-    navigate('/planos');
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-calmon-600" />
-            <p className="text-gray-600">Carregando informações da assinatura...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
-            Erro ao carregar assinatura
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()} variant="outline">
-            Tentar novamente
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      {/* Status da Assinatura */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Status da Assinatura
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-gray-900">
-                {planInfo?.displayName || 'Plano não identificado'}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Período: {planInfo?.period || 'N/A'}
-              </p>
-            </div>
-            {getStatusBadge()}
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          Gerenciar Assinatura
+        </CardTitle>
+        <CardDescription>
+          Gerencie sua assinatura e configurações de pagamento
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Status da Assinatura */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Status da Assinatura</p>
+            <p className="text-sm text-muted-foreground">{getStatusMessage()}</p>
           </div>
+          {getStatusBadge()}
+        </div>
 
-          {subscriptionEndsAt && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {subscriptionStatus === 'active' ? 'Próxima cobrança:' : 'Termina em:'} {' '}
-                {new Date(subscriptionEndsAt).toLocaleDateString('pt-BR')}
-                {daysUntilExpiry !== null && daysUntilExpiry > 0 && (
-                  <span className="ml-1">({daysUntilExpiry} dias)</span>
-                )}
-              </span>
+        {/* Informações da Assinatura */}
+        {subscription && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Plano:</span>
+              <span className="font-medium">{subscription.plan_name || 'N/A'}</span>
             </div>
-          )}
-
-          {/* Alertas baseados no status */}
-          {subscriptionStatus === 'past_due' && (
-            <Alert className="border-orange-200 bg-orange-50">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
-                Seu pagamento está em atraso. Atualize seu método de pagamento para manter o acesso.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry > 0 && (
-            <Alert className="border-yellow-200 bg-yellow-50">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                Sua assinatura vence em {daysUntilExpiry} dias. Certifique-se de que seu método de pagamento está atualizado.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {isActive && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                Sua assinatura está ativa e todos os recursos estão disponíveis.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Uso de Colaboradores */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Uso de Colaboradores
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Colaboradores ativos
-              </span>
-              <span className="text-sm font-medium">
-                {currentCollaborators} / {maxCollaborators}
-              </span>
-            </div>
-            
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentCollaborators >= maxCollaborators
-                    ? 'bg-red-500'
-                    : currentCollaborators >= maxCollaborators * 0.8
-                    ? 'bg-yellow-500'
-                    : 'bg-green-500'
-                }`}
-                style={{
-                  width: `${Math.min((currentCollaborators / maxCollaborators) * 100, 100)}%`
-                }}
-              />
-            </div>
-
-            {currentCollaborators >= maxCollaborators && (
-              <Alert className="border-orange-200 bg-orange-50">
-                <Users className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800">
-                  Você atingiu o limite de colaboradores do seu plano. 
-                  Faça upgrade para adicionar mais colaboradores.
-                </AlertDescription>
-              </Alert>
+            {subscription.current_period_end && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Próxima cobrança:</span>
+                <span className="font-medium">
+                  {format(new Date(subscription.current_period_end), 'dd/MM/yyyy', { locale: ptBR })}
+                </span>
+              </div>
+            )}
+            {subscription.cancel_at_period_end && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Cancelamento:</span>
+                <span className="font-medium text-orange-600">
+                  {format(new Date(subscription.current_period_end), 'dd/MM/yyyy', { locale: ptBR })}
+                </span>
+              </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Ações */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Gerenciar Assinatura
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        {/* Alertas */}
+        {isExpired && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Sua assinatura expirou. Acesse o portal do cliente para renovar.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isCanceled && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Sua assinatura foi cancelada. Você ainda pode acessar os serviços até o final do período atual.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Ações */}
+        <div className="flex gap-2">
           <Button
-            onClick={handleManageSubscription}
-            className="w-full justify-between"
+            onClick={openCustomerPortal}
+            disabled={isLoading}
+            className="flex-1"
             variant="outline"
           >
-            <span className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Portal de Cobrança
-            </span>
-            <ExternalLink className="h-4 w-4" />
+            <Settings className="h-4 w-4 mr-2" />
+            Portal do Cliente
           </Button>
 
-          <Button
-            onClick={handleUpgradePlan}
-            className="w-full bg-calmon-500 hover:bg-calmon-600"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Alterar Plano
-          </Button>
-
-          <p className="text-xs text-gray-500 text-center">
-            Use o portal de cobrança para atualizar método de pagamento, 
-            baixar faturas e gerenciar sua assinatura.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          {isActive && !isCanceled && (
+            <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" disabled={isLoading}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cancelar Assinatura</DialogTitle>
+                  <DialogDescription>
+                    Tem certeza que deseja cancelar sua assinatura? Ela permanecerá ativa até o final do período atual.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="cancel-reason">Motivo do cancelamento (opcional)</Label>
+                    <Textarea
+                      id="cancel-reason"
+                      placeholder="Conte-nos por que está cancelando..."
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCancelDialogOpen(false)}
+                    disabled={isLoading}
+                  >
+                    Manter Assinatura
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleCancelSubscription}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Cancelando...
+                      </>
+                    ) : (
+                      'Confirmar Cancelamento'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 } 

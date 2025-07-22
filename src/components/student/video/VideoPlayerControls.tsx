@@ -62,7 +62,7 @@ export const VideoPlayerControls = ({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-5 space-y-3 sm:space-y-4 pointer-events-auto">
+    <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 lg:p-4 space-y-2 sm:space-y-3 pointer-events-auto">
       {/* Progress Bar */}
       <VideoPlayerProgress
         currentTime={currentTime}
@@ -72,35 +72,35 @@ export const VideoPlayerControls = ({
 
       {/* Control Buttons */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-1 sm:space-x-2">
+        <div className="flex items-center space-x-0.5 sm:space-x-2">
           <Button
             onClick={handlePlayClick}
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20 touch-manipulation min-h-[48px] min-w-[48px] sm:h-12 sm:w-12 lg:h-14 lg:w-14 p-0 rounded-full"
+            className="text-white hover:bg-white/20 touch-manipulation h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 p-0 rounded-full"
             aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
           >
-            {isPlaying ? <Pause className="h-5 w-5 sm:h-6 sm:w-6" /> : <Play className="h-5 w-5 sm:h-6 sm:w-6" />}
+            {isPlaying ? <Pause className="h-4 w-4 sm:h-5 sm:w-5" /> : <Play className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
 
           <Button
             onClick={handleSkipBackward}
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20 touch-manipulation min-h-[48px] min-w-[48px] sm:h-12 sm:w-12 lg:h-14 lg:w-14 p-0 rounded-full"
+            className="text-white hover:bg-white/20 touch-manipulation h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 p-0 rounded-full"
             aria-label="Voltar 10 segundos"
           >
-            <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
+            <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
           <Button
             onClick={handleSkipForward}
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20 touch-manipulation min-h-[48px] min-w-[48px] sm:h-12 sm:w-12 lg:h-14 lg:w-14 p-0 rounded-full"
+            className="text-white hover:bg-white/20 touch-manipulation h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 p-0 rounded-full"
             aria-label="Avançar 10 segundos"
           >
-            <RotateCw className="h-5 w-5 sm:h-6 sm:w-6" />
+            <RotateCw className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
           {/* Volume controls - hidden on mobile */}
@@ -120,10 +120,10 @@ export const VideoPlayerControls = ({
           onClick={handleFullscreen}
           size="sm"
           variant="ghost"
-          className="text-white hover:bg-white/20 touch-manipulation min-h-[48px] min-w-[48px] sm:h-12 sm:w-12 lg:h-14 lg:w-14 p-0 rounded-full"
+          className="text-white hover:bg-white/20 touch-manipulation h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 p-0 rounded-full"
           aria-label="Tela cheia"
         >
-          <Maximize className="h-5 w-5 sm:h-6 sm:w-6" />
+          <Maximize className="h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
       </div>
     </div>

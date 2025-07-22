@@ -19,11 +19,11 @@ export const StudentCourseGrid = ({
   if (courses.length === 0) {
     return (
       <div className="text-center py-12">
-        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-slate-200 mb-2">
           {emptyMessage}
         </h3>
-        <p className="text-gray-600">
+        <p className="text-slate-400">
           {emptyDescription}
         </p>
       </div>
@@ -31,7 +31,7 @@ export const StudentCourseGrid = ({
   }
 
   return (
-    <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6' : 'space-y-4'}>
+    <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 pl-4' : 'space-y-6 pl-4'}>
       {courses.map((course, index) => (
         <StudentCourseCard 
           key={course.id} 

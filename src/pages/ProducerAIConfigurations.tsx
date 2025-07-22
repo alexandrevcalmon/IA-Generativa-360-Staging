@@ -1,5 +1,6 @@
-
 import React, { useState } from 'react';
+import { PageLayout } from '@/components/PageLayout';
+import { PageSection } from '@/components/PageSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Bot, Settings } from 'lucide-react';
@@ -52,93 +53,101 @@ const ProducerAIConfigurations = () => {
     setIsDialogOpen(true);
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="border-b bg-white px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Bot className="h-6 w-6" />
-              Configurações de IA
-            </h1>
-            <p className="text-gray-600">Gerencie os provedores de IA e suas configurações para chatbots de lições</p>
-          </div>
-          <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Configuração
-          </Button>
-        </div>
-      </header>
+  // Header content com botão de criar nova configuração
+  const headerContent = (
+    <Button 
+      onClick={handleCreateNew}
+      className="!bg-gray-800 !text-white hover:!bg-gray-700 !border-gray-600"
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      Nova Configuração
+    </Button>
+  );
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
-                <p className="text-gray-600">Carregando configurações...</p>
-              </div>
+  return (
+    <PageLayout
+      title="Configurações de IA"
+      subtitle="Gerencie os provedores de IA e suas configurações para chatbots de lições"
+      headerContent={headerContent}
+      background="dark"
+      className="dark-theme-override"
+    >
+      <div className="max-w-7xl mx-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 !border-blue-400 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold !text-white mb-2">Carregando Configurações</h3>
+              <p className="!text-gray-300">Buscando configurações de IA...</p>
             </div>
-          ) : configurations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {configurations.map((config) => (
-                <AIConfigurationCard
-                  key={config.id}
-                  config={config}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onToggleStatus={handleToggleStatus}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card>
+          </div>
+        ) : configurations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {configurations.map((config) => (
+              <AIConfigurationCard
+                key={config.id}
+                config={config}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleStatus={handleToggleStatus}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-16">
+            <Card className="!bg-gray-800 !border-gray-700 max-w-md w-full">
               <CardHeader className="text-center py-12">
-                <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <CardTitle>Nenhuma configuração de IA encontrada</CardTitle>
-                <CardDescription>
+                <Bot className="h-16 w-16 !text-gray-400 mx-auto mb-4" />
+                <CardTitle className="!text-white">Nenhuma configuração de IA encontrada</CardTitle>
+                <CardDescription className="!text-gray-300">
                   Crie sua primeira configuração de IA para habilitar chatbots inteligentes nas lições
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pb-12">
-                <Button onClick={handleCreateNew}>
+                <Button 
+                  onClick={handleCreateNew}
+                  className="!bg-blue-600 hover:!bg-blue-700 !text-white"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Criar primeira configuração
                 </Button>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Configuration Dialog */}
+        <AIConfigurationDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          config={editingConfig}
+          onSave={handleSave}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletingConfigId} onOpenChange={() => setDeletingConfigId(null)}>
+          <AlertDialogContent className="!bg-gray-800 !border-gray-700">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="!text-white">Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription className="!text-gray-300">
+                Tem certeza que deseja excluir esta configuração de IA? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="!bg-gray-700 !text-gray-300 hover:!bg-gray-600 !border-gray-600">
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="!bg-red-600 hover:!bg-red-700 !text-white"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      {/* Configuration Dialog */}
-      <AIConfigurationDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        config={editingConfig}
-        onSave={handleSave}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingConfigId} onOpenChange={() => setDeletingConfigId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta configuração de IA? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </PageLayout>
   );
 };
 

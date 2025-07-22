@@ -68,8 +68,8 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
     <Card
       ref={setNodeRef}
       style={style}
-      className={`group hover:shadow-md transition-shadow ${
-        isDragging ? 'shadow-lg z-50' : ''
+      className={`group hover:shadow-lg transition-shadow bg-gray-800/50 border-gray-600 ${
+        isDragging ? 'shadow-xl z-50' : ''
       }`}
     >
       <CardContent className="p-4">
@@ -78,26 +78,28 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
           <div
             {...attributes}
             {...listeners}
-            className="flex items-center text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-600"
+            className="flex items-center text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-300"
           >
             <GripVertical className="h-4 w-4" />
           </div>
           
           {/* Order Number */}
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-xs font-medium text-gray-300">
             {index + 1}
           </div>
           
           {/* Lesson Info */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h5 className="font-medium text-sm">{lesson.title}</h5>
+              <h5 className="font-medium text-sm text-white">{lesson.title}</h5>
               {lesson.is_free && (
-                <Badge variant="secondary" className="text-xs">Gratuita</Badge>
+                <Badge variant="secondary" className="text-xs bg-green-900/20 text-green-400 border-green-800">
+                  Gratuita
+                </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-xs text-gray-400">
               {lesson.duration_minutes && (
                 <span>{formatDuration(lesson.duration_minutes)}</span>
               )}
@@ -107,12 +109,12 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
           </div>
           
           {/* Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onEdit(lesson)}
-              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
               title="Editar aula"
             >
               <Edit className="h-3 w-3" />
@@ -123,25 +125,27 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
                   title="Excluir aula"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="bg-gray-800 border-gray-600">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir Aula</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="text-white">Excluir Aula</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-300">
                     Tem certeza que deseja excluir a aula "{lesson.title}"? 
                     Esta ação não pode ser desfeita.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel className="bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600">
+                    Cancelar
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => onDelete(lesson.id)}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     Excluir
                   </AlertDialogAction>
@@ -277,15 +281,17 @@ function LessonQuizzesList({ lessonId }: { lessonId: string }) {
   const quizContent = lesson ? `${lesson.title}\n${lesson.content || ''}` : '';
 
   return (
-    <div style={{ marginLeft: 32, marginTop: 12, marginBottom: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontWeight: 500, fontSize: 14 }}>Quizzes desta aula:</span>
-        <button
-          style={{ fontSize: 12, padding: '4px 12px', border: '1px solid #ccc', borderRadius: 6, background: '#f9f9f9', cursor: 'pointer' }}
+    <div className="ml-8 mt-3 mb-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="font-medium text-sm text-gray-300">Quizzes desta aula:</span>
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => setCreateQuizOpen(true)}
+          className="text-xs border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 bg-gray-800/50"
         >
           + Adicionar Quiz
-        </button>
+        </Button>
       </div>
       {/* Modal de criação de quiz */}
       <GenerateQuizDialog
@@ -306,32 +312,46 @@ function LessonQuizzesList({ lessonId }: { lessonId: string }) {
           onQuizApproved={() => setEditQuiz(null)}
         />
       )}
-      {isLoading && <span style={{ fontSize: 13, color: '#888' }}>Carregando quizzes...</span>}
-      {error && <span style={{ fontSize: 13, color: 'red' }}>Erro ao carregar quizzes</span>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {isLoading && <span className="text-sm text-gray-400">Carregando quizzes...</span>}
+      {error && <span className="text-sm text-red-400">Erro ao carregar quizzes</span>}
+      <div className="flex flex-col gap-2">
         {quizzes && quizzes.length === 0 && !isLoading && (
-          <span style={{ fontSize: 13, color: '#888' }}>Nenhum quiz cadastrado para esta aula.</span>
+          <span className="text-sm text-gray-400">Nenhum quiz cadastrado para esta aula.</span>
         )}
         {quizzes && quizzes.map((quiz) => (
-          <Card key={quiz.id} style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+          <Card key={quiz.id} className="bg-gray-800/50 border-gray-600 shadow-sm">
             <CardContent className="py-3 px-4 flex items-center gap-4">
-              <span style={{ fontWeight: 500, fontSize: 13 }}>{quiz.title}</span>
-              <span style={{ fontSize: 12, color: quiz.status === 'Aprovado' ? 'green' : 'orange', fontWeight: 500 }}>{quiz.status || 'Rascunho'}</span>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                <button style={{ fontSize: 12, padding: '2px 10px', border: '1px solid #b6e0fe', borderRadius: 4, background: '#e6f7ff', cursor: 'pointer' }} onClick={() => setEditQuiz(quiz)}>Editar</button>
+              <span className="font-medium text-sm text-white">{quiz.title}</span>
+              <span className={`text-xs font-medium ${quiz.status === 'Aprovado' ? 'text-green-400' : 'text-orange-400'}`}>{quiz.status || 'Rascunho'}</span>
+              <div className="ml-auto flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditQuiz(quiz)}
+                  className="text-xs border-blue-500 text-blue-400 hover:text-white hover:bg-blue-600"
+                >
+                  Editar
+                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <button style={{ fontSize: 12, padding: '2px 10px', border: '1px solid #ffc1c1', borderRadius: 4, background: '#fff1f0', color: '#d32f2f', cursor: 'pointer' }} onClick={() => { setQuizToDelete(quiz.id); setQuizTitleToDelete(quiz.title); }}>Excluir</button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { setQuizToDelete(quiz.id); setQuizTitleToDelete(quiz.title); }}
+                      className="text-xs border-red-500 text-red-400 hover:text-white hover:bg-red-600"
+                    >
+                      Excluir
+                    </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="bg-gray-900 border-gray-700">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir Quiz</AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogTitle className="text-white">Excluir Quiz</AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-300">
                         Tem certeza que deseja excluir o quiz "{quizTitleToDelete}"? Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setQuizToDelete(null)}>Cancelar</AlertDialogCancel>
+                      <AlertDialogCancel onClick={() => setQuizToDelete(null)} className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700">Cancelar</AlertDialogCancel>
                       <AlertDialogAction onClick={() => {
                         if (quizToDelete) {
                           console.log('[UI] Confirmando exclusão do quiz:', quizToDelete);

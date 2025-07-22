@@ -29,28 +29,28 @@ export const MentorshipCard = ({
     const sessionDate = new Date(scheduledAt);
     
     if (status === 'completed') {
-      return <Badge className="bg-green-100 text-green-700">Concluída</Badge>;
+      return <Badge className="bg-emerald-900/20 border border-emerald-500/30 text-emerald-400">Concluída</Badge>;
     }
     
     if (status === 'cancelled') {
-      return <Badge variant="destructive">Cancelada</Badge>;
+      return <Badge className="bg-red-900/20 border border-red-500/30 text-red-400">Cancelada</Badge>;
     }
     
     if (sessionDate > now) {
-      return <Badge className="bg-blue-100 text-blue-700">Agendada</Badge>;
+      return <Badge className="bg-blue-900/20 border border-blue-500/30 text-blue-400">Agendada</Badge>;
     }
     
-    return <Badge className="bg-yellow-100 text-yellow-700">Em andamento</Badge>;
+    return <Badge className="bg-yellow-900/20 border border-yellow-500/30 text-yellow-400">Em andamento</Badge>;
   };
 
   const getTypeBadge = (type: string) => {
     if (type === 'collective') {
-      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+      return <Badge className="bg-purple-900/20 border border-purple-500/30 text-purple-400">
         <Globe className="h-3 w-3 mr-1" />
         Coletiva
       </Badge>;
     }
-    return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+    return <Badge className="bg-blue-900/20 border border-blue-500/30 text-blue-400">
       Empresa
     </Badge>;
   };
@@ -60,12 +60,12 @@ export const MentorshipCard = ({
   };
 
   return (
-    <Card className={`hover:shadow-md transition-shadow ${isPast ? 'opacity-75' : ''}`}>
+    <Card className={`bg-transparent border-gray-600/30 hover:bg-gray-700/20 transition-all duration-200 ${isPast ? 'opacity-75' : ''}`}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2 flex-wrap gap-2">
-              <h3 className="font-semibold text-gray-900 text-lg">
+              <h3 className="font-semibold text-white text-lg">
                 {mentorship.title}
               </h3>
               {getTypeBadge(mentorship.type)}
@@ -73,23 +73,23 @@ export const MentorshipCard = ({
             </div>
             
             {mentorship.description && (
-              <p className="text-gray-600 mb-3">{mentorship.description}</p>
+              <p className="text-gray-400 mb-3">{mentorship.description}</p>
             )}
             
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center space-x-1">
-                <Calendar className="h-4 w-4" />
-                <span>{formatDateTime(mentorship.scheduled_at)}</span>
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-white font-bold">{formatDateTime(mentorship.scheduled_at)}</span>
               </div>
               
               <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>{mentorship.duration_minutes} minutos</span>
+                <Clock className="h-4 w-4 text-gray-400" />
+                <span className="text-white font-bold">{mentorship.duration_minutes} minutos</span>
               </div>
               
               <div className="flex items-center space-x-1">
-                <Users className="h-4 w-4" />
-                <span>
+                <Users className="h-4 w-4 text-gray-400" />
+                <span className="text-white font-bold">
                   {isPast ? 
                     `${mentorship.participants_count} participantes` :
                     `${mentorship.participants_count}/${mentorship.max_participants} participantes`
@@ -106,7 +106,7 @@ export const MentorshipCard = ({
                 (mentorship.meet_url || mentorship.google_meet_url) ? (
                   <Button
                     size="sm"
-                    className="flex items-center space-x-1 w-full bg-black text-white font-semibold hover:bg-gray-800"
+                    className="flex items-center space-x-1 w-full bg-black text-white font-semibold hover:bg-gray-800 border border-gray-600"
                     onClick={() => window.open(mentorship.meet_url || mentorship.google_meet_url, '_blank')}
                   >
                     <Video className="h-4 w-4" />
@@ -115,7 +115,7 @@ export const MentorshipCard = ({
                 ) : (
                   <Button
                     size="sm"
-                    className="flex items-center space-x-1 w-full bg-gray-400 text-white font-semibold"
+                    className="flex items-center space-x-1 w-full bg-gray-700 text-gray-300 font-semibold border border-gray-600"
                     disabled
                   >
                     <Video className="h-4 w-4" />

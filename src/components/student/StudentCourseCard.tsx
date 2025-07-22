@@ -44,13 +44,13 @@ export const StudentCourseCard = ({ course, isListView = false, index }: Student
   };
 
   return (
-    <Card className={`hover-lift transition-all duration-200 ${isListView ? 'flex flex-col sm:flex-row' : ''}`}>
+    <Card className={`relative overflow-hidden bg-slate-900/20 backdrop-blur-xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 group hover:scale-[1.01] ${isListView ? 'flex flex-col sm:flex-row' : ''}`}>
       <div className={`${isListView ? 'w-full sm:w-48 flex-shrink-0' : 'w-full'}`}>
         <div className={`relative ${isListView ? 'h-48 sm:h-32' : 'h-48'} overflow-hidden ${isListView ? 'rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none' : 'rounded-t-lg'}`}>
           <img 
             src={getImageUrl(course, index)}
             alt={course.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               console.log('Image failed to load, falling back to placeholder');
               e.currentTarget.src = getPlaceholderImage(index);
@@ -59,8 +59,10 @@ export const StudentCourseCard = ({ course, isListView = false, index }: Student
               console.log('Image loaded successfully:', course.thumbnail_url || 'placeholder');
             }}
           />
+          {/* Overlay gradient for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
           {progressData.progressPercentage > 0 && (
-            <Badge className="absolute top-2 right-2 bg-green-500">
+            <Badge className="absolute top-3 right-3 bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 text-white border-0 shadow-lg text-xs font-medium">
               {progressData.progressPercentage === 100 ? 'Concluído' : `${Math.round(progressData.progressPercentage)}%`}
             </Badge>
           )}
@@ -68,42 +70,39 @@ export const StudentCourseCard = ({ course, isListView = false, index }: Student
       </div>
       
       <div className={`${isListView ? 'flex-1' : ''}`}>
-        <CardHeader className={`p-4 ${isListView ? 'pb-2' : ''}`}>
+        <CardHeader className={`p-6 ${isListView ? 'pb-4' : ''}`}>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className={`${isListView ? 'text-lg' : 'text-xl'} mb-2 line-clamp-2`}>
+              <CardTitle className={`${isListView ? 'text-lg' : 'text-xl'} mb-3 line-clamp-2 text-slate-100 font-semibold leading-tight`}>
                 {course.title}
               </CardTitle>
-              <CardDescription className={`${isListView ? 'line-clamp-2' : 'line-clamp-3'} mb-3 text-sm`}>
+              <CardDescription className={`${isListView ? 'line-clamp-2' : 'line-clamp-3'} mb-4 text-sm text-slate-300 leading-relaxed`}>
                 {course.description}
               </CardDescription>
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="outline" className="text-xs">{course.category}</Badge>
-            <Badge variant="outline" className="text-xs">{course.difficulty_level}</Badge>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Badge className="text-xs bg-slate-600/50 border-0 text-slate-200 px-3 py-1 font-medium">{course.category}</Badge>
+            <Badge className="text-xs bg-slate-600/50 border-0 text-slate-200 px-3 py-1 font-medium">{course.difficulty_level}</Badge>
           </div>
         </CardHeader>
 
-        <CardContent className={`p-4 pt-0 ${isListView ? '' : ''}`}>
-          <div className={`${isListView ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4' : 'space-y-3'}`}>
-            <div className={`${isListView ? 'flex flex-wrap gap-4 text-sm' : 'space-y-2 text-sm'}`}>
-              <div className="flex items-center text-gray-600">
-                <Clock className="h-4 w-4 mr-1" />
+        <CardContent className={`p-6 pt-0 ${isListView ? '' : ''}`}>
+          <div className={`${isListView ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4' : 'space-y-4'}`}>
+            <div className={`${isListView ? 'flex flex-wrap gap-4 text-sm' : 'space-y-3 text-sm'}`}>
+              <div className="flex items-center text-slate-300 font-medium">
+                <Clock className="h-4 w-4 mr-2 text-emerald-400" />
                 {course.estimated_hours}h
               </div>
-              <div className="flex items-center text-gray-600">
-                <BookOpen className="h-4 w-4 mr-1" />
+              <div className="flex items-center text-slate-300 font-medium">
+                <BookOpen className="h-4 w-4 mr-2 text-emerald-400" />
                 {course.modules?.length || 0} módulos
               </div>
-              <Badge variant="outline" className="text-xs">
-                {course.difficulty_level}
-              </Badge>
             </div>
             
             <div className={`${isListView ? 'flex items-center gap-2' : 'flex justify-between items-center'}`}>
-              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2">
+              <Button asChild className="bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 text-white text-sm px-6 py-2 border-0 shadow-lg hover:shadow-xl transition-all duration-300 font-medium">
                 <Link to={`/student/courses/${course.id}`}>
                   {progressData.progressPercentage > 0 ? 'Continuar' : 'Começar Curso'}
                 </Link>
@@ -112,12 +111,12 @@ export const StudentCourseCard = ({ course, isListView = false, index }: Student
           </div>
           
           {progressData.progressPercentage > 0 && progressData.progressPercentage < 100 && (
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>Progresso</span>
-                <span>{Math.round(progressData.progressPercentage)}% ({progressData.completedLessons} de {progressData.totalLessons})</span>
+            <div className="mt-6 pt-4 border-t border-slate-600/20">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-slate-200 font-medium">Progresso</span>
+                <span className="text-slate-300">{Math.round(progressData.progressPercentage)}% ({progressData.completedLessons} de {progressData.totalLessons})</span>
               </div>
-              <Progress value={progressData.progressPercentage} className="h-2" />
+              <Progress value={progressData.progressPercentage} className="h-2 bg-slate-600/50 !bg-slate-600/50" />
             </div>
           )}
         </CardContent>

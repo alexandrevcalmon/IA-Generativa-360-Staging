@@ -10,8 +10,8 @@ export const ChatContextIndicator = ({ lessonId, materialsCount }: ChatContextIn
   return (
     <div className={`text-xs p-2 rounded text-center ${
       hasContent 
-        ? 'text-blue-600 bg-blue-50' 
-        : 'text-amber-600 bg-amber-50'
+        ? 'text-emerald-300 bg-emerald-500/10 border border-emerald-500/20' 
+        : 'text-amber-300 bg-amber-500/10 border border-amber-500/20'
     }`}>
       {hasContent ? (
         <>
@@ -20,7 +20,7 @@ export const ChatContextIndicator = ({ lessonId, materialsCount }: ChatContextIn
       ) : (
         <>
           📖 Tenho acesso ao conteúdo da lição básica
-          <div className="text-xs mt-1 text-amber-700">
+          <div className="text-xs mt-1 text-amber-400">
             💡 Adicione materiais de apoio para respostas mais detalhadas
           </div>
         </>

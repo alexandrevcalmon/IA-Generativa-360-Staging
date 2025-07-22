@@ -37,19 +37,31 @@ export default function Ranking() {
     setLoading(true);
     const fetchRanking = async () => {
       const periodField = PERIODS.find(p => p.value === period)?.field || 'total_points';
-      let query = supabase
-        .from('global_collaborator_ranking_period')
-        .select('*', { count: 'exact' })
-        .order(periodField, { ascending: false })
-        .order('collaborator_name', { ascending: true })
-        .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-      if (search) {
-        query = query.ilike('collaborator_name', `%${search}%`).ilike('company_name', `%${search}%`);
-      }
-      const { data, count, error } = await query;
+      // Usar a função segura em vez da view
+      const { data, count, error } = await supabase.rpc('get_global_collaborator_ranking_period');
       if (!error) {
-        setRanking(data || []);
-        setTotal(count || 0);
+        // Filtrar e ordenar os dados
+        let filteredData = data || [];
+        if (search) {
+          filteredData = filteredData.filter(item => 
+            item.collaborator_name?.toLowerCase().includes(search.toLowerCase()) ||
+            item.company_name?.toLowerCase().includes(search.toLowerCase())
+          );
+        }
+        
+        // Ordenar por período
+        const periodField = PERIODS.find(p => p.value === period)?.field || 'total_points';
+        filteredData.sort((a, b) => (b[periodField] || 0) - (a[periodField] || 0));
+        
+        // Paginação
+        const startIndex = (page - 1) * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+        const paginatedData = filteredData.slice(startIndex, endIndex);
+        
+        setRanking(paginatedData);
+        setTotal(filteredData.length);
+      } else {
+        console.error('Erro ao buscar ranking:', error);
       }
       setLoading(false);
     };
@@ -61,34 +73,47 @@ export default function Ranking() {
     if (!user?.id) return;
     const fetchMyPosition = async () => {
       const { data, error } = await supabase
-        .from('global_collaborator_ranking')
+        .from('global_collaborator_ranking_new')
         .select('*')
         .eq('collaborator_email', user.email)
         .single();
-      if (!error && data) setMyPosition(data);
+      if (!error && data) {
+        setMyPosition(data);
+      } else if (error) {
+        console.error('Erro ao buscar posição do usuário:', error);
+      }
     };
     fetchMyPosition();
   }, [user]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="bg-white border-b p-6">
+    <div className="flex flex-col h-full dark-theme-override">
+      <div className="bg-slate-900/20 border-b border-slate-700/50 p-6" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ranking Geral</h1>
-            <p className="text-gray-600">Veja quem são os colaboradores mais engajados da plataforma!</p>
+            <h1 className="text-2xl font-bold text-white">Ranking Geral</h1>
+            <p className="text-slate-300">Veja quem são os colaboradores mais engajados da plataforma!</p>
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-auto p-6 bg-gray-50">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">Ranking de Colaboradores</CardTitle>
+      <div className="flex-1 overflow-auto p-6 bg-slate-900/10" style={{ backgroundColor: 'rgba(15, 23, 42, 0.1)' }}>
+        <Card className="max-w-4xl mx-auto border-slate-700/50 bg-slate-900/20 shadow-lg" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+          <CardHeader className="bg-slate-900/20 text-white border-b border-slate-700/50" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+            <CardTitle className="flex items-center gap-2 text-white">Ranking de Colaboradores</CardTitle>
             <div className="flex flex-wrap gap-2 mt-2">
               {PERIODS.map(p => (
                 <button
                   key={p.value}
-                  className={`px-3 py-1 rounded-full border ${period === p.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'} transition`}
+                  className={`px-3 py-1 rounded-full border transition ${
+                    period === p.value 
+                      ? 'bg-emerald-600 text-white border-emerald-600' 
+                      : 'bg-slate-800/50 text-slate-300 border-slate-600 hover:bg-slate-700/50'
+                  }`}
+                  style={{
+                    backgroundColor: period === p.value ? '#059669' : 'rgba(30, 41, 59, 0.5)',
+                    borderColor: period === p.value ? '#059669' : '#475569',
+                    color: period === p.value ? 'white' : '#cbd5e1'
+                  }}
                   onClick={() => { setPage(1); setPeriod(p.value); }}
                 >
                   {p.label}
@@ -99,51 +124,56 @@ export default function Ranking() {
               placeholder="Buscar por nome ou empresa..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="mt-2 w-full"
+              className="mt-2 w-full bg-slate-800/50 border-slate-700/50 text-white placeholder:text-slate-400 focus:border-emerald-500/50"
+              style={{ 
+                backgroundColor: 'rgba(30, 41, 59, 0.5)', 
+                borderColor: 'rgba(71, 85, 105, 0.5)',
+                color: 'white'
+              }}
             />
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-slate-900/20" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
             {myPosition && (
-              <div className="mb-4 p-3 rounded-lg bg-blue-50 flex items-center gap-4 border border-blue-200">
-                <span className="font-bold text-lg">Sua posição: {myPosition.position}</span>
-                <span className="font-semibold">{myPosition.collaborator_name}</span>
-                <span className="text-gray-500">({myPosition.company_name})</span>
-                <Badge className="bg-blue-600 text-white ml-2">Você</Badge>
-                <span className="ml-auto font-bold text-blue-700">{myPosition.total_points} pts</span>
+              <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 flex items-center gap-4 border border-emerald-500/20" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                <span className="font-bold text-lg text-white">Sua posição: {myPosition.position}</span>
+                <span className="font-semibold text-white">{myPosition.collaborator_name}</span>
+                <span className="text-slate-300">({myPosition.company_name})</span>
+                <Badge className="bg-emerald-600 text-white ml-2" style={{ backgroundColor: '#059669' }}>Você</Badge>
+                <span className="ml-auto font-bold text-emerald-400">{myPosition.total_points} pts</span>
               </div>
             )}
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th className="p-2 text-left">Posição</th>
-                    <th className="p-2 text-left">Colaborador</th>
-                    <th className="p-2 text-left">Empresa</th>
-                    <th className="p-2 text-right">Pontos</th>
+                  <tr className="bg-slate-800/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}>
+                    <th className="p-2 text-left text-white">Posição</th>
+                    <th className="p-2 text-left text-white">Colaborador</th>
+                    <th className="p-2 text-left text-white">Empresa</th>
+                    <th className="p-2 text-right text-white">Pontos</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={4} className="text-center p-4">Carregando...</td></tr>
+                    <tr><td colSpan={4} className="text-center p-4 text-slate-300">Carregando...</td></tr>
                   ) : ranking.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center p-4">Nenhum resultado encontrado.</td></tr>
+                    <tr><td colSpan={4} className="text-center p-4 text-slate-300">Nenhum resultado encontrado.</td></tr>
                   ) : ranking.map((row, idx) => {
                     const pos = (page - 1) * PAGE_SIZE + idx + 1;
                     const isMe = user?.email && row.collaborator_email === user.email;
                     let medal = null;
                     if (pos <= 3) medal = MEDALS[pos - 1];
                     return (
-                      <tr key={row.collaborator_id} className={isMe ? 'bg-blue-100 font-bold' : ''}>
-                        <td className="p-2">
+                      <tr key={row.collaborator_id} className={`${isMe ? 'bg-emerald-500/10 font-bold' : ''} border-b border-slate-700/30`} style={isMe ? { backgroundColor: 'rgba(16, 185, 129, 0.1)' } : {}}>
+                        <td className="p-2 text-white">
                           {medal ? (
                             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${medal.color}`}>{medal.label}</span>
                           ) : (
                             <span>{pos}</span>
                           )}
                         </td>
-                        <td className="p-2">{row.collaborator_name} {isMe && <Badge className="ml-1 bg-blue-600 text-white">Você</Badge>}</td>
-                        <td className="p-2">{row.company_name}</td>
-                        <td className="p-2 text-right font-semibold">{row.total_points}</td>
+                        <td className="p-2 text-white">{row.collaborator_name} {isMe && <Badge className="ml-1 bg-emerald-600 text-white" style={{ backgroundColor: '#059669' }}>Você</Badge>}</td>
+                        <td className="p-2 text-slate-300">{row.company_name}</td>
+                        <td className="p-2 text-right font-semibold text-emerald-400">{row.total_points}</td>
                       </tr>
                     );
                   })}
@@ -153,13 +183,15 @@ export default function Ranking() {
             {/* Paginação */}
             <div className="flex justify-between items-center mt-4">
               <button
-                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                className="px-3 py-1 rounded bg-slate-800/50 hover:bg-slate-700/50 text-white border border-slate-600"
+                style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', borderColor: '#475569' }}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
               >Anterior</button>
-              <span>Página {page} de {Math.ceil(total / PAGE_SIZE) || 1}</span>
+              <span className="text-slate-300">Página {page} de {Math.ceil(total / PAGE_SIZE) || 1}</span>
               <button
-                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                className="px-3 py-1 rounded bg-slate-800/50 hover:bg-slate-700/50 text-white border border-slate-600"
+                style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', borderColor: '#475569' }}
                 onClick={() => setPage(p => p + 1)}
                 disabled={page * PAGE_SIZE >= total}
               >Próxima</button>

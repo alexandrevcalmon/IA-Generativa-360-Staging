@@ -77,17 +77,17 @@ export const FileUploadField = ({
 
   return (
     <div className={className}>
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label className="text-sm font-medium text-gray-300">{label}</Label>
       {description && (
-        <p className="text-sm text-muted-foreground mt-1 mb-2">{description}</p>
+        <p className="text-sm text-gray-400 mt-1 mb-2">{description}</p>
       )}
       
       {!value ? (
         <div
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
             isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-blue-500 bg-blue-500/10'
+              : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
           }`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -97,8 +97,10 @@ export const FileUploadField = ({
           onDrop={handleDrop}
         >
           <div className="flex flex-col items-center gap-2">
-            {getFileIcon()}
-            <div className="text-sm text-gray-600">
+            <div className="text-gray-400">
+              {getFileIcon()}
+            </div>
+            <div className="text-sm text-gray-300">
               <p>Arraste e solte ou</p>
               <Button
                 type="button"
@@ -106,7 +108,7 @@ export const FileUploadField = ({
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="mt-2"
+                className="mt-2 !border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {isUploading ? 'Enviando...' : 'Selecionar arquivo'}
@@ -128,7 +130,7 @@ export const FileUploadField = ({
               <img
                 src={value}
                 alt="Preview"
-                className="w-full max-w-xs h-32 object-cover rounded border"
+                className="w-full max-w-xs h-32 object-cover rounded border border-gray-600"
               />
             </div>
           )}
@@ -137,13 +139,15 @@ export const FileUploadField = ({
               <video
                 src={value}
                 controls
-                className="w-full max-w-xs h-32 rounded border"
+                className="w-full max-w-xs h-32 rounded border border-gray-600"
               />
             </div>
           )}
-          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
-            {getFileIcon()}
-            <span className="text-sm flex-1 truncate">
+          <div className="flex items-center gap-2 p-2 bg-gray-800 rounded border border-gray-600">
+            <div className="text-gray-400">
+              {getFileIcon()}
+            </div>
+            <span className="text-sm flex-1 truncate text-gray-300">
               {value.split('/').pop()?.split('?')[0]}
             </span>
             <Button
@@ -151,7 +155,7 @@ export const FileUploadField = ({
               variant="ghost"
               size="sm"
               onClick={handleRemove}
-              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+              className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-gray-700"
             >
               <X className="h-4 w-4" />
             </Button>

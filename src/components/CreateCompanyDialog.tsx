@@ -47,10 +47,9 @@ export function CreateCompanyDialog({ isOpen, onClose }: CreateCompanyDialogProp
     // Validação do nome da empresa
     if (!formData.name || formData.name.trim() === '') {
       console.log('❌ Validation failed: Nome Fantasia is required');
-      toast({
+      toast.error({
         title: "Erro de validação",
-        description: "Nome Fantasia é obrigatório.",
-        variant: "destructive",
+        description: "Nome Fantasia é obrigatório."
       });
       return false;
     }
@@ -58,10 +57,9 @@ export function CreateCompanyDialog({ isOpen, onClose }: CreateCompanyDialogProp
     // Validação do email de contato
     if (!formData.contact_email || formData.contact_email.trim() === '') {
       console.log('❌ Validation failed: Contact email is required');
-      toast({
+      toast.error({
         title: "Erro de validação",
-        description: "Email do contato é obrigatório para criar o acesso à plataforma.",
-        variant: "destructive",
+        description: "Email do contato é obrigatório para criar o acesso à plataforma."
       });
       return false;
     }
@@ -70,10 +68,9 @@ export function CreateCompanyDialog({ isOpen, onClose }: CreateCompanyDialogProp
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.contact_email)) {
       console.log('❌ Validation failed: Invalid email format');
-      toast({
+      toast.error({
         title: "Erro de validação",
-        description: "Por favor, insira um email válido.",
-        variant: "destructive",
+        description: "Por favor, insira um email válido."
       });
       return false;
     }
@@ -84,10 +81,9 @@ export function CreateCompanyDialog({ isOpen, onClose }: CreateCompanyDialogProp
         subscription_plan_id: formData.subscription_plan_id,
         billing_period: formData.billing_period
       });
-      toast({
+      toast.error({
         title: "Erro de validação",
-        description: "Por favor, selecione um plano de assinatura e período de cobrança.",
-        variant: "destructive",
+        description: "Por favor, selecione um plano de assinatura e período de cobrança."
       });
       return false;
     }
@@ -120,10 +116,9 @@ export function CreateCompanyDialog({ isOpen, onClose }: CreateCompanyDialogProp
         ? error.message 
         : 'Ocorreu um erro inesperado ao criar a empresa.';
         
-      toast({
+      toast.error({
         title: "Erro ao criar empresa",
-        description: errorMessage,
-        variant: "destructive",
+        description: errorMessage
       });
     }
   };

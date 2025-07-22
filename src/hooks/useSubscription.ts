@@ -48,6 +48,7 @@ export function useSubscription() {
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select(`
+          id,
           stripe_customer_id,
           stripe_subscription_id,
           subscription_status,

@@ -12,7 +12,8 @@ export const useCollaboratorAnalyticsFiltering = (
     return analytics
       .filter(stat => {
         const matchesSearch = stat.collaborator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             stat.collaborator.email.toLowerCase().includes(searchTerm.toLowerCase());
+                             stat.collaborator.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             (stat.collaborator.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
         
         const matchesStatus = filterStatus === "all" || 
                              (filterStatus === "active" && stat.collaborator.is_active) ||

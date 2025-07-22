@@ -1,6 +1,9 @@
-
+import { PageLayout } from "@/components/PageLayout";
+import { PageSection } from "@/components/PageSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Edit, Save } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from '@/hooks/useAuth';
 import { ProfileHeader } from "@/components/company/profile/ProfileHeader";
@@ -12,34 +15,45 @@ const CompanyProfile = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
 
+  // Header content com botão de editar/salvar
+  const headerContent = (
+    <Button 
+      onClick={() => setIsEditing(!isEditing)}
+      variant={isEditing ? "default" : "outline"}
+    >
+      {isEditing ? (
+        <>
+          <Save className="h-4 w-4 mr-2" />
+          Salvar
+        </>
+      ) : (
+        <>
+          <Edit className="h-4 w-4 mr-2" />
+          Editar Perfil
+        </>
+      )}
+    </Button>
+  );
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="border-b bg-white px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Perfil da Empresa</h1>
-            <p className="text-gray-600">Gerencie as informações da sua empresa</p>
-          </div>
-        </div>
-      </header>
+    <PageLayout
+      title="Perfil da Empresa"
+      subtitle="Gerencie as informações da sua empresa"
+      headerContent={headerContent}
+    >
+      <div className="space-y-6">
+        {/* Profile Overview */}
+        <PageSection>
+          <ProfileHeader
+            userEmail={user?.email}
+            userCreatedAt={user?.created_at}
+            isEditing={isEditing}
+            onToggleEdit={() => setIsEditing(!isEditing)}
+          />
+        </PageSection>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Profile Overview */}
-          <Card>
-            <CardContent className="p-6">
-              <ProfileHeader
-                userEmail={user?.email}
-                userCreatedAt={user?.created_at}
-                isEditing={isEditing}
-                onToggleEdit={() => setIsEditing(!isEditing)}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Profile Tabs */}
+        {/* Profile Tabs */}
+        <PageSection transparent>
           <Tabs defaultValue="info" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="info">Informações</TabsTrigger>
@@ -59,9 +73,9 @@ const CompanyProfile = () => {
               <SettingsTab />
             </TabsContent>
           </Tabs>
-        </div>
+        </PageSection>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

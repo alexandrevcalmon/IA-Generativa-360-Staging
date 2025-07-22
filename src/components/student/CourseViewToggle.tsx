@@ -11,14 +11,22 @@ export const CourseViewToggle = ({ viewMode, onViewModeChange }: CourseViewToggl
   return (
     <div className="flex items-center space-x-2">
       <Button
-        variant={viewMode === 'grid' ? 'default' : 'outline'}
+        className={`h-10 px-3 transition-all duration-300 ${
+          viewMode === 'grid' 
+            ? 'bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 text-white border-0 shadow-xl' 
+            : 'bg-slate-800/60 border-slate-700/50 text-slate-300 hover:bg-slate-700/80 hover:text-white'
+        }`}
         size="sm"
         onClick={() => onViewModeChange('grid')}
       >
         <Grid className="h-4 w-4" />
       </Button>
       <Button
-        variant={viewMode === 'list' ? 'default' : 'outline'}
+        className={`h-10 px-3 transition-all duration-300 ${
+          viewMode === 'list' 
+            ? 'bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 text-white border-0 shadow-xl' 
+            : 'bg-slate-800/60 border-slate-700/50 text-slate-300 hover:bg-slate-700/80 hover:text-white'
+        }`}
         size="sm"
         onClick={() => onViewModeChange('list')}
       >

@@ -24,10 +24,10 @@ export function useAuthRedirects({ user, userRole, authLoading, needsPasswordCha
       timestamp: new Date().toISOString()
     });
 
-    // Don't redirect if loading, no user, or user needs password change
-    if (authLoading || !user || needsPasswordChange) {
+    // Don't redirect if loading, no user, user needs password change, or on activation page
+    if (authLoading || !user || needsPasswordChange || location.pathname === '/activate-account') {
       console.log('⏸️ Skipping redirect:', {
-        reason: authLoading ? 'loading' : !user ? 'no user' : 'needs password change'
+        reason: authLoading ? 'loading' : !user ? 'no user' : needsPasswordChange ? 'needs password change' : 'on activation page'
       });
       return;
     }
@@ -149,12 +149,13 @@ export function useAuthRedirects({ user, userRole, authLoading, needsPasswordCha
         }
       }
 
-      // Only redirect from specific "entry" pages
+      // Only redirect from specific "entry" pages (exclude activation page)
       const shouldRedirect = 
-        location.pathname === '/' || 
+        (location.pathname === '/' || 
         location.pathname === '/auth' || 
         location.pathname === '/login-produtor' ||
-        location.pathname === '/company-dashboard'; // Add legacy route
+        location.pathname === '/company-dashboard') && // Add legacy route
+        location.pathname !== '/activate-account'; // Never redirect from activation page
 
       if (!shouldRedirect) {
         console.log('ℹ️ Not on redirect-eligible page, skipping redirect. Current:', location.pathname);

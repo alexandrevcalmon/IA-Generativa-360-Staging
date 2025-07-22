@@ -15,7 +15,7 @@ export function ProducerCompaniesSearch({ searchTerm, onSearchChange }: Producer
         placeholder="Buscar empresas..."
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="pl-10"
+        className="pl-10 bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-orange-500 focus:ring-orange-500"
       />
     </div>
   );

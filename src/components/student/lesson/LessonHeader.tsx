@@ -19,30 +19,30 @@ export const LessonHeader = ({ currentLesson, course, courseId, currentModule }:
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white text-gray-900 border-b border-gray-200">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <SidebarTrigger className="flex-shrink-0 h-10 w-10 text-gray-600 hover:bg-gray-100" />
+      <div className="lg:hidden bg-slate-900/50 text-white border-b border-slate-700/50">
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <SidebarTrigger className="flex-shrink-0 h-8 w-8 text-slate-300 hover:bg-slate-800/50" />
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => navigate(`/student/courses/${courseId}`)}
-              className="flex-shrink-0 h-10 w-10 p-0 text-gray-600 hover:bg-gray-100"
+              className="flex-shrink-0 h-8 w-8 p-0 text-slate-300 hover:bg-slate-800/50"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-base font-semibold truncate leading-tight text-gray-900">
+              <h1 className="text-sm font-semibold truncate leading-tight text-white">
                 {currentLesson.title}
               </h1>
-              <p className="text-sm text-gray-600 truncate mt-0.5">
+              <p className="text-xs text-slate-300 truncate mt-0.5">
                 {course.title}
               </p>
             </div>
           </div>
           {currentLesson.completed && (
-            <Badge className="bg-green-100 text-green-800 flex-shrink-0 text-xs px-2 py-1 h-7 border border-green-200">
-              <CheckCircle className="w-3 h-3 mr-1" />
+            <Badge className="bg-emerald-500/20 text-emerald-300 flex-shrink-0 text-xs px-1.5 py-0.5 h-6 border border-emerald-500/30">
+              <CheckCircle className="w-3 h-3 mr-0.5" />
               <span className="hidden sm:inline">Concluída</span>
               <span className="sm:hidden">OK</span>
             </Badge>
@@ -51,7 +51,7 @@ export const LessonHeader = ({ currentLesson, course, courseId, currentModule }:
         {/* Module info on separate line for mobile when present */}
         {currentModule && (
           <div className="px-4 pb-3">
-            <p className="text-sm text-gray-500 truncate">
+            <p className="text-sm text-slate-400 truncate">
               Módulo: {currentModule.title}
             </p>
           </div>
@@ -59,21 +59,21 @@ export const LessonHeader = ({ currentLesson, course, courseId, currentModule }:
       </div>
 
       {/* Desktop Header */}
-      <div className="hidden lg:block bg-white text-gray-900 border-b border-gray-200">
+      <div className="hidden lg:block bg-slate-900/50 text-white border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button 
                 variant="ghost" 
                 onClick={() => navigate(`/student/courses/${courseId}`)}
-                className="h-10 text-gray-600 hover:bg-gray-100"
+                className="h-10 text-slate-300 hover:bg-slate-800/50"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao Curso
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{currentLesson.title}</h1>
-                <div className="flex items-center gap-2 text-base text-gray-600 mt-1">
+                <h1 className="text-2xl font-bold text-white">{currentLesson.title}</h1>
+                <div className="flex items-center gap-2 text-base text-slate-300 mt-1">
                   <span>{course.title}</span>
                   {currentModule && (
                     <>
@@ -86,7 +86,7 @@ export const LessonHeader = ({ currentLesson, course, courseId, currentModule }:
             </div>
             <div className="flex items-center space-x-3">
               {currentLesson.completed && (
-                <Badge className="bg-green-100 text-green-800 h-8 border border-green-200">
+                <Badge className="bg-emerald-500/20 text-emerald-300 h-8 border border-emerald-500/30">
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Concluída
                 </Badge>

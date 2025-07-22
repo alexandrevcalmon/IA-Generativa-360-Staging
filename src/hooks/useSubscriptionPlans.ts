@@ -16,6 +16,23 @@ export interface SubscriptionPlan {
   updated_at: string;
 }
 
+// Interface para planos agrupados
+export interface GroupedSubscriptionPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  semester_price: number;
+  annual_price: number;
+  max_students: number;
+  features: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // IDs dos planos originais para referência
+  semester_plan_id: string;
+  annual_plan_id: string;
+}
+
 export interface CreatePlanData {
   name: string;
   description?: string;
@@ -54,9 +71,81 @@ export const useSubscriptionPlans = () => {
         throw error;
       }
 
-      console.log('✅ Subscription plans fetched:', {
+      console.log('✅ Raw subscription plans fetched:', {
         count: data?.length || 0,
         plans: data?.map(p => ({
+          id: p.id,
+          name: p.name,
+          is_active: p.is_active,
+          semester_price: p.semester_price,
+          annual_price: p.annual_price,
+          subscription_period_days: p.subscription_period_days
+        }))
+      });
+
+      // Agrupar planos por nome
+      const groupedPlans = new Map<string, GroupedSubscriptionPlan>();
+      
+      data?.forEach((plan) => {
+        console.log('🔍 Processing plan:', {
+          id: plan.id,
+          name: plan.name,
+          subscription_period_days: plan.subscription_period_days,
+          semester_price: plan.semester_price,
+          annual_price: plan.annual_price
+        });
+
+        const existingPlan = groupedPlans.get(plan.name);
+        
+        if (existingPlan) {
+          console.log('🔄 Merging with existing plan:', plan.name);
+          // Se já existe um plano com este nome, mesclar os preços
+          if (plan.subscription_period_days === 180) {
+            // Plano semestral
+            existingPlan.semester_price = Number(plan.semester_price) || 0;
+            existingPlan.semester_plan_id = plan.id;
+            console.log('📅 Added semester price:', existingPlan.semester_price);
+          } else if (plan.subscription_period_days === 365) {
+            // Plano anual
+            existingPlan.annual_price = Number(plan.annual_price) || 0;
+            existingPlan.annual_plan_id = plan.id;
+            console.log('📅 Added annual price:', existingPlan.annual_price);
+          }
+          
+          // Manter o plano ativo se pelo menos um dos dois estiver ativo
+          existingPlan.is_active = existingPlan.is_active || plan.is_active;
+        } else {
+          console.log('🆕 Creating new grouped plan:', plan.name);
+          // Criar novo plano agrupado
+          const groupedPlan: GroupedSubscriptionPlan = {
+            id: plan.id, // Usar o primeiro ID como ID principal
+            name: plan.name,
+            description: plan.description,
+            semester_price: plan.subscription_period_days === 180 ? (Number(plan.semester_price) || 0) : 0,
+            annual_price: plan.subscription_period_days === 365 ? (Number(plan.annual_price) || 0) : 0,
+            max_students: plan.max_students,
+            features: plan.features || [],
+            is_active: plan.is_active,
+            created_at: plan.created_at,
+            updated_at: plan.updated_at,
+            semester_plan_id: plan.subscription_period_days === 180 ? plan.id : '',
+            annual_plan_id: plan.subscription_period_days === 365 ? plan.id : ''
+          };
+          
+          groupedPlans.set(plan.name, groupedPlan);
+          console.log('✅ Created grouped plan:', {
+            name: groupedPlan.name,
+            semester_price: groupedPlan.semester_price,
+            annual_price: groupedPlan.annual_price
+          });
+        }
+      });
+
+      const groupedPlansArray = Array.from(groupedPlans.values());
+      
+      console.log('✅ Grouped subscription plans:', {
+        count: groupedPlansArray.length,
+        plans: groupedPlansArray.map(p => ({
           id: p.id,
           name: p.name,
           is_active: p.is_active,
@@ -65,7 +154,7 @@ export const useSubscriptionPlans = () => {
         }))
       });
 
-      return data as SubscriptionPlan[];
+      return groupedPlansArray as SubscriptionPlan[];
     },
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),

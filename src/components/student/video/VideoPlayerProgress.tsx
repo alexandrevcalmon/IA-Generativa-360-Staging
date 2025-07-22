@@ -20,20 +20,20 @@ export const VideoPlayerProgress = ({ currentTime, duration, onSeek }: VideoPlay
   };
 
   return (
-    <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 pointer-events-auto">
-      <span className="text-white text-xs sm:text-sm font-mono min-w-[40px] sm:min-w-[45px] lg:min-w-[50px] text-center">
+    <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3 pointer-events-auto">
+      <span className="text-white text-[10px] sm:text-xs font-mono min-w-[32px] sm:min-w-[40px] lg:min-w-[45px] text-center">
         {formatTime(currentTime)}
       </span>
-      <div className="flex-1 px-1">
+      <div className="flex-1">
         <Slider
           value={[currentTime]}
           onValueChange={handleSeek}
           max={duration || 100}
           step={1}
-          className="w-full cursor-pointer touch-manipulation [&_.slider-track]:h-2 sm:[&_.slider-track]:h-3 [&_.slider-thumb]:h-5 [&_.slider-thumb]:w-5 sm:[&_.slider-thumb]:h-6 sm:[&_.slider-thumb]:w-6 [&_.slider-thumb]:touch-manipulation [&_.slider-thumb]:cursor-pointer"
+          className="w-full cursor-pointer touch-manipulation [&_.slider-track]:h-1.5 sm:[&_.slider-track]:h-2 [&_.slider-thumb]:h-4 [&_.slider-thumb]:w-4 sm:[&_.slider-thumb]:h-5 sm:[&_.slider-thumb]:w-5 [&_.slider-thumb]:touch-manipulation [&_.slider-thumb]:cursor-pointer"
         />
       </div>
-      <span className="text-white text-xs sm:text-sm font-mono min-w-[40px] sm:min-w-[45px] lg:min-w-[50px] text-center">
+      <span className="text-white text-[10px] sm:text-xs font-mono min-w-[32px] sm:min-w-[40px] lg:min-w-[45px] text-center">
         {formatTime(duration)}
       </span>
     </div>

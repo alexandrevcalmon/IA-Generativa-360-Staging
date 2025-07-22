@@ -10,7 +10,7 @@ export const createProducerSignInService = (toast: any) => {
     
     if (error) {
       console.error(`[ProducerSignIn] Producer login error for ${email}: ${error.message}`);
-      toast({ title: "Erro no Login", description: error.message, variant: "destructive" });
+      toast.error({ title: "Erro no Login", description: error.message });
       return { error };
     }
     
@@ -20,10 +20,9 @@ export const createProducerSignInService = (toast: any) => {
 
       if (producerError || !producerData) {
         console.error(`[ProducerSignIn] User ${email} is not a producer or is inactive`);
-        toast({ 
+        toast.error({ 
           title: "Acesso Negado", 
-          description: "Esta conta não tem permissões de produtor ou está inativa.", 
-          variant: "destructive" 
+          description: "Esta conta não tem permissões de produtor ou está inativa."
         });
         // Sign out the user since they don't have producer access
         await supabase.auth.signOut();
@@ -38,7 +37,7 @@ export const createProducerSignInService = (toast: any) => {
         await updateUserMetadata({ role: 'producer' });
       }
       
-      toast({ title: "Login de Produtor bem-sucedido!", description: "Bem-vindo!" });
+      toast.success({ title: "Login de Produtor bem-sucedido!", description: "Bem-vindo!" });
       return { error: null, user: data.user, session: data.session, needsPasswordChange: false };
     }
     

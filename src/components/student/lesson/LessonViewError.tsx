@@ -1,4 +1,6 @@
 
+import { PageLayout } from '@/components/PageLayout';
+
 interface LessonViewErrorProps {
   error: Error;
   course?: any;
@@ -6,17 +8,21 @@ interface LessonViewErrorProps {
 
 export const LessonViewError = ({ error, course }: LessonViewErrorProps) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageLayout
+      title={!course ? 'Conteúdo não encontrado' : 'Erro ao carregar'}
+      subtitle={!course ? 'Curso não encontrado' : error.message}
+      background="dark"
+    >
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">
+          <h2 className="text-xl font-semibold mb-2 text-white">
             {!course ? 'Conteúdo não encontrado' : 'Erro ao carregar'}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-slate-300">
             {!course ? 'Curso não encontrado' : error.message}
           </p>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };

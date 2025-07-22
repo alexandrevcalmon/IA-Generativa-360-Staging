@@ -24,18 +24,18 @@ export const SessionParticipantsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-white">
+            <Users className="h-5 w-5 text-blue-400" />
             Participantes - {session.title}
           </DialogTitle>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-4 text-sm text-gray-300">
             <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 text-gray-400" />
               {format(new Date(session.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
             </div>
-            <Badge variant="outline">
+            <Badge variant="outline" className="border-gray-600 text-gray-300">
               {participants.length} / {session.max_participants || 100} inscritos
             </Badge>
           </div>
@@ -44,50 +44,61 @@ export const SessionParticipantsDialog = ({
         <div className="space-y-4">
           {isLoading ? (
             <div className="text-center py-8">
-              <p>Carregando participantes...</p>
+              <p className="text-gray-300">Carregando participantes...</p>
             </div>
           ) : participants.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-white mb-2">
                 Nenhum participante inscrito
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-300">
                 Quando alguém se inscrever na sessão, aparecerá aqui.
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Data de Inscrição</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {participants.map((participant) => (
-                  <TableRow key={participant.id}>
-                    <TableCell className="font-medium">
-                      {participant.participant_name}
-                    </TableCell>
-                    <TableCell>{participant.participant_email}</TableCell>
-                    <TableCell>{participant.company_name || '-'}</TableCell>
-                    <TableCell>
-                      {format(new Date(participant.registered_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={participant.attended === true ? "default" : "outline"}>
-                        {participant.attended === true ? "Participou" : 
-                         participant.attended === false ? "Não participou" : "Inscrito"}
-                      </Badge>
-                    </TableCell>
+            <div className="border border-gray-700 rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-800/50 border-gray-700">
+                    <TableHead className="text-gray-300 font-medium">Nome</TableHead>
+                    <TableHead className="text-gray-300 font-medium">Email</TableHead>
+                    <TableHead className="text-gray-300 font-medium">Empresa</TableHead>
+                    <TableHead className="text-gray-300 font-medium">Data de Inscrição</TableHead>
+                    <TableHead className="text-gray-300 font-medium">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {participants.map((participant) => (
+                    <TableRow key={participant.id} className="border-gray-700 hover:bg-gray-800/30">
+                      <TableCell className="font-medium text-white">
+                        {participant.participant_name}
+                      </TableCell>
+                      <TableCell className="text-gray-300">{participant.participant_email}</TableCell>
+                      <TableCell className="text-gray-300">{participant.company_name || '-'}</TableCell>
+                      <TableCell className="text-gray-300">
+                        {format(new Date(participant.registered_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={participant.attended === true ? "default" : "outline"}
+                          className={
+                            participant.attended === true 
+                              ? "bg-green-500/20 text-green-300 border-green-500/30"
+                              : participant.attended === false 
+                                ? "bg-red-500/20 text-red-300 border-red-500/30"
+                                : "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                          }
+                        >
+                          {participant.attended === true ? "Participou" : 
+                           participant.attended === false ? "Não participou" : "Inscrito"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </div>
       </DialogContent>

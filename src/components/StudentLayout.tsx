@@ -1,7 +1,7 @@
 
 import { ReactNode } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import { StudentSidebar } from './StudentSidebar';
+import { UnifiedSidebar } from './UnifiedSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,7 +43,7 @@ const StudentLayout = () => {
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen flex w-full bg-background">
-        <StudentSidebar />
+        <UnifiedSidebar />
         <SidebarInset className="flex-1 flex flex-col">
           <Outlet />
         </SidebarInset>

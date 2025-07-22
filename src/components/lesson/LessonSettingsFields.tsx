@@ -38,13 +38,13 @@ const timeStringToMinutes = (timeString: string): number => {
 
 export const LessonSettingsFields = ({ control }: LessonSettingsFieldsProps) => {
   return (
-    <>
+    <div className="dark-theme-override">
       <FormField
         control={control}
         name="duration_minutes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Duração (MM:SS)</FormLabel>
+            <FormLabel className="text-gray-300">Duração (MM:SS)</FormLabel>
             <FormControl>
               <Input 
                 type="text" 
@@ -61,10 +61,11 @@ export const LessonSettingsFields = ({ control }: LessonSettingsFieldsProps) => 
                   const minutes = timeStringToMinutes(value);
                   field.onChange(minutes);
                 }}
+                className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
               />
             </FormControl>
             <FormMessage />
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-xs text-gray-400 mt-1">
               Digite no formato MM:SS (ex: 05:30 para 5 minutos e 30 segundos)
             </div>
           </FormItem>
@@ -75,10 +76,10 @@ export const LessonSettingsFields = ({ control }: LessonSettingsFieldsProps) => 
         control={control}
         name="is_free"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+          <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-600 p-4 bg-gray-800/50">
             <div className="space-y-0.5">
-              <FormLabel>Aula Gratuita</FormLabel>
-              <div className="text-sm text-muted-foreground">
+              <FormLabel className="text-gray-300">Aula Gratuita</FormLabel>
+              <div className="text-sm text-gray-400">
                 Permitir acesso gratuito a esta aula
               </div>
             </div>
@@ -91,6 +92,6 @@ export const LessonSettingsFields = ({ control }: LessonSettingsFieldsProps) => 
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 };

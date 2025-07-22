@@ -49,18 +49,18 @@ export function TestUserDialog({ onUseCredentials }: TestUserDialogProps) {
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
-    toast({
+    toast.success({
       title: `${type} copiado!`,
-      description: 'Colado na área de transferência',
+      description: 'Colado na área de transferência'
     });
   };
 
   const useCredentials = (credentials: TestCredentials) => {
     onUseCredentials(credentials.email, credentials.password);
     setOpen(false);
-    toast({
+    toast.success({
       title: 'Credenciais aplicadas!',
-      description: `Email e senha de ${credentials.role.toLowerCase()} preenchidos`,
+      description: `Email e senha de ${credentials.role.toLowerCase()} preenchidos`
     });
   };
 

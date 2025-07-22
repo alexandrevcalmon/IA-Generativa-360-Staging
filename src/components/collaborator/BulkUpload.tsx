@@ -66,9 +66,9 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
     worksheet['!cols'] = colWidths;
 
     XLSX.writeFile(workbook, "template_colaboradores_simplificado.xlsx");
-    toast({
+    toast.success({
       title: "Template baixado!",
-      description: "Use este arquivo como modelo para importar colaboradores. Apenas 4 campos necessários!",
+      description: "Use este arquivo como modelo para importar colaboradores. Apenas 4 campos necessários!"
     });
   };
 
@@ -138,20 +138,18 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
 
       if (jsonData.length === 0) {
         console.log('❌ Arquivo vazio');
-        toast({
+        toast.error({
           title: "Arquivo vazio",
-          description: "O arquivo não contém dados para processar.",
-          variant: "destructive"
+          description: "O arquivo não contém dados para processar."
         });
         return;
       }
 
       if (jsonData.length > maxCollaborators) {
         console.log('❌ Limite excedido:', jsonData.length, '>', maxCollaborators);
-        toast({
+        toast.error({
           title: "Limite excedido",
-          description: `O arquivo contém ${jsonData.length} colaboradores, mas o limite do plano é ${maxCollaborators}.`,
-          variant: "destructive"
+          description: `O arquivo contém ${jsonData.length} colaboradores, mas o limite do plano é ${maxCollaborators}.`
         });
         return;
       }
@@ -207,25 +205,23 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
 
       if (allErrors.length === 0) {
         console.log('✅ Validação bem-sucedida!');
-        toast({
+        toast.success({
           title: "Validação concluída!",
-          description: `${validData.length} colaboradores prontos para importação.`,
+          description: `${validData.length} colaboradores prontos para importação.`
         });
       } else {
         console.log('❌ Erros encontrados na validação');
-        toast({
+        toast.error({
           title: "Erros encontrados",
-          description: `${allErrors.length} erros encontrados. Corrija-os antes de importar.`,
-          variant: "destructive"
+          description: `${allErrors.length} erros encontrados. Corrija-os antes de importar.`
         });
       }
 
     } catch (error) {
       console.error("❌ Erro ao processar arquivo:", error);
-      toast({
+      toast.error({
         title: "Erro ao processar arquivo",
-        description: "Verifique se o arquivo está no formato correto.",
-        variant: "destructive"
+        description: "Verifique se o arquivo está no formato correto."
       });
     } finally {
       setIsValidating(false);
@@ -244,10 +240,9 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
       
       if (!selectedFile.name.endsWith('.xlsx')) {
         console.log('❌ Formato inválido:', selectedFile.name);
-        toast({
+        toast.error({
           title: "Formato inválido",
-          description: "Por favor, selecione um arquivo .xlsx",
-          variant: "destructive"
+          description: "Por favor, selecione um arquivo .xlsx"
         });
         return;
       }
@@ -286,13 +281,13 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5 text-green-600" />
+        <CardTitle className="flex items-center gap-2 text-white">
+          <FileSpreadsheet className="h-5 w-5 text-green-400" />
           Importação em Massa
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-300">
           Importe múltiplos colaboradores usando um arquivo Excel (.xlsx). 
           Máximo de {maxCollaborators} colaboradores por vez.
         </CardDescription>
@@ -303,7 +298,7 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
           <Button
             variant="outline"
             onClick={downloadTemplate}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:text-white hover:border-slate-500/50 transition-all duration-300"
           >
             <Download className="h-4 w-4" />
             Baixar Modelo (Template)
@@ -311,7 +306,7 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
         </div>
 
         {/* File Upload */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <div className="border-2 border-dashed border-slate-600/50 rounded-lg p-6 text-center bg-slate-700/30 hover:border-slate-500/50 transition-all duration-300">
           <input
             ref={fileInputRef}
             type="file"
@@ -321,11 +316,11 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
             id="file-upload"
           />
           <label htmlFor="file-upload" className="cursor-pointer">
-            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">
+            <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4 hover:text-slate-300 transition-colors duration-300" />
+            <p className="text-lg font-medium text-slate-200 mb-2">
               Clique para selecionar o arquivo
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-400">
               Apenas arquivos .xlsx são aceitos
             </p>
           </label>
@@ -333,17 +328,22 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
 
         {/* File Info */}
         {file && (
-          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg border border-slate-600/50">
             <div className="flex items-center gap-3">
-              <FileSpreadsheet className="h-8 w-8 text-blue-600" />
+              <FileSpreadsheet className="h-8 w-8 text-blue-400" />
               <div>
-                <p className="font-medium text-blue-900">{file.name}</p>
-                <p className="text-sm text-blue-600">
+                <p className="font-medium text-slate-200">{file.name}</p>
+                <p className="text-sm text-slate-400">
                   {(file.size / 1024).toFixed(1)} KB
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={clearFile}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFile}
+              className="text-slate-400 hover:text-white hover:bg-slate-600/50"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -353,17 +353,17 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
         {isValidating && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Validando arquivo...</span>
-              <span className="text-sm text-gray-500">Processando</span>
+              <span className="text-sm font-medium text-slate-200">Validando arquivo...</span>
+              <span className="text-sm text-slate-400">Processando</span>
             </div>
-            <Progress value={uploadProgress} className="h-2" />
+            <Progress value={uploadProgress} className="h-2 bg-slate-700/50" />
           </div>
         )}
 
         {/* Validation Results */}
         {validatedData.length > 0 && (
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
+          <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-200">
+            <CheckCircle className="h-4 w-4 text-emerald-400" />
             <AlertDescription>
               <strong>{validatedData.length} colaboradores</strong> validados e prontos para importação.
             </AlertDescription>
@@ -373,8 +373,8 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
         {/* Resumo dos colaboradores válidos */}
         {validatedData.length > 0 && (
           <div className="my-4">
-            <h4 className="font-semibold mb-2">Colaboradores prontos para importação:</h4>
-            <ul className="list-disc ml-6 text-sm">
+            <h4 className="font-semibold mb-2 text-slate-200">Colaboradores prontos para importação:</h4>
+            <ul className="list-disc ml-6 text-sm text-slate-300 space-y-1">
               {validatedData.map((colab, idx) => (
                 <li key={idx}>{colab.name} ({colab.email})</li>
               ))}
@@ -385,8 +385,8 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
         {/* Erros de validação */}
         {errors.length > 0 && (
           <div className="my-4">
-            <h4 className="font-semibold text-red-600 mb-2">Erros encontrados:</h4>
-            <ul className="list-disc ml-6 text-sm text-red-600">
+            <h4 className="font-semibold text-red-400 mb-2">Erros encontrados:</h4>
+            <ul className="list-disc ml-6 text-sm text-red-400 space-y-1">
               {errors.map((err, idx) => (
                 <li key={idx}>Linha {err.row}: {err.field} - {err.message}</li>
               ))}
@@ -396,7 +396,7 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
 
         {/* Botão de importação */}
         <Button
-          className="mt-4"
+          className="mt-4 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
           disabled={validatedData.length === 0 || errors.length > 0 || isLoading}
           onClick={async () => {
             console.log('🚀 Botão Importar clicado!');
@@ -415,12 +415,12 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
               console.log('📤 Chamando onSubmit...');
               await onSubmit(validatedData);
               console.log('✅ onSubmit concluído!');
-              toast({ title: 'Importação concluída!', description: `${validatedData.length} colaboradores importados com sucesso.` });
+              toast.success({ title: 'Importação concluída!', description: `${validatedData.length} colaboradores importados com sucesso.` });
               setValidatedData([]);
               setFile(null);
             } catch (error) {
               console.error('❌ Erro na importação:', error);
-              toast({ title: 'Erro na importação', description: 'Ocorreu um erro ao importar os colaboradores.', variant: 'destructive' });
+              toast.error({ title: 'Erro na importação', description: 'Ocorreu um erro ao importar os colaboradores.' });
             } finally {
               setIsValidating(false);
             }
@@ -431,4 +431,4 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({
       </CardContent>
     </Card>
   );
-}; 
+};

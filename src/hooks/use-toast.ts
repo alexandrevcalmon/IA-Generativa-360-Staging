@@ -139,7 +139,35 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+interface ToastFunction {
+  (props: Toast): {
+    id: string
+    dismiss: () => void
+    update: (props: ToasterToast) => void
+  }
+  success: (props: Omit<Toast, "variant">) => {
+    id: string
+    dismiss: () => void
+    update: (props: ToasterToast) => void
+  }
+  warning: (props: Omit<Toast, "variant">) => {
+    id: string
+    dismiss: () => void
+    update: (props: ToasterToast) => void
+  }
+  info: (props: Omit<Toast, "variant">) => {
+    id: string
+    dismiss: () => void
+    update: (props: ToasterToast) => void
+  }
+  error: (props: Omit<Toast, "variant">) => {
+    id: string
+    dismiss: () => void
+    update: (props: ToasterToast) => void
+  }
+}
+
+const toast = (({ ...props }: Toast) => {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -166,6 +194,35 @@ function toast({ ...props }: Toast) {
     dismiss,
     update,
   }
+}) as ToastFunction
+
+// Atribuir funções específicas ao objeto toast
+toast.success = (props: Omit<Toast, "variant">) => {
+  return toast({
+    variant: "success",
+    ...props,
+  })
+}
+
+toast.warning = (props: Omit<Toast, "variant">) => {
+  return toast({
+    variant: "warning",
+    ...props,
+  })
+}
+
+toast.info = (props: Omit<Toast, "variant">) => {
+  return toast({
+    variant: "info",
+    ...props,
+  })
+}
+
+toast.error = (props: Omit<Toast, "variant">) => {
+  return toast({
+    variant: "destructive",
+    ...props,
+  })
 }
 
 function useToast() {

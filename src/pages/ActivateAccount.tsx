@@ -13,7 +13,9 @@ import { GenderOptions, GenderType } from '@/hooks/collaborators/types';
 // Função auxiliar para processar token de ativação com fallbacks
 const processActivationToken = async (token?: string, hash?: string) => {
   console.log('🔍 Processing activation token:', { hasToken: !!token, hasHash: !!hash });
-  
+
+  const errors: string[] = [];
+
   try {
     // Método 1: Tentar verifyOtp para tokens diretos
     if (token) {
@@ -22,77 +24,88 @@ const processActivationToken = async (token?: string, hash?: string) => {
         token_hash: token,
         type: 'invite',
       });
-      
+
       if (!error && data?.user) {
         console.log('✅ verifyOtp successful');
         return { user: data.user, session: data.session, method: 'verifyOtp' };
       }
-      
+
       if (error) {
         console.log('⚠️ verifyOtp failed:', error.message);
+        errors.push(`verifyOtp: ${error.message}`);
       }
     }
-    
+
     // Método 2: Tentar getSessionFromUrl (versão 2.x)
     if (hash && typeof supabase.auth.getSessionFromUrl === 'function') {
       console.log('🔗 Attempting getSessionFromUrl...');
       const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-      
+
       if (!error && data?.session?.user) {
         console.log('✅ getSessionFromUrl successful');
         return { user: data.session.user, session: data.session, method: 'getSessionFromUrl' };
       }
-      
+
       if (error) {
         console.log('⚠️ getSessionFromUrl failed:', error.message);
+        errors.push(`getSessionFromUrl: ${error.message}`);
       }
     }
-    
+
     // Método 3: Tentar getSession após detectar URL (fallback)
     if (hash) {
       console.log('🔄 Attempting getSession fallback...');
       // Aguardar um pouco para o Supabase processar a URL
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (!error && data?.session?.user) {
         console.log('✅ getSession fallback successful');
         return { user: data.session.user, session: data.session, method: 'getSession' };
       }
-      
+
       if (error) {
         console.log('⚠️ getSession fallback failed:', error.message);
+        errors.push(`getSession: ${error.message}`);
       }
     }
-    
+
     // Método 4: Tentar processar manualmente o hash (último recurso)
     if (hash) {
       console.log('🔧 Attempting manual hash processing...');
       const params = new URLSearchParams(hash.substring(1));
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
-      
+
       if (accessToken && refreshToken) {
         console.log('🔑 Found tokens in hash, attempting setSession...');
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
-        
+
         if (!error && data?.session?.user) {
           console.log('✅ Manual hash processing successful');
           return { user: data.session.user, session: data.session, method: 'setSession' };
         }
-        
+
         if (error) {
           console.log('⚠️ Manual hash processing failed:', error.message);
+          errors.push(`setSession: ${error.message}`);
         }
+      } else {
+        errors.push('No access_token or refresh_token found in hash');
       }
     }
-    
-    throw new Error('All activation methods failed');
-    
+
+    // Se chegou até aqui, nenhum método funcionou
+    const errorMessage = errors.length > 0
+      ? `Todos os métodos de ativação falharam: ${errors.join(', ')}`
+      : 'Nenhum token ou hash válido encontrado';
+
+    throw new Error(errorMessage);
+
   } catch (error: any) {
     console.error('❌ Token processing error:', error);
     throw error;
@@ -103,7 +116,7 @@ export default function ActivateAccount() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -183,12 +196,24 @@ export default function ActivateAccount() {
         // 2) Caso venha por hash (#access_token=xxx&...)
         const hash = window.location.hash;
 
-        console.log('📋 Token validation params:', { 
-          hasToken: !!token, 
-          type, 
+        console.log('📋 Token validation params:', {
+          hasToken: !!token,
+          type,
           hasHash: !!hash,
-          hashPreview: hash ? hash.substring(0, 50) + '...' : 'none'
+          hashPreview: hash ? hash.substring(0, 50) + '...' : 'none',
+          fullUrl: window.location.href
         });
+
+        // Verificar se há um redirecionamento automático em andamento
+        if (window.location.pathname === '/' && (token || hash)) {
+          console.log('⚠️ Detectado redirecionamento incorreto para a página principal com token presente');
+          console.log('🔄 Redirecionando para a página de ativação...');
+
+          // Construir URL de ativação correta
+          const redirectUrl = `/activate-account${token ? `?token=${token}&type=${type || 'invite'}` : ''}${hash || ''}`;
+          navigate(redirectUrl, { replace: true });
+          return;
+        }
 
         if (!token && !hash) {
           console.log('❌ No token or hash found');
@@ -203,6 +228,9 @@ export default function ActivateAccount() {
 
         const result = await processActivationToken(token || undefined, hash || undefined);
         console.log('[ActivateAccount] Token processado:', result);
+        console.log('[ActivateAccount] User email:', result.user.email);
+        console.log('[ActivateAccount] User metadata:', result.user.user_metadata);
+        console.log('[ActivateAccount] User role from metadata:', result.user.user_metadata?.role);
         setUserEmail(result.user.email || '');
         setActivationMethod(result.method);
         setIsValidToken(true);
@@ -286,7 +314,7 @@ export default function ActivateAccount() {
       }
       if (!gender) {
         toast({
-          title: "Campo obrigatório", 
+          title: "Campo obrigatório",
           description: "Sexo é obrigatório.",
           variant: "destructive",
         });
@@ -331,76 +359,112 @@ export default function ActivateAccount() {
     setLoading(true);
     try {
       console.log('[ActivateAccount] Atualizando senha do usuário...');
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-      if (error) {
-        console.error('[ActivateAccount] Erro ao atualizar senha:', error);
-        setPasswordError(error.message || 'Erro ao definir senha.');
-        toast({
-          title: "Erro ao definir senha",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
+      const { error: passwordError } = await supabase.auth.updateUser({ password });
+      if (passwordError) throw new Error(passwordError.message || 'Erro ao definir a senha.');
+
       if (needsCompleteRegistration && userData) {
         console.log('[ActivateAccount] Atualizando dados do colaborador no banco...');
         const { error: updateError } = await supabase
           .from('company_users')
           .update({
-            birth_date: birthDate,
-            gender: gender,
+            birth_date: birthDate || null,
+            gender: gender || null,
             cidade: city.trim(),
             estado: state.trim(),
             pais: country.trim(),
             needs_complete_registration: false,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', userData.id);
-        if (updateError) {
-          console.error('[ActivateAccount] Erro ao atualizar dados do colaborador:', updateError);
-          toast({
-            title: "Erro ao completar cadastro",
-            description: "Ocorreu um erro ao salvar seus dados.",
-            variant: "destructive",
-          });
-          return;
-        }
+
+        if (updateError) throw new Error(updateError.message || 'Erro ao completar o cadastro.');
       }
-      console.log('[ActivateAccount] Conta ativada com sucesso! Redirecionando...');
+
       toast({
         title: "Conta ativada com sucesso!",
-        description: needsCompleteRegistration 
-          ? "Seu cadastro foi completado. Redirecionando para o dashboard..." 
-          : "Sua senha foi definida. Redirecionando para o dashboard...",
+        description: needsCompleteRegistration
+          ? "Seu cadastro foi completado. Redirecionando para o dashboard..."
+          : "Sua senha foi definida. Redirecionando...",
       });
-      setTimeout(async () => {
-        console.log('[ActivateAccount] Buscando role do usuário autenticado...');
-        const { data: { user } } = await supabase.auth.getUser();
+
+      // A sessão é atualizada automaticamente pelo updateUser.
+      // Agora, buscamos o usuário e seu role para fazer o redirecionamento correto e imediato.
+      const { data: { user } } = await supabase.auth.getUser(); // Pega o usuário da sessão recém-criada
+
+      if (user) {
         let userRole = user?.user_metadata?.role;
+
+        // Fallback para buscar o role na tabela 'profiles' se não estiver nos metadados
         if (!userRole && user?.id) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .maybeSingle();
-          userRole = profile?.role;
+
+          if (profileError) console.error("Erro ao buscar perfil para redirecionamento:", profileError.message);
+          if (profile) userRole = profile.role;
         }
-        console.log('[ActivateAccount] Role detectada:', userRole);
+
+        // Verificar se a empresa existe antes de redirecionar para company dashboard
         if (userRole === 'company') {
-          navigate('/company/dashboard');
-        } else if (userRole === 'producer') {
-          navigate('/producer/dashboard');
-        } else {
-          navigate('/student/dashboard');
+          console.log('🏢🏢🏢 REDIRECIONAMENTO COMPANY DETECTADO 🏢🏢🏢');
+          console.log('userRole:', userRole);
+          console.log('user metadata:', user?.user_metadata);
+          console.log('company_id from metadata:', user?.user_metadata?.company_id);
+
+          const companyId = user?.user_metadata?.company_id;
+          if (companyId) {
+            console.log('🔍🔍🔍 VERIFICANDO SE EMPRESA EXISTE 🔍🔍🔍');
+            const { data: company, error: companyError } = await supabase
+              .from('companies')
+              .select('id, name, is_active')
+              .eq('id', companyId)
+              .maybeSingle();
+
+            console.log('Empresa encontrada:', company);
+            console.log('Erro ao buscar empresa:', companyError);
+
+            if (companyError || !company || !company.is_active) {
+              console.log('⚠️ Empresa não encontrada ou inativa, redirecionando para login');
+              toast({
+                title: "Empresa não encontrada",
+                description: "Sua empresa não foi encontrada ou está inativa. Entre em contato com o suporte.",
+                variant: "destructive"
+              });
+              navigate('/auth');
+              return;
+            }
+          }
         }
-      }, 2000);
+
+        console.log('🎯🎯🎯 INICIANDO REDIRECIONAMENTO 🎯🎯🎯');
+        console.log('userRole final:', userRole);
+
+        switch (userRole) {
+          case 'producer':
+            console.log('🚀 Redirecionando para producer dashboard');
+            navigate('/producer/dashboard');
+            break;
+          case 'company':
+            console.log('🏢 Redirecionando para company dashboard');
+            navigate('/company/dashboard');
+            break;
+          default:
+            console.log('👨‍🎓 Redirecionando para student dashboard');
+            navigate('/student/dashboard');
+        }
+      } else {
+        // Se por algum motivo o usuário não for encontrado, redireciona para o login.
+        toast({ title: "Sessão não encontrada", description: "Por favor, faça o login.", variant: "destructive" });
+        navigate('/auth');
+      }
+
     } catch (error: any) {
-      console.error('[ActivateAccount] Erro inesperado durante ativação:', error);
+      console.error('[useActivationForm] Erro ao submeter:', error);
       toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro durante a ativação da conta.",
+        title: "Erro na ativação",
+        description: error.message.includes('JWT') ? 'Sua sessão de ativação expirou. Por favor, use o link novamente.' : (error.message || "Ocorreu um erro ao processar sua solicitação."),
         variant: "destructive",
       });
     } finally {
@@ -452,7 +516,7 @@ export default function ActivateAccount() {
             {needsCompleteRegistration ? 'Complete seu Cadastro' : 'Ativar Conta'}
           </CardTitle>
           <CardDescription className="text-gray-600">
-            {needsCompleteRegistration 
+            {needsCompleteRegistration
               ? 'Defina sua senha e complete suas informações pessoais para acessar a plataforma'
               : `Olá, ${userEmail}! Defina sua senha para ativar sua conta`
             }
@@ -467,7 +531,7 @@ export default function ActivateAccount() {
           )}
           {/* Removido: Processado via: {activationMethod} */}
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -496,7 +560,7 @@ export default function ActivateAccount() {
               </div>
               {passwordError && <p className="text-sm text-red-500 mt-1">{passwordError}</p>}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
               <div className="relative">
@@ -643,8 +707,8 @@ export default function ActivateAccount() {
               </ul>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               disabled={loading}
             >

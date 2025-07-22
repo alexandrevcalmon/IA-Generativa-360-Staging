@@ -1,7 +1,8 @@
-
 import { useState } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ProducerMentorshipHeader } from "@/components/producer/ProducerMentorshipHeader";
+import { PageLayout } from "@/components/PageLayout";
+import { PageSection } from "@/components/PageSection";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { ProducerMentorshipContent } from "@/components/producer/ProducerMentorshipContent";
 import { CreateMentorshipSessionDialog } from "@/components/producer/CreateMentorshipSessionDialog";
 import { SessionParticipantsDialog } from "@/components/producer/SessionParticipantsDialog";
@@ -44,33 +45,34 @@ const ProducerMentorship = () => {
     setShowCreateDialog(true);
   };
 
+  // Header content com botão de criar sessão
+  const headerContent = (
+    <Button 
+      onClick={handleCreateSession}
+      className="!bg-gradient-to-r !from-orange-500 !to-red-600 hover:!from-orange-600 hover:!to-red-700 !text-white !border-0 !shadow-lg"
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      Nova Sessão
+    </Button>
+  );
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="border-b bg-white px-6 py-4">
-        <div className="flex items-center space-x-4">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sessões de Mentoria</h1>
-            <p className="text-gray-600">Gerencie suas sessões de mentoria e participantes</p>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <ProducerMentorshipHeader onCreateSession={handleCreateSession} />
-
-          <ProducerMentorshipContent
-            sessions={sessions}
-            isLoading={isLoading}
-            onEditSession={handleEditSession}
-            onDeleteSession={handleDeleteSession}
-            onViewParticipants={handleViewParticipants}
-          />
-        </div>
-      </div>
+    <PageLayout
+      title="Sessões de Mentoria"
+      subtitle="Gerencie suas sessões de mentoria e participantes"
+      headerContent={headerContent}
+      background="dark"
+      className="dark-theme-override"
+    >
+      <PageSection>
+        <ProducerMentorshipContent
+          sessions={sessions}
+          isLoading={isLoading}
+          onEditSession={handleEditSession}
+          onDeleteSession={handleDeleteSession}
+          onViewParticipants={handleViewParticipants}
+        />
+      </PageSection>
 
       <CreateMentorshipSessionDialog
         open={showCreateDialog}
@@ -83,7 +85,7 @@ const ProducerMentorship = () => {
         onOpenChange={setShowParticipantsDialog}
         session={selectedSession}
       />
-    </div>
+    </PageLayout>
   );
 };
 

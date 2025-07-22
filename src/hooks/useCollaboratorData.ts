@@ -38,7 +38,9 @@ export const useCollaboratorData = () => {
           companies:company_id (
             id,
             name,
-            logo_url
+            logo_url,
+            subscription_status,
+            subscription_ends_at
           )
         `)
         .eq('auth_user_id', user.id)
@@ -53,6 +55,21 @@ export const useCollaboratorData = () => {
       if (!data) {
         console.log('⚠️ No collaborator data found for user:', user.id);
         return null;
+      }
+
+      // Verificar se a empresa tem assinatura ativa
+      const company = data.companies;
+      if (company) {
+        const isSubscriptionActive = company.subscription_status === 'active' || company.subscription_status === 'trialing';
+        const isNotExpired = !company.subscription_ends_at || new Date(company.subscription_ends_at) > new Date();
+        
+        if (!isSubscriptionActive || !isNotExpired) {
+          console.log('⚠️ Company subscription is inactive or expired:', {
+            status: company.subscription_status,
+            expiresAt: company.subscription_ends_at
+          });
+          return null; // Retorna null para indicar que colaborador não tem acesso
+        }
       }
 
       console.log('✅ Collaborator data fetched:', data);

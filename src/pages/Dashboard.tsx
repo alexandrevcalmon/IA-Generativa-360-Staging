@@ -1,231 +1,298 @@
 
+import { useState, useEffect } from 'react';
+import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  BookOpen,
-  Users,
-  Award,
   TrendingUp,
+  TrendingDown,
+  Users,
+  BookOpen,
   Clock,
-  Brain,
-  Calendar,
-  MessageCircle,
+  Star,
   Target,
+  Calendar,
+  Award,
   Zap,
-  Trophy
+  Eye,
+  MessageCircle,
+  Heart,
+  Share2,
+  Play,
+  CheckCircle,
+  AlertCircle,
+  Plus
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from '@/hooks/auth';
+import { useCourses } from '@/hooks/useCourses';
+import { useStudentCourses } from '@/hooks/useStudentCourses';
+import { useStudentProgress } from '@/hooks/useStudentProgress';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { data: courses = [], isLoading: coursesLoading } = useCourses();
+  const { data: studentCourses = [], isLoading: studentCoursesLoading } = useStudentCourses();
+  const { data: progress = [], isLoading: progressLoading } = useStudentProgress();
+  
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="border-b bg-white px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <SidebarTrigger />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600">Bem-vindo de volta{user?.email ? `, ${user.email}` : ''}!</p>
+  useEffect(() => {
+    // Simulate loading state
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Check user role
+  const isProducer = user?.user_metadata?.role === 'producer';
+  const isStudent = user?.user_metadata?.role === 'student';
+  const isCompany = user?.user_metadata?.role === 'company';
+
+  // Get user initials for avatar
+  const getUserInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  };
+
+  // Get display name from user data
+  const getDisplayName = () => {
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name;
+    }
+    if (user?.email) {
+      const emailPrefix = user.email.split('@')[0];
+      return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+    }
+    return 'Usuário';
+  };
+
+  if (isLoading) {
+    return (
+      <>
+        <AppSidebar />
+        <main className="flex-1 overflow-hidden">
+          <div className="flex flex-col h-full">
+            <header className="border-b bg-white px-6 py-4">
+              <div className="flex items-center space-x-4">
+                <SidebarTrigger />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                  <p className="text-gray-600">Bem-vindo de volta!</p>
+                </div>
+              </div>
+            </header>
+            <div className="flex-1 overflow-auto p-6">
+              <div className="animate-pulse space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-gray-200 h-32 rounded-lg"></div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="bg-gray-200 h-64 rounded-lg"></div>
+                  <div className="bg-gray-200 h-64 rounded-lg"></div>
+                  <div className="bg-gray-200 h-64 rounded-lg"></div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" disabled>
-              <Calendar className="h-4 w-4 mr-2" />
-              Agendar Mentoria
-            </Button>
-          </div>
-        </div>
-      </header>
+        </main>
+      </>
+    );
+  }
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6 bg-gray-50">
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Cursos Concluídos
-                </CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Nenhum curso concluído
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Horas de Estudo
-                </CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0h</div>
-                <p className="text-xs text-muted-foreground">
-                  Comece seus estudos
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  XP Total
-                </CardTitle>
-                <Zap className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Comece a ganhar XP
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Ranking
-                </CardTitle>
-                <Trophy className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Sem ranking ainda
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left Column - 2/3 width */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Continue Learning */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Brain className="h-5 w-5 mr-2 text-blue-600" />
-                    Continue Aprendendo
-                  </CardTitle>
-                  <CardDescription>
-                    Comece sua jornada de aprendizado
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Você ainda não iniciou nenhum curso.</p>
-                    <Link to="/courses">
-                      <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white">
-                        Explorar Cursos
-                      </Button>
-                    </Link>
+  if (isProducer) {
+    return (
+      <>
+        <AppSidebar />
+        <main className="flex-1 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <header className="border-b bg-white px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <SidebarTrigger />
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard do Produtor</h1>
+                    <p className="text-gray-600">Bem-vindo de volta, {getDisplayName()}!</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Learning Path Progress */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Target className="h-5 w-5 mr-2 text-green-600" />
-                    Trilhas de Aprendizado
-                  </CardTitle>
-                  <CardDescription>
-                    Siga um caminho estruturado de aprendizado
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Nenhuma trilha de aprendizado disponível ainda.</p>
-                    <Button variant="outline" disabled>
-                      Explorar Trilhas
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - 1/3 width */}
-            <div className="space-y-6">
-              {/* Upcoming Mentorships */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Calendar className="h-5 w-5 mr-2 text-purple-600" />
-                    Próximas Mentorias
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Nenhuma mentoria agendada.</p>
-                    <Button variant="outline" size="sm" disabled>
-                      Agendar Mentoria
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Achievements */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Award className="h-5 w-5 mr-2 text-yellow-600" />
-                    Conquistas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Comece a estudar para ganhar suas primeiras conquistas!</p>
-                    <Link to="/courses">
-                      <Button variant="outline" size="sm">
-                        Começar Agora
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ações Rápidas</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full justify-start" variant="outline" disabled>
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Fazer Pergunta na Comunidade
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Button variant="outline">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Relatórios
                   </Button>
-                  <Link to="/courses">
-                    <Button className="w-full justify-start" variant="outline">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Explorar Novos Cursos
-                    </Button>
-                  </Link>
-                  <Button className="w-full justify-start" variant="outline" disabled>
+                  <Button className="ai-gradient text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Curso
+                  </Button>
+                </div>
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-auto p-6">
+              <div className="text-center py-12">
+                <Zap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Dashboard do Produtor
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  As métricas detalhadas do produtor estarão disponíveis em breve
+                </p>
+                <Button variant="outline">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Gerenciar Cursos
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (isStudent) {
+    return (
+      <>
+        <AppSidebar />
+        <main className="flex-1 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <header className="border-b bg-white px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <SidebarTrigger />
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Meu Dashboard</h1>
+                    <p className="text-gray-600">Bem-vindo de volta, {getDisplayName()}!</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Button variant="outline">
+                    <Target className="h-4 w-4 mr-2" />
+                    Metas
+                  </Button>
+                  <Button className="ai-gradient text-white">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Explorar Cursos
+                  </Button>
+                </div>
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-auto p-6">
+              <div className="text-center py-12">
+                <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Dashboard do Estudante
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  As métricas detalhadas do estudante estarão disponíveis em breve
+                </p>
+                <Button variant="outline">
+                  <Play className="h-4 w-4 mr-2" />
+                  Continuar Aprendendo
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (isCompany) {
+    return (
+      <>
+        <AppSidebar />
+        <main className="flex-1 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <header className="border-b bg-white px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <SidebarTrigger />
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard da Empresa</h1>
+                    <p className="text-gray-600">Bem-vindo de volta, {getDisplayName()}!</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Button variant="outline">
                     <Users className="h-4 w-4 mr-2" />
-                    Ver Leaderboard
+                    Colaboradores
                   </Button>
-                </CardContent>
-              </Card>
+                  <Button className="ai-gradient text-white">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Gerenciar Cursos
+                  </Button>
+                </div>
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-auto p-6">
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Dashboard da Empresa
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  As métricas detalhadas da empresa estarão disponíveis em breve
+                </p>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Gerenciar Colaboradores
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  // Default dashboard for other roles
+  return (
+    <>
+      <AppSidebar />
+      <main className="flex-1 overflow-hidden">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <header className="border-b bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <SidebarTrigger />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                  <p className="text-gray-600">Bem-vindo de volta, {getDisplayName()}!</p>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-auto p-6">
+            <div className="text-center py-12">
+              <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Dashboard Geral
+              </h3>
+              <p className="text-gray-600">
+                As métricas gerais estarão disponíveis em breve
+              </p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 };
 

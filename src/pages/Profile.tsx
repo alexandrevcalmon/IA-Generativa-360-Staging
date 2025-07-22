@@ -127,45 +127,68 @@ const Profile = () => {
   ];
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 overflow-hidden">
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <header className="border-b bg-white px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <SidebarTrigger />
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
-                    <p className="text-gray-600">Gerencie suas informações e preferências</p>
+    <div className="dark-theme-override min-h-screen" style={{ 
+      backgroundColor: '#0f172a',
+      color: 'white',
+      '--background': '240 10% 3.9%',
+      '--foreground': '0 0% 98%',
+      '--card': '240 10% 3.9%',
+      '--card-foreground': '0 0% 98%',
+      '--popover': '240 10% 3.9%',
+      '--popover-foreground': '0 0% 98%',
+      '--primary': '0 0% 98%',
+      '--primary-foreground': '240 5.9% 10%',
+      '--secondary': '240 3.7% 15.9%',
+      '--secondary-foreground': '0 0% 98%',
+      '--muted': '240 3.7% 15.9%',
+      '--muted-foreground': '240 5% 64.9%',
+      '--accent': '240 3.7% 15.9%',
+      '--accent-foreground': '0 0% 98%',
+      '--destructive': '0 62.8% 30.6%',
+      '--destructive-foreground': '0 0% 98%',
+      '--border': 'transparent',
+      '--input': '240 3.7% 15.9%',
+      '--ring': '240 4.9% 83.9%'
+    } as React.CSSProperties}>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <main className="flex-1 overflow-hidden">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <header className="border-b border-slate-700/50 bg-slate-900/20 px-6 py-4" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <SidebarTrigger />
+                    <div>
+                      <h1 className="text-2xl font-bold text-white">Meu Perfil</h1>
+                      <p className="text-slate-300">Gerencie suas informações e preferências</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Button variant="outline" size="sm" disabled className="border-slate-600 text-slate-300 hover:bg-slate-700/50">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar Dados
+                    </Button>
+                    <Button className="ai-gradient text-white" size="sm" disabled>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configurações
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Button variant="outline" size="sm" disabled>
-                    <Download className="h-4 w-4 mr-2" />
-                    Exportar Dados
-                  </Button>
-                  <Button className="ai-gradient text-white" size="sm" disabled>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configurações
-                  </Button>
-                </div>
-              </div>
-            </header>
+              </header>
 
-            {/* Main Content */}
-            <div className="flex-1 overflow-auto p-6 bg-gray-50">
+              {/* Main Content */}
+              <div className="flex-1 overflow-auto p-6 bg-slate-900" style={{ backgroundColor: '#0f172a' }}>
               <div className="max-w-6xl mx-auto space-y-6">
                 {/* Profile Header Card */}
-                <Card className="relative overflow-hidden">
+                <Card className="relative overflow-hidden border-slate-700/50 bg-slate-900/20 shadow-lg" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
                   <div className="absolute inset-0 ai-gradient opacity-10" />
                   <CardContent className="relative p-8">
                     <div className="flex flex-col md:flex-row items-start md:items-center space-y-6 md:space-y-0 md:space-x-8">
                       {/* Avatar Section */}
                       <div className="relative">
-                        <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+                        <Avatar className="w-32 h-32 border-4 border-slate-600 shadow-lg">
                           <AvatarImage src="" />
                           <AvatarFallback className="text-2xl font-bold ai-gradient text-white">
                             {getUserInitials()}
@@ -184,21 +207,21 @@ const Profile = () => {
                       <div className="flex-1">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
                           <div>
-                            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                            <h2 className="text-3xl font-bold text-white mb-2">
                               {getDisplayName()}
                             </h2>
-                            <p className="text-lg text-gray-600 mb-3">
+                            <p className="text-lg text-slate-300 mb-3">
                               {getRoleDisplay()}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               <Badge className="ai-gradient text-white border-0">
                                 {getRoleDisplay()}
                               </Badge>
-                              <Badge variant="outline">
+                              <Badge variant="outline" className="border-slate-600 text-slate-300">
                                 Membro desde {userStats.joinDate}
                               </Badge>
                               {companyUserData?.companies && (
-                                <Badge variant="secondary" className="flex items-center gap-1">
+                                <Badge variant="secondary" className="flex items-center gap-1 bg-slate-700/50 text-slate-300">
                                   <Building className="h-3 w-3" />
                                   {companyUserData.companies.name}
                                 </Badge>
@@ -211,56 +234,56 @@ const Profile = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {userRole === 'producer' ? (
                             <>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   {userStats.totalCourses}
                                 </div>
-                                <div className="text-sm text-gray-600">Cursos Criados</div>
+                                <div className="text-sm text-slate-300">Cursos Criados</div>
                               </div>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   {userStats.publishedCourses}
                                 </div>
-                                <div className="text-sm text-gray-600">Publicados</div>
+                                <div className="text-sm text-slate-300">Publicados</div>
                               </div>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   0
                                 </div>
-                                <div className="text-sm text-gray-600">Empresas</div>
+                                <div className="text-sm text-slate-300">Empresas</div>
                               </div>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   0
                                 </div>
-                                <div className="text-sm text-gray-600">Estudantes</div>
+                                <div className="text-sm text-slate-300">Estudantes</div>
                               </div>
                             </>
                           ) : (
                             <>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   0
                                 </div>
-                                <div className="text-sm text-gray-600">Cursos</div>
+                                <div className="text-sm text-slate-300">Cursos</div>
                               </div>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   0h
                                 </div>
-                                <div className="text-sm text-gray-600">Horas</div>
+                                <div className="text-sm text-slate-300">Horas</div>
                               </div>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   0
                                 </div>
-                                <div className="text-sm text-gray-600">Certificados</div>
+                                <div className="text-sm text-slate-300">Certificados</div>
                               </div>
-                              <div className="text-center p-3 bg-white/50 rounded-lg">
-                                <div className="text-2xl font-bold text-gray-900">
+                              <div className="text-center p-3 bg-slate-800/40 rounded-lg border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)' }}>
+                                <div className="text-2xl font-bold text-white">
                                   0
                                 </div>
-                                <div className="text-sm text-gray-600">Conquistas</div>
+                                <div className="text-sm text-slate-300">Conquistas</div>
                               </div>
                             </>
                           )}
@@ -272,41 +295,73 @@ const Profile = () => {
 
                 {/* Profile Tabs */}
                 <Tabs defaultValue="info" className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="info">Informações</TabsTrigger>
-                    <TabsTrigger value="notifications">Notificações</TabsTrigger>
-                    <TabsTrigger value="privacy">Privacidade</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 border border-slate-700/50" style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}>
+                    <TabsTrigger 
+                      value="info" 
+                      className="data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-slate-300"
+                      style={{ 
+                        '--background': 'rgba(51, 65, 85, 0.5)',
+                        '--foreground': 'white'
+                      } as React.CSSProperties}
+                    >
+                      Informações
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="notifications"
+                      className="data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-slate-300"
+                      style={{ 
+                        '--background': 'rgba(51, 65, 85, 0.5)',
+                        '--foreground': 'white'
+                      } as React.CSSProperties}
+                    >
+                      Notificações
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="privacy"
+                      className="data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-slate-300"
+                      style={{ 
+                        '--background': 'rgba(51, 65, 85, 0.5)',
+                        '--foreground': 'white'
+                      } as React.CSSProperties}
+                    >
+                      Privacidade
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="space-y-6">
                     <div className="grid lg:grid-cols-2 gap-6">
                       {/* Personal Information */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center">
-                            <User className="h-5 w-5 mr-2" />
+                      <Card className="border-slate-700/50 bg-slate-900/20 shadow-lg" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+                        <CardHeader className="bg-slate-900/20 text-white border-b border-slate-700/50" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+                          <CardTitle className="flex items-center text-white">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center mr-2">
+                              <User className="h-3 w-3 text-white" />
+                            </div>
                             Informações Pessoais
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-4 bg-slate-900/20" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
                           <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="name">Nome Completo</Label>
+                              <Label htmlFor="name" className="text-slate-300">Nome Completo</Label>
                               <Input 
                                 id="name" 
                                 value={companyUserData?.name || ''}
                                 disabled
                                 readOnly
+                                className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                                style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="email">Email</Label>
+                              <Label htmlFor="email" className="text-slate-300">Email</Label>
                               <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <Input 
                                   id="email" 
                                   value={companyUserData?.email || user?.email || ''} 
-                                  className="pl-10"
+                                  className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                                  style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                                   disabled
                                   readOnly
                                 />
@@ -316,23 +371,26 @@ const Profile = () => {
 
                           <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="phone">Telefone</Label>
+                              <Label htmlFor="phone" className="text-slate-300">Telefone</Label>
                               <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <Input 
                                   id="phone" 
                                   value={companyUserData?.phone || ''}
-                                  className="pl-10"
+                                  className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                                  style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                                   disabled
                                   readOnly
                                 />
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="position">Cargo</Label>
+                              <Label htmlFor="position" className="text-slate-300">Cargo</Label>
                               <Input 
                                 id="position" 
                                 value={companyUserData?.position || ''}
+                                className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                                style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                                 disabled
                                 readOnly
                               />
@@ -340,13 +398,14 @@ const Profile = () => {
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="company">Empresa</Label>
+                            <Label htmlFor="company" className="text-slate-300">Empresa</Label>
                             <div className="relative">
-                              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                               <Input 
                                 id="company" 
                                 value={getCompanyName()}
-                                className="pl-10"
+                                className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                                style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                                 disabled
                                 readOnly
                               />
@@ -354,23 +413,26 @@ const Profile = () => {
                           </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="role">Tipo de Conta</Label>
+                            <Label htmlFor="role" className="text-slate-300">Tipo de Conta</Label>
                             <Input 
                               id="role" 
                               value={getRoleDisplay()} 
+                              className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                              style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                               disabled
                               readOnly
                             />
                           </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="joinDate">Membro desde</Label>
+                            <Label htmlFor="joinDate" className="text-slate-300">Membro desde</Label>
                             <div className="relative">
-                              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                               <Input 
                                 id="joinDate" 
                                 value={userStats.joinDate} 
-                                className="pl-10"
+                                className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                                style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                                 disabled
                                 readOnly
                               />
@@ -378,11 +440,13 @@ const Profile = () => {
                           </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="bio">Biografia</Label>
+                            <Label htmlFor="bio" className="text-slate-300">Biografia</Label>
                             <Textarea 
                               id="bio" 
                               placeholder="Conte um pouco sobre você..."
                               defaultValue=""
+                              className="bg-slate-800/50 border-slate-600 text-white placeholder-slate-400"
+                              style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
                             />
                           </div>
                           
@@ -393,47 +457,52 @@ const Profile = () => {
                       </Card>
 
                       {/* Activity Summary */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Resumo de Atividade</CardTitle>
+                      <Card className="border-slate-700/50 bg-slate-900/20 shadow-lg" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+                        <CardHeader className="bg-slate-900/20 text-white border-b border-slate-700/50" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
+                          <CardTitle className="flex items-center text-white">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center mr-2">
+                              <Activity className="h-3 w-3 text-white" />
+                            </div>
+                            Resumo de Atividade
+                          </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-4 bg-slate-900/20" style={{ backgroundColor: 'rgba(15, 23, 42, 0.2)' }}>
                           {userRole === 'producer' ? (
                             <>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Cursos Criados</span>
-                                <span className="font-semibold">{userStats.totalCourses}</span>
+                                <span className="text-sm text-slate-300">Cursos Criados</span>
+                                <span className="font-semibold text-white">{userStats.totalCourses}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Cursos Publicados</span>
-                                <span className="font-semibold">{userStats.publishedCourses}</span>
+                                <span className="text-sm text-slate-300">Cursos Publicados</span>
+                                <span className="font-semibold text-white">{userStats.publishedCourses}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Empresas Parceiras</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-slate-300">Empresas Parceiras</span>
+                                <span className="font-semibold text-white">0</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Estudantes Alcançados</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-slate-300">Estudantes Alcançados</span>
+                                <span className="font-semibold text-white">0</span>
                               </div>
                             </>
                           ) : (
                             <>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Cursos Matriculados</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-slate-300">Cursos Matriculados</span>
+                                <span className="font-semibold text-white">0</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Cursos Concluídos</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-slate-300">Cursos Concluídos</span>
+                                <span className="font-semibold text-white">0</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Horas de Estudo</span>
-                                <span className="font-semibold">0h</span>
+                                <span className="text-sm text-slate-300">Horas de Estudo</span>
+                                <span className="font-semibold text-white">0h</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Certificados</span>
-                                <span className="font-semibold">0</span>
+                                <span className="text-sm text-slate-300">Certificados</span>
+                                <span className="font-semibold text-white">0</span>
                               </div>
 
                               {/* Company Information for Students */}
@@ -441,24 +510,24 @@ const Profile = () => {
                                 <>
                                   <Separator />
                                   <div className="pt-2">
-                                    <h4 className="font-medium mb-3 flex items-center">
-                                      <Building className="h-4 w-4 mr-2" />
+                                    <h4 className="font-medium mb-3 flex items-center text-white">
+                                      <Building className="h-4 w-4 mr-2 text-slate-300" />
                                       Informações da Empresa
                                     </h4>
                                     <div className="space-y-2">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">Nome da Empresa</span>
-                                        <span className="font-semibold">{companyUserData.companies.name}</span>
+                                        <span className="text-sm text-slate-300">Nome da Empresa</span>
+                                        <span className="font-semibold text-white">{companyUserData.companies.name}</span>
                                       </div>
                                       {companyUserData.companies.official_name && (
                                         <div className="flex items-center justify-between">
-                                          <span className="text-sm text-gray-600">Razão Social</span>
-                                          <span className="font-semibold">{companyUserData.companies.official_name}</span>
+                                          <span className="text-sm text-slate-300">Razão Social</span>
+                                          <span className="font-semibold text-white">{companyUserData.companies.official_name}</span>
                                         </div>
                                       )}
                                       <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">Status na Empresa</span>
-                                        <Badge variant={companyUserData.is_active ? "default" : "secondary"}>
+                                        <span className="text-sm text-slate-300">Status na Empresa</span>
+                                        <Badge variant={companyUserData.is_active ? "default" : "secondary"} className={companyUserData.is_active ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-slate-700/50 text-slate-300"}>
                                           {companyUserData.is_active ? "Ativo" : "Inativo"}
                                         </Badge>
                                       </div>
@@ -469,8 +538,8 @@ const Profile = () => {
                             </>
                           )}
                           
-                          <div className="pt-4 mt-4 border-t">
-                            <p className="text-sm text-gray-500 text-center">
+                          <div className="pt-4 mt-4 border-t border-slate-700/50">
+                            <p className="text-sm text-slate-400 text-center">
                               {userRole === 'producer' 
                                 ? 'Dados atualizados em tempo real conforme você cria conteúdo.'
                                 : 'Seus dados de progresso aparecerão conforme você avança nos estudos.'
@@ -600,7 +669,8 @@ const Profile = () => {
           </div>
         </main>
       </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 };
 

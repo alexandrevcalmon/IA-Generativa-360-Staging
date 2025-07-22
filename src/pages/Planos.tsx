@@ -1,185 +1,241 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Check, Users, Calendar, CreditCard } from 'lucide-react';
-import { STRIPE_PLANS } from '@/lib/stripe';
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Check, Users, Calendar, CreditCard, Star, Zap, Crown } from 'lucide-react'
+import { useStripePrices } from '@/hooks/useStripePrices'
 
-interface Plan {
-  id: string;
-  name: string;
-  maxCollaborators: number;
-  period: string;
-  displayName: string;
-  price?: number;
-  currency?: string;
-}
+type PeriodType = 'anual' | 'semestral'
 
 export default function Planos() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { plans, loading, error, getPlansByPeriod } = useStripePrices()
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('anual')
 
-  useEffect(() => {
-    // Converter planos do Stripe para formato da UI
-    const planList = Object.entries(STRIPE_PLANS).map(([id, info]) => ({
-      id,
-      ...info,
-    }));
-    setPlans(planList);
-    setLoading(false);
-  }, []);
+  // Usar apenas dados reais do banco
+  const filteredPlans = getPlansByPeriod(selectedPeriod)
 
-  const handleSelectPlan = (planId: string) => {
-    setSelectedPlan(planId);
-    // Redirecionar para formulário de dados da empresa
-    window.location.href = `/checkout/company-data?plan=${planId}`;
-  };
+  const getPlanIcon = (maxCollaborators: number) => {
+    if (maxCollaborators <= 5) return Zap
+    if (maxCollaborators <= 25) return Star
+    return Crown
+  }
 
-  const groupedPlans = plans.reduce((acc, plan) => {
-    const baseName = plan.name;
-    if (!acc[baseName]) {
-      acc[baseName] = [];
-    }
-    acc[baseName].push(plan);
-    return acc;
-  }, {} as Record<string, Plan[]>);
+  const getPlanGradient = (maxCollaborators: number) => {
+    if (maxCollaborators <= 5) return 'from-blue-500 to-cyan-500'
+    if (maxCollaborators <= 25) return 'from-purple-500 to-pink-500'
+    return 'from-orange-500 to-red-500'
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-calmon-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando planos...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando planos...</p>
+          </div>
         </div>
       </div>
-    );
+    )
+  }
+
+  if (error || filteredPlans.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Escolha o Plano Ideal para sua Empresa
+            </h1>
+            <div className="mt-8 p-6 bg-red-100 border border-red-400 rounded-lg max-w-2xl mx-auto">
+              <p className="text-red-800 font-medium mb-2">
+                Erro ao carregar planos
+              </p>
+              <p className="text-red-700 text-sm">
+                {error || 'Nenhum plano encontrado. Tente recarregar a página.'}
+              </p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 bg-red-600 hover:bg-red-700"
+              >
+                Recarregar Página
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Escolha seu Plano
-            </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Selecione o plano ideal para sua empresa e comece a transformar o aprendizado dos seus colaboradores
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Escolha o Plano Ideal para sua Empresa
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Planos flexíveis que crescem junto com sua equipe. Escolha entre pagamento semestral ou anual.
+          </p>
+        </div>
+
+        {/* Period Selector */}
+        <div className="flex justify-center mb-12">
+          <div className="bg-white rounded-lg p-1 shadow-lg">
+            <Button
+              variant={selectedPeriod === 'semestral' ? 'default' : 'ghost'}
+              onClick={() => setSelectedPeriod('semestral')}
+              className="w-32 px-8 py-3 rounded-md transition-all duration-200"
+            >
+              Semestral
+            </Button>
+            <Button
+              variant={selectedPeriod === 'anual' ? 'default' : 'ghost'}
+              onClick={() => setSelectedPeriod('anual')}
+              className="w-32 px-8 py-3 rounded-md transition-all duration-200 relative"
+            >
+              Anual
+              <span className="absolute -top-5 -right-1 text-xs text-green-600 font-medium bg-white px-1 rounded">
+                Economia de -17%
+              </span>
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Planos */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {Object.entries(groupedPlans).map(([baseName, planVariations]) => (
-          <div key={baseName} className="mb-12">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{baseName}</h2>
-              <div className="flex items-center justify-center gap-2 text-gray-600">
-                <Users className="h-5 w-5" />
-                <span>Até {planVariations[0].maxCollaborators} colaboradores</span>
-              </div>
-            </div>
+        {/* Plans Grid - All 5 plans in one row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
+          {filteredPlans.map((plan) => {
+            const IconComponent = getPlanIcon(plan.max_collaborators)
+            const gradient = getPlanGradient(plan.max_collaborators)
+            
+            return (
+              <Card 
+                key={plan.id} 
+                className="relative overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+              >
+                {/* Gradient Header */}
+                <div className={`bg-gradient-to-r ${gradient} p-4 text-white text-center`}>
+                  <div className="flex items-center justify-center mb-3">
+                    <IconComponent className="h-6 w-6 mr-2" />
+                    <Badge variant="secondary" className="bg-white/20 text-white text-xs">
+                      {plan.max_collaborators} colaboradores
+                    </Badge>
+                  </div>
+                  <h3 className="text-lg font-bold">{plan.name}</h3>
+                  <p className="text-white/80 mt-1 text-sm">
+                    {selectedPeriod === 'semestral' ? '6 meses' : '12 meses'}
+                  </p>
+                </div>
 
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {planVariations.map((plan) => (
-                <Card 
-                  key={plan.id} 
-                  className={`relative transition-all duration-200 hover:shadow-lg ${
-                    plan.period === 'anual' ? 'border-calmon-500 ring-2 ring-calmon-500 ring-opacity-20' : 'border-gray-200'
-                  }`}
-                >
-                  {plan.period === 'anual' && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-calmon-500 text-white">
-                        Mais Popular
-                      </Badge>
-                    </div>
-                  )}
-
-                  <CardHeader className="text-center pb-4">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      {plan.period === 'semestral' ? 'Semestral' : 'Anual'}
-                    </CardTitle>
-                    <CardDescription>
-                      Pagamento {plan.period === 'semestral' ? 'a cada 6 meses' : 'anual'}
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="text-center pb-6">
-                    <div className="mb-6">
-                      <div className="text-3xl font-bold text-gray-900 mb-1">
-                        Consulte valores
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {plan.period === 'semestral' ? 'por semestre' : 'por ano'}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-center gap-2 text-gray-700">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span>Até {plan.maxCollaborators} colaboradores</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 text-gray-700">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span>Cursos ilimitados</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 text-gray-700">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span>Relatórios de progresso</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 text-gray-700">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span>Suporte por email</span>
-                      </div>
-                      {plan.period === 'anual' && (
-                        <div className="flex items-center justify-center gap-2 text-green-600 font-medium">
-                          <Check className="h-4 w-4 text-green-500" />
-                          <span>2 meses grátis</span>
-                        </div>
+                <CardContent className="text-center pb-6 pt-6">
+                  <div className="mb-6">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                      {plan.price ? (
+                        <>
+                          R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </>
+                      ) : (
+                        'Preço não disponível'
                       )}
                     </div>
-                  </CardContent>
+                    <p className="text-gray-600 text-sm">
+                      por mês
+                    </p>
+                  </div>
+                </CardContent>
 
-                  <CardFooter>
-                    <Button
-                      className={`w-full ${
-                        plan.period === 'anual'
-                          ? 'bg-calmon-500 hover:bg-calmon-600'
-                          : 'bg-gray-600 hover:bg-gray-700'
-                      } text-white`}
-                      onClick={() => handleSelectPlan(plan.id)}
-                      disabled={selectedPlan === plan.id}
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      {selectedPlan === plan.id ? 'Selecionado' : 'Assinar Agora'}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                <CardFooter className="pt-0">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-2 text-sm"
+                    onClick={() => {
+                      // Redirecionar para checkout com o plano selecionado
+                      window.location.href = `/checkout/company-data?plan=${plan.id}`
+                    }}
+                  >
+                    Escolher Este Plano
+                  </Button>
+                </CardFooter>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Benefits Section - Moved below plans */}
+        <div className="mb-12">
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-8 max-w-6xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">🧠 Todos os planos incluem:</h2>
+              <p className="text-gray-600">Recursos completos para transformar sua empresa</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-800 font-medium">Suporte via chat inteligente 24/7</span>
+                    <p className="text-sm text-gray-600 mt-1">Atendimento automatizado e inteligente</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-800 font-medium">Workshop Online Gravado</span>
+                    <p className="text-sm text-gray-600 mt-1">Atualizado continuamente com as últimas tendências</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-800 font-medium">2h Mentoria Plantão Tira-Dúvidas</span>
+                    <p className="text-sm text-gray-600 mt-1">Coletiva mensal online</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-800 font-medium">1h Mentoria de Atualizações</span>
+                    <p className="text-sm text-gray-600 mt-1">Coletiva mensal online</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-800 font-medium">Palestra "A Revolução da IA"</span>
+                    <p className="text-sm text-gray-600 mt-1">Coletiva mensal online</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Check className="h-6 w-6 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-gray-800 font-medium">Palestra "Gestão Emocional"</span>
+                    <p className="text-sm text-gray-600 mt-1">Coletiva mensal online</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Footer */}
-      <div className="bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p className="mb-2">
-              Tem dúvidas sobre qual plano escolher?
-            </p>
-            <p className="text-sm">
-              Entre em contato conosco: <a href="mailto:contato@exemplo.com" className="text-calmon-600 hover:underline">contato@exemplo.com</a>
+        {/* Footer Info */}
+        <div className="text-center mt-16">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center mb-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Garantia de 7 Dias</h3>
+            </div>
+            <p className="text-gray-700 text-base leading-relaxed">
+              Experimente por 7 dias com garantia total: se não ficar satisfeito, devolvemos seu investimento integralmente.
             </p>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 } 

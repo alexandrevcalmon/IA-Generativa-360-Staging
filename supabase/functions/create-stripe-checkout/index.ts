@@ -1,290 +1,249 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@14.21.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Mapeamento dos IDs dos produtos e preços de teste do Stripe
-const STRIPE_PRODUCT_IDS = {
-  starter_5_semestral: 'prod_SedYxAWeBjaMM0',
-  starter_5_anual: 'prod_SeddHsdOwwbtyI',
-  starter_10_semestral: 'prod_SedjWSI3Hrmmb9',
-  starter_10_anual: 'prod_SedlCkXK4ZQjHl',
-  starter_25_semestral: 'prod_Sedo2OcgsH2hj1',
-  starter_25_anual: 'prod_SedqKdKa09qAb9',
-  starter_50_semestral: 'prod_SedtiC1kEgAcMd',
-  starter_50_anual: 'prod_SedveLSteTQwQW',
-  starter_100_semestral: 'prod_Sedx0hLJDjrbdo',
-  starter_100_anual: 'prod_SedzGgwgO66Xj7',
-} as const;
-
-const STRIPE_PRICE_IDS = {
-  starter_5_semestral: 'price_1RjKHe4gaE84sNi0O6fUvTgq',
-  starter_5_anual: 'price_1RjKMM4gaE84sNi0zAzsXkAk',
-  starter_10_semestral: 'price_1RjKRd4gaE84sNi0TCQ4mWkK',
-  starter_10_anual: 'price_1RjKTx4gaE84sNi0VhePmv8M',
-  starter_25_semestral: 'price_1RjKWn4gaE84sNi0yjqw2fMQ',
-  starter_25_anual: 'price_1RjKYv4gaE84sNi0qdDSgHZX',
-  starter_50_semestral: 'price_1RjKbN4gaE84sNi0V5j1Yurq',
-  starter_50_anual: 'price_1RjKdQ4gaE84sNi0qC1LKMZJ',
-  starter_100_semestral: 'price_1RjKfV4gaE84sNi0tqJWMmwV',
-  starter_100_anual: 'price_1RjKhu4gaE84sNi05XaH5wij',
-} as const;
-
-// Configuração dos planos
-const STRIPE_PLANS = {
-  starter_5_semestral: {
-    name: 'Starter 5',
-    maxCollaborators: 5,
-    period: 'semestral',
-    displayName: 'Starter 5 (Semestral)'
-  },
-  starter_5_anual: {
-    name: 'Starter 5',
-    maxCollaborators: 5,
-    period: 'anual',
-    displayName: 'Starter 5 (Anual)'
-  },
-  starter_10_semestral: {
-    name: 'Starter 10',
-    maxCollaborators: 10,
-    period: 'semestral',
-    displayName: 'Starter 10 (Semestral)'
-  },
-  starter_10_anual: {
-    name: 'Starter 10',
-    maxCollaborators: 10,
-    period: 'anual',
-    displayName: 'Starter 10 (Anual)'
-  },
-  starter_25_semestral: {
-    name: 'Starter 25',
-    maxCollaborators: 25,
-    period: 'semestral',
-    displayName: 'Starter 25 (Semestral)'
-  },
-  starter_25_anual: {
-    name: 'Starter 25',
-    maxCollaborators: 25,
-    period: 'anual',
-    displayName: 'Starter 25 (Anual)'
-  },
-  starter_50_semestral: {
-    name: 'Starter 50',
-    maxCollaborators: 50,
-    period: 'semestral',
-    displayName: 'Starter 50 (Semestral)'
-  },
-  starter_50_anual: {
-    name: 'Starter 50',
-    maxCollaborators: 50,
-    period: 'anual',
-    displayName: 'Starter 50 (Anual)'
-  },
-  starter_100_semestral: {
-    name: 'Starter 100',
-    maxCollaborators: 100,
-    period: 'semestral',
-    displayName: 'Starter 100 (Semestral)'
-  },
-  starter_100_anual: {
-    name: 'Starter 100',
-    maxCollaborators: 100,
-    period: 'anual',
-    displayName: 'Starter 100 (Anual)'
-  }
-} as const;
-
-type PlanId = keyof typeof STRIPE_PLANS;
-
-function getPlanInfo(planId: PlanId) {
-  return STRIPE_PLANS[planId];
-}
-
-function isValidPlan(planId: string): planId is PlanId {
-  return planId in STRIPE_PLANS;
-}
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('🔧 Starting create-stripe-checkout function');
+    console.log('[create-stripe-checkout] Function started')
     
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    // Check environment variables
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const frontendUrl = Deno.env.get('FRONTEND_URL')
+    
+    console.log('[create-stripe-checkout] Environment check:', {
+      hasStripeKey: !!stripeSecretKey,
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      hasFrontendUrl: !!frontendUrl
+    })
+    
     if (!stripeSecretKey) {
-      console.error('❌ STRIPE_SECRET_KEY not found in environment');
-      throw new Error('Stripe secret key not configured');
+      return new Response(
+        JSON.stringify({ error: 'Stripe configuration missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ error: 'Supabase configuration missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
+    // Initialize Stripe
+    console.log('[create-stripe-checkout] Initializing Stripe...')
+    const Stripe = (await import('https://esm.sh/stripe@14.21.0')).default
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2024-12-18.acacia',
-    });
+    })
+    console.log('[create-stripe-checkout] Stripe initialized successfully')
 
-    console.log('✅ Stripe initialized successfully');
+    // Initialize Supabase client
+    console.log('[create-stripe-checkout] Initializing Supabase...')
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    console.log('[create-stripe-checkout] Supabase initialized successfully')
 
-    const requestBody = await req.json();
-    console.log('📝 Request body:', JSON.stringify(requestBody, null, 2));
-
-    const { planId, companyData } = requestBody;
-
-    // Validar dados obrigatórios
-    if (!planId || !companyData?.contact_email || !companyData?.name) {
-      console.error('❌ Missing required fields:', { planId, contact_email: companyData?.contact_email, name: companyData?.name });
-      return new Response(
-        JSON.stringify({
-          error: 'Missing required fields: planId, contact_email, and company name'
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Validar se o plano existe
-    if (!isValidPlan(planId)) {
-      console.error('❌ Invalid plan ID:', planId);
-      return new Response(
-        JSON.stringify({ error: 'Invalid plan ID' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const planInfo = getPlanInfo(planId);
-    const stripeProductId = STRIPE_PRODUCT_IDS[planId];
+    // Get request body
+    console.log('[create-stripe-checkout] Parsing request body...')
+    const requestBody = await req.json()
+    console.log('[create-stripe-checkout] Request body:', JSON.stringify(requestBody, null, 2))
     
-    console.log('📋 Plan info:', { planId, planInfo, stripeProductId });
+    const { companyData, planId } = requestBody
 
-    // Buscar preços do produto no Stripe
-    console.log('🔍 Searching for prices for product:', stripeProductId);
+    if (!companyData || !planId) {
+      console.error('[create-stripe-checkout] Missing required data:', { companyData: !!companyData, planId: !!planId })
+      return new Response(
+        JSON.stringify({ error: 'Missing required data: companyData and planId are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    console.log('[create-stripe-checkout] Request data validated:', { 
+      companyName: companyData.name, 
+      companyEmail: companyData.contact_email, 
+      planId 
+    })
+
+    // Get plan information from database
+    console.log('[create-stripe-checkout] Fetching plan from database:', planId)
+    const { data: planInfo, error: planError } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('id', planId)
+      .single()
+
+    if (planError) {
+      console.error('[create-stripe-checkout] Database error fetching plan:', planError)
+      return new Response(
+        JSON.stringify({ error: 'Database error fetching plan', details: planError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!planInfo) {
+      console.error('[create-stripe-checkout] Plan not found:', planId)
+      return new Response(
+        JSON.stringify({ error: 'Plan not found', planId }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    console.log('[create-stripe-checkout] Plan found:', { 
+      planName: planInfo.name, 
+      stripeProductId: planInfo.stripe_product_id,
+      maxCollaborators: planInfo.max_collaborators 
+    })
+
+    const stripeProductId = planInfo.stripe_product_id
+    const maxCollaborators = planInfo.max_collaborators
+    const subscriptionPeriod = planInfo.subscription_period_days || 30
+
+    // Get Stripe prices for the product
+    console.log('[create-stripe-checkout] Fetching Stripe prices for product:', stripeProductId)
     const prices = await stripe.prices.list({
       product: stripeProductId,
       active: true,
-    });
+    })
 
-    console.log('💰 Found prices:', prices.data.length);
+    console.log('[create-stripe-checkout] Stripe prices found:', prices.data.length)
 
     if (prices.data.length === 0) {
-      console.error('❌ No active prices found for product:', stripeProductId);
+      console.error('[create-stripe-checkout] No prices found for product:', stripeProductId)
       return new Response(
-        JSON.stringify({ error: 'No active prices found for this plan' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+        JSON.stringify({ error: 'No prices found for product', productId: stripeProductId }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Usar o primeiro preço ativo encontrado
-    const price = prices.data[0];
-    console.log('💵 Using price:', price.id);
+    // Use the first price (usually the default)
+    const price = prices.data[0]
+    console.log('[create-stripe-checkout] Using price:', { 
+      priceId: price.id, 
+      amount: price.unit_amount, 
+      currency: price.currency 
+    })
 
-    // Criar ou buscar customer no Stripe
-    console.log('👤 Searching for existing customer:', companyData.contact_email);
-    let customer;
-    const existingCustomers = await stripe.customers.list({
-      email: companyData.contact_email,
-      limit: 1,
-    });
-
-    if (existingCustomers.data.length > 0) {
-      customer = existingCustomers.data[0];
-      console.log('✅ Found existing customer:', customer.id);
-    } else {
-      console.log('➕ Creating new customer');
-      customer = await stripe.customers.create({
+    // Check if customer already exists
+    console.log('[create-stripe-checkout] Checking for existing customer:', companyData.contact_email)
+    let customer
+    try {
+      const existingCustomers = await stripe.customers.list({
         email: companyData.contact_email,
-        name: companyData.contact_name || companyData.name,
-        metadata: {
-          company_name: companyData.name,
-          official_name: companyData.official_name || '',
-          cnpj: companyData.cnpj || '',
-          phone: companyData.phone || '',
-          contact_name: companyData.contact_name || '',
-          contact_phone: companyData.contact_phone || '',
-        },
-        address: companyData.address_street ? {
-          line1: `${companyData.address_street}, ${companyData.address_number || ''}`,
-          line2: companyData.address_complement || '',
-          city: companyData.address_city || '',
-          state: companyData.address_state || '',
-          postal_code: companyData.address_zip_code || '',
-          country: 'BR',
-        } : undefined,
-      });
-      console.log('✅ Created new customer:', customer.id);
+        limit: 1,
+      })
+
+      if (existingCustomers.data.length > 0) {
+        customer = existingCustomers.data[0]
+        console.log('[create-stripe-checkout] Found existing customer:', customer.id)
+      } else {
+        // Create new customer
+        console.log('[create-stripe-checkout] Creating new customer...')
+        customer = await stripe.customers.create({
+          email: companyData.contact_email,
+          name: companyData.name,
+          phone: companyData.contact_phone,
+          metadata: {
+            company_name: companyData.name,
+            contact_name: companyData.contact_name,
+          },
+        })
+        console.log('[create-stripe-checkout] New customer created:', customer.id)
+      }
+    } catch (customerError) {
+      console.error('[create-stripe-checkout] Customer error:', customerError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create or find customer', details: customerError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Criar sessão de checkout
-    console.log('🛒 Creating checkout session');
-    const session = await stripe.checkout.sessions.create({
+    // Create checkout session
+    console.log('[create-stripe-checkout] Creating checkout session...')
+    const effectiveFrontendUrl = frontendUrl || 'https://staging.grupocalmon.com'
+    console.log('[create-stripe-checkout] Frontend URL:', effectiveFrontendUrl)
+    
+    const sessionData = {
       customer: customer.id,
-      payment_method_types: ['card', 'boleto'],
+      payment_method_types: ['card'],
       line_items: [
         {
-          price: STRIPE_PRICE_IDS[planId],
+          price: price.id,
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: `https://staging.grupocalmon.com/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://staging.grupocalmon.com/planos`,
+      success_url: `${effectiveFrontendUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${effectiveFrontendUrl}/planos`,
       metadata: {
-        company_data: JSON.stringify(companyData),
+        company_name: companyData.name,
+        contact_name: companyData.contact_name,
+        contact_email: companyData.contact_email,
+        contact_phone: companyData.contact_phone || '',
+        cnpj: companyData.cnpj,
+        address_street: companyData.address_street || '',
+        address_city: companyData.address_city || '',
+        address_state: companyData.address_state || '',
+        address_zip_code: companyData.address_zip_code || '',
         plan_id: planId,
-        max_collaborators: planInfo.maxCollaborators.toString(),
-        subscription_period: planInfo.period,
+        max_collaborators: maxCollaborators.toString(),
+        subscription_period: subscriptionPeriod.toString(),
       },
       subscription_data: {
         metadata: {
-          company_data: JSON.stringify(companyData),
+          company_name: companyData.name,
           plan_id: planId,
-          max_collaborators: planInfo.maxCollaborators.toString(),
-          subscription_period: planInfo.period,
         },
       },
-      tax_id_collection: {
-        enabled: true,
-      },
-      customer_update: {
-        name: 'auto',
-        address: 'auto',
-      },
-      locale: 'pt-BR',
-    });
+    }
+    
+    console.log('[create-stripe-checkout] Session data prepared:', {
+      customerId: customer.id,
+      priceId: price.id,
+      planId,
+      frontendUrl: effectiveFrontendUrl
+    })
+    
+    const session = await stripe.checkout.sessions.create(sessionData)
 
-    console.log('✅ Checkout session created:', session.id);
+    console.log('[create-stripe-checkout] Checkout session created successfully:', {
+      sessionId: session.id, 
+      url: session.url 
+    })
 
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         sessionId: session.id,
-        url: session.url,
+        checkout_url: session.url 
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
-    console.error('❌ Error in create-stripe-checkout:', error);
+    console.error('[create-stripe-checkout] Checkout creation error:', error)
+    console.error('[create-stripe-checkout] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return new Response(
-      JSON.stringify({
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error.message,
+        timestamp: new Date().toISOString()
       }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 }) 

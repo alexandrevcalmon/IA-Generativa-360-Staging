@@ -17,14 +17,30 @@ interface CreateLessonDialogProps {
 }
 
 export const CreateLessonDialog = ({ isOpen, onClose, moduleId, lesson }: CreateLessonDialogProps) => {
+  console.log('🎭🎭🎭 CreateLessonDialog renderizado 🎭🎭🎭');
+  console.log('isOpen:', isOpen);
+  console.log('moduleId:', moduleId);
+  console.log('lesson:', lesson);
+  console.log('lesson?.id:', lesson?.id);
+  console.log('lesson?.title:', lesson?.title);
+  console.log('lesson?.duration_minutes:', lesson?.duration_minutes);
+  console.log('lesson?.bunny_video_id:', lesson?.bunny_video_id);
+  console.log('lesson?.module_id:', lesson?.module_id);
+  console.log('🎭🎭🎭 FIM CreateLessonDialog 🎭🎭🎭');
+
+  if (!moduleId) {
+    console.error('❌ ERRO: moduleId é vazio ou undefined');
+    return <div>Erro: Module ID não encontrado</div>;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark-theme-override bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-white">
             {lesson ? "Editar Aula" : "Criar Nova Aula"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-300">
             {lesson 
               ? "Edite as informações da aula abaixo." 
               : "Preencha as informações para criar uma nova aula."
@@ -32,7 +48,9 @@ export const CreateLessonDialog = ({ isOpen, onClose, moduleId, lesson }: Create
           </DialogDescription>
         </DialogHeader>
 
-        <LessonForm moduleId={moduleId} lesson={lesson} onClose={onClose} />
+        <div className="dark-theme-override">
+          <LessonForm moduleId={moduleId} lesson={lesson} onClose={onClose} />
+        </div>
       </DialogContent>
     </Dialog>
   );

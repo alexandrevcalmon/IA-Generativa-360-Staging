@@ -23,15 +23,15 @@ export const ProducerMentorshipSessionCard = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
       case 'live':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500/20 text-green-300 border border-green-500/30';
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500/20 text-red-300 border border-red-500/30';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
     }
   };
 
@@ -51,11 +51,11 @@ export const ProducerMentorshipSessionCard = ({
   };
 
   return (
-    <Card>
+    <Card className="bg-gray-900/50 border-gray-700 shadow-xl">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{session.title}</CardTitle>
+            <CardTitle className="text-lg text-white">{session.title}</CardTitle>
             <Badge className={getStatusColor(session.status)}>
               {getStatusText(session.status)}
             </Badge>
@@ -65,6 +65,7 @@ export const ProducerMentorshipSessionCard = ({
               variant="outline"
               size="sm"
               onClick={() => onEdit(session)}
+              className="!bg-gray-700 !text-white hover:!bg-gray-600 !border-gray-600 !shadow-md"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -72,6 +73,7 @@ export const ProducerMentorshipSessionCard = ({
               variant="outline"
               size="sm"
               onClick={() => onDelete(session.id)}
+              className="!bg-red-600/20 !text-red-300 hover:!bg-red-600/30 !border-red-500/30 !shadow-md"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -80,25 +82,25 @@ export const ProducerMentorshipSessionCard = ({
       </CardHeader>
       <CardContent>
         {session.description && (
-          <p className="text-gray-600 mb-4">{session.description}</p>
+          <p className="text-gray-300 mb-4">{session.description}</p>
         )}
         
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-2" />
+          <div className="flex items-center text-sm text-gray-300">
+            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
             {format(new Date(session.scheduled_at), "dd/MM/yyyy", { locale: ptBR })}
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Clock className="h-4 w-4 mr-2" />
+          <div className="flex items-center text-sm text-gray-300">
+            <Clock className="h-4 w-4 mr-2 text-gray-400" />
             {format(new Date(session.scheduled_at), "HH:mm", { locale: ptBR })} ({session.duration_minutes}min)
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-2" />
+          <div className="flex items-center text-sm text-gray-300">
+            <Users className="h-4 w-4 mr-2 text-gray-400" />
             Máx. {session.max_participants || 100} participantes
           </div>
           {session.google_meet_url && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Video className="h-4 w-4 mr-2" />
+            <div className="flex items-center text-sm text-gray-300">
+              <Video className="h-4 w-4 mr-2 text-gray-400" />
               Google Meet
             </div>
           )}
@@ -109,6 +111,7 @@ export const ProducerMentorshipSessionCard = ({
             variant="outline"
             size="sm"
             onClick={() => onViewParticipants(session)}
+            className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg"
           >
             <Users className="h-4 w-4 mr-2" />
             Ver Participantes
@@ -118,6 +121,7 @@ export const ProducerMentorshipSessionCard = ({
               variant="outline"
               size="sm"
               onClick={() => window.open(session.google_meet_url, '_blank')}
+              className="!bg-gradient-to-r !from-green-500 !to-emerald-600 hover:!from-green-600 hover:!to-emerald-700 !text-white !border-0 !shadow-lg"
             >
               <Video className="h-4 w-4 mr-2" />
               Abrir Meet

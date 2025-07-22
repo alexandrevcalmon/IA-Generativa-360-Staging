@@ -16,6 +16,9 @@ export interface AuthContextType {
   isStudent: boolean;
   needsPasswordChange: boolean;
   companyUserData: any;
+  subscriptionStatus?: any;
+  subscriptionAlert?: any;
+  isSubscriptionBlocked: boolean;
   refreshUserRole: () => Promise<void>;
 }
 

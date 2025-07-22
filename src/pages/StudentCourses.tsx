@@ -1,10 +1,10 @@
-
 import { useState } from "react";
+import { PageLayout } from "@/components/PageLayout";
+import { PageSection } from "@/components/PageSection";
 import { useStudentCourses } from "@/hooks/useStudentCourses";
-import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { CourseSearchFilters } from "@/components/student/CourseSearchFilters";
 import { StudentCourseTabs } from "@/components/student/StudentCourseTabs";
-import { CourseViewToggle } from "@/components/student/CourseViewToggle";
+
 
 const StudentCourses = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -16,43 +16,42 @@ const StudentCourses = () => {
   const inProgressCourses = courses?.filter(c => c.progress_percentage > 0 && c.progress_percentage < 100) || [];
   const completedCourses = courses?.filter(c => c.progress_percentage === 100) || [];
 
+
+
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full">
-        <StudentPageHeader
-          title="Catálogo de Cursos"
-          subtitle="Carregando..."
-        />
-        <div className="flex-1 overflow-auto p-4 md:p-6 bg-gray-50">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-gray-600">Carregando cursos...</div>
-          </div>
+      <PageLayout
+        title="Catálogo de Cursos"
+        subtitle="Carregando..."
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-600">Carregando cursos...</div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <StudentPageHeader
-        title="Catálogo de Cursos"
-        subtitle="Explore nossa biblioteca completa de conhecimento"
-      >
-        <CourseViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-      </StudentPageHeader>
-
-      <div className="flex-1 overflow-auto p-4 md:p-6 bg-gray-50">
-        <div className="space-y-6">
+    <PageLayout
+      title="Catálogo de Cursos"
+      subtitle="Explore nossa biblioteca completa de conhecimento"
+      background="dark"
+    >
+      <div className="space-y-12 dark-theme-override pl-6">
+        <PageSection>
           <CourseSearchFilters categories={categories} levels={levels} />
+        </PageSection>
+        
+        <PageSection noPadding>
           <StudentCourseTabs 
             courses={courses || []}
             viewMode={viewMode}
             inProgressCourses={inProgressCourses}
             completedCourses={completedCourses}
           />
-        </div>
+        </PageSection>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

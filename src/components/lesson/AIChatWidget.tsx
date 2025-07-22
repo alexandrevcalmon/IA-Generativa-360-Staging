@@ -81,7 +81,7 @@ export const AIChatWidget = ({ lessonId, companyId, className }: AIChatWidgetPro
 
       {/* Chat Widget - Highest z-index to stay above everything */}
       {isOpen && (
-        <Card className="fixed bottom-4 right-4 w-80 h-[500px] shadow-xl z-[9999] flex flex-col">
+        <Card className="fixed bottom-4 right-4 w-80 h-[500px] shadow-xl z-[9999] flex flex-col border-slate-700/50 bg-slate-900/95">
           {/* Header - Fixed at top */}
           <ChatHeader
             lessonId={lessonId}
@@ -119,13 +119,13 @@ export const AIChatWidget = ({ lessonId, companyId, className }: AIChatWidgetPro
                   lessonId={lessonId}
                 />
               ) : (
-                <div className="p-3 border-t bg-white">
+                <div className="p-3 border-t border-slate-700/50 bg-slate-900/20">
                   <Button
                     onClick={handleCreateSession}
                     variant="outline"
                     size="sm"
                     disabled={createSessionMutation.isPending}
-                    className="w-full"
+                    className="w-full border-slate-600 text-slate-300 hover:bg-slate-800/50 bg-transparent"
                   >
                     {createSessionMutation.isPending ? (
                       <>

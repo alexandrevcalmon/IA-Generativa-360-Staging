@@ -9,9 +9,9 @@ interface CollaboratorAnalyticsListProps {
 
 export const CollaboratorAnalyticsList = ({ collaborators }: CollaboratorAnalyticsListProps) => {
   return (
-    <Card>
+    <Card className="!bg-gray-800 !border-gray-700">
       <CardHeader>
-        <CardTitle>Colaboradores ({collaborators.length})</CardTitle>
+        <CardTitle className="!text-white">Colaboradores ({collaborators.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">

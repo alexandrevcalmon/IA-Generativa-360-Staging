@@ -109,8 +109,8 @@ export const LessonMaterialUpload = ({ lessonId, onUploadComplete }: LessonMater
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full border-slate-700/50 bg-slate-900/20 shadow-lg">
+      <CardHeader className="bg-slate-900/20 text-white border-b border-slate-700/50">
         <CardTitle className="flex items-center gap-2 text-base">
           <Upload className="h-4 w-4" />
           Adicionar Materiais de Apoio
@@ -123,30 +123,30 @@ export const LessonMaterialUpload = ({ lessonId, onUploadComplete }: LessonMater
             multiple
             accept=".pdf,.docx,.xlsx,.csv,.txt"
             onChange={handleFileSelect}
-            className="cursor-pointer"
+            className="cursor-pointer border-slate-600 bg-slate-800/50 text-slate-300"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Aceita: PDF, Word, Excel, CSV, TXT (máx. 10MB cada)
           </p>
         </div>
 
         {selectedFiles.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Arquivos Selecionados:</h4>
+            <h4 className="text-sm font-medium text-white">Arquivos Selecionados:</h4>
             {selectedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+              <div key={index} className="flex items-center justify-between p-2 bg-slate-800/50 rounded border border-slate-700/50">
                 <div className="flex items-center gap-2">
-                  <File className="h-4 w-4 text-gray-500" />
+                  <File className="h-4 w-4 text-slate-400" />
                   <div>
-                    <p className="text-sm font-medium">{file.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                    <p className="text-sm font-medium text-white">{file.name}</p>
+                    <p className="text-xs text-slate-400">{formatFileSize(file.size)}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => removeFile(index)}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -156,7 +156,7 @@ export const LessonMaterialUpload = ({ lessonId, onUploadComplete }: LessonMater
             <Button
               onClick={handleUpload}
               disabled={isUploading}
-              className="w-full"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {isUploading ? (
                 <>
@@ -173,7 +173,7 @@ export const LessonMaterialUpload = ({ lessonId, onUploadComplete }: LessonMater
           </div>
         )}
 
-        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+        <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">
           💡 <strong>Dica:</strong> Materiais de apoio melhoram significativamente a capacidade do assistente IA de responder suas perguntas com informações específicas e detalhadas sobre o conteúdo da lição.
         </div>
       </CardContent>

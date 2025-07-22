@@ -6,6 +6,7 @@ import { createCacheManagementService } from './cacheManagementService';
 import { createSessionCleanupService } from './sessionCleanupService';
 import { createLogoutValidationService } from './logoutValidationService';
 import { createServerLogoutService } from './serverLogoutService';
+import { createAuditService } from './auditService';
 
 export const createSignOutService = (toast: ReturnType<typeof useToast>['toast']) => {
   const sessionService = createSessionValidationService();
@@ -13,6 +14,7 @@ export const createSignOutService = (toast: ReturnType<typeof useToast>['toast']
   const cleanupService = createSessionCleanupService();
   const validationService = createLogoutValidationService();
   const serverLogoutService = createServerLogoutService();
+  const auditService = createAuditService();
   
   // Flag to prevent multiple simultaneous logout attempts
   let isLoggingOut = false;
@@ -39,22 +41,39 @@ export const createSignOutService = (toast: ReturnType<typeof useToast>['toast']
       
       if (sessionError) {
         console.log('❌ Error getting session during logout:', sessionError.message);
+        // Log the logout attempt with error
+        await auditService.logAuthEvent('logout', null, null, {
+          success: true,
+          method: 'local',
+          reason: 'session_error',
+          error_message: sessionError.message
+        });
         // Treat session errors as successful logout
-        toast({
+        toast.success({
           title: "Logout realizado",
-          description: "Sessão encerrada com segurança.",
+          description: "Sessão encerrada com segurança."
         });
         return { error: null };
       }
       
       if (!currentSession) {
         console.log('ℹ️ No session found, logout completed locally');
-        toast({
+        // Log the logout attempt with no session
+        await auditService.logAuthEvent('logout', null, null, {
+          success: true,
+          method: 'local',
+          reason: 'no_session'
+        });
+        toast.info({
           title: "Logout realizado",
-          description: "Sessão já estava encerrada.",
+          description: "Sessão já estava encerrada."
         });
         return { error: null };
       }
+      
+      // Log user information for the audit
+      const userId = currentSession.user?.id;
+      const userEmail = currentSession.user?.email;
       
       // Check if we should skip server logout
       const validation = await sessionService.validateSession(currentSession);
@@ -62,9 +81,9 @@ export const createSignOutService = (toast: ReturnType<typeof useToast>['toast']
       
       if (skipResult.skip) {
         console.log(`⚠️ ${skipResult.reason}, skipping server logout`);
-        toast({
+        toast.success({
           title: "Logout realizado",
-          description: "Sessão encerrada localmente.",
+          description: "Sessão encerrada localmente."
         });
         return { error: null };
       }
@@ -73,20 +92,29 @@ export const createSignOutService = (toast: ReturnType<typeof useToast>['toast']
       console.log('🔍 Valid session found, attempting enhanced server logout...');
       const logoutResult = await serverLogoutService.performServerLogout(currentSession);
       
+      // Log the logout event with appropriate details
+      await auditService.logAuthEvent('logout', userId, userEmail, {
+        success: true,
+        method: logoutResult.success ? 'server' : 'local',
+        treated_as_403: logoutResult.treatedAs403 || false,
+        network_error: logoutResult.networkError || false,
+        role: currentSession.user?.user_metadata?.role || 'unknown'
+      });
+      
       if (logoutResult.success || logoutResult.treatedAs403) {
-        toast({
+        toast.success({
           title: "Logout realizado com sucesso!",
-          description: "Até mais!",
+          description: "Até mais!"
         });
       } else if (logoutResult.networkError) {
-        toast({
+        toast.info({
           title: "Logout realizado",
-          description: "Sessão encerrada localmente devido a problema de rede.",
+          description: "Sessão encerrada localmente devido a problema de rede."
         });
       } else {
-        toast({
+        toast.info({
           title: "Logout realizado",
-          description: "Sessão encerrada localmente. Cache do navegador foi limpo.",
+          description: "Sessão encerrada localmente. Cache do navegador foi limpo."
         });
       }
       
@@ -102,9 +130,9 @@ export const createSignOutService = (toast: ReturnType<typeof useToast>['toast']
       // Always ensure local state is cleared even on errors
       cleanupService.clearLocalSession();
       
-      toast({
+      toast.success({
         title: "Logout realizado",
-        description: "Sessão encerrada com limpeza de segurança completa.",
+        description: "Sessão encerrada com limpeza de segurança completa."
       });
       
       return { error: null }; // Always allow navigation

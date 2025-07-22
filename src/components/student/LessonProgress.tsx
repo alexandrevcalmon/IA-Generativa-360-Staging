@@ -99,18 +99,18 @@ export const LessonProgress = ({ currentLesson, watchTime, duration }: LessonPro
       {/* Progress Bar */}
       <div className="mb-4 sm:mb-6">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-gray-800">Progresso da Aula</span>
-          <span className="text-sm text-gray-600 font-mono">
+          <span className="text-sm font-medium text-white">Progresso da Aula</span>
+          <span className="text-sm text-slate-300 font-mono">
             {formatTime(watchTime)} / {formatTime(duration)}
           </span>
         </div>
-        <Progress value={progressPercentage} className="h-3 sm:h-4 bg-gray-100 [&>div]:bg-blue-600" />
+        <Progress value={progressPercentage} className="h-3 sm:h-4 bg-slate-600/50 [&>div]:bg-white" />
         <div className="flex justify-between items-center mt-2">
-          <span className="text-xs sm:text-sm text-gray-600">
+          <span className="text-xs sm:text-sm text-slate-300">
             {progressPercentage.toFixed(1)}% assistido
           </span>
           {currentLesson.completed && (
-            <div className="flex items-center text-green-600 text-xs sm:text-sm font-medium">
+            <div className="flex items-center text-emerald-400 text-xs sm:text-sm font-medium">
               <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               Concluída
             </div>
@@ -124,7 +124,7 @@ export const LessonProgress = ({ currentLesson, watchTime, duration }: LessonPro
           <Button 
             variant="outline" 
             asChild 
-            className="h-11 touch-manipulation border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700 font-medium"
+            className="h-11 touch-manipulation border-2 border-slate-600 hover:bg-slate-800/50 hover:border-slate-500 text-slate-300 font-medium bg-transparent"
           >
             <a href={currentLesson.material_url} download>
               <FileText className="h-4 w-4 mr-2" />

@@ -71,20 +71,21 @@ export const LessonsTabContent = ({ modules, onEditLesson, onCreateLesson }: Les
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Todas as Aulas ({allLessons.length})</h3>
+        <h3 className="text-lg font-medium text-white">Todas as Aulas ({allLessons.length})</h3>
         {modules.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="bg-gradient-to-r from-calmon-500 to-calmon-700 hover:from-calmon-600 hover:to-calmon-800 text-white">
+              <Button className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Aula
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent className="bg-gray-800 border-gray-600">
               {modules.map((module) => (
                 <DropdownMenuItem 
                   key={module.id}
                   onClick={() => onCreateLesson(module.id)}
+                  className="text-gray-300 hover:bg-gray-700 hover:text-white"
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
                   {module.title}
@@ -96,7 +97,7 @@ export const LessonsTabContent = ({ modules, onEditLesson, onCreateLesson }: Les
       </div>
       
       <div className="space-y-8">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-400">
           💡 Dica: Arraste as aulas para reordenar dentro de cada módulo
         </p>
         

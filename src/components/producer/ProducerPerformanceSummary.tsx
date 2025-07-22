@@ -5,9 +5,19 @@ import { Trophy } from "lucide-react";
 
 interface ProducerPerformanceSummaryProps {
   publishedCourses: number;
+  activeCompanies: number;
+  totalCollaborators: number;
+  completionRate?: number;
+  averageRating?: number;
 }
 
-export const ProducerPerformanceSummary = ({ publishedCourses }: ProducerPerformanceSummaryProps) => {
+export const ProducerPerformanceSummary = ({ 
+  publishedCourses, 
+  activeCompanies, 
+  totalCollaborators, 
+  completionRate, 
+  averageRating 
+}: ProducerPerformanceSummaryProps) => {
   return (
     <Card>
       <CardHeader>
@@ -24,20 +34,24 @@ export const ProducerPerformanceSummary = ({ publishedCourses }: ProducerPerform
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm">Empresas Ativas</span>
-            <span className="font-medium">0</span>
+            <span className="font-medium">{activeCompanies}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm">Colaboradores Ativos</span>
-            <span className="font-medium">0</span>
+            <span className="font-medium">{totalCollaborators}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm">Taxa de Conclusão</span>
-            <span className="font-medium text-green-600">-</span>
+            <span className="font-medium text-green-600">
+              {completionRate !== undefined ? `${completionRate}%` : '-'}
+            </span>
           </div>
           <div className="pt-2 border-t">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Avaliação Geral</span>
-              <Badge className="bg-yellow-100 text-yellow-700">-</Badge>
+              <Badge className="bg-yellow-100 text-yellow-700">
+                {averageRating !== undefined ? averageRating.toFixed(1) : '-'}
+              </Badge>
             </div>
           </div>
         </div>

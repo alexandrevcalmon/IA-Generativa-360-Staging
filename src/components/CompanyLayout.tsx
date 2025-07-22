@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/auth';
 import { Navigate, Outlet } from 'react-router-dom';
-import { CompanySidebar } from './CompanySidebar';
+import { UnifiedSidebar } from './UnifiedSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 const CompanyLayout = () => {
@@ -38,7 +38,7 @@ const CompanyLayout = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <CompanySidebar />
+        <UnifiedSidebar />
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>

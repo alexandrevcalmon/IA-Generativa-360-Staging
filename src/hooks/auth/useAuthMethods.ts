@@ -1,7 +1,8 @@
 
 import { useToast } from '@/hooks/use-toast';
 import { createAuthService } from './authService';
-import { fetchUserRoleAuxiliaryData } from './userRoleService';
+import { unifiedRoleService } from './unifiedRoleService';
+import { enhancedAuditService } from './enhancedAuditService';
 import { createSessionValidationService } from './sessionValidationService';
 import { createSessionCleanupService } from './sessionCleanupService';
 import { User } from '@supabase/supabase-js';
@@ -41,24 +42,24 @@ export function useAuthMethods({
     
     console.log('🔄 Refreshing user role for:', user.email);
     try {
-      // Use the improved role determination service
-      const auxData = await fetchUserRoleAuxiliaryData(user);
+      // Use the unified role service
+      const roleData = await unifiedRoleService.refreshUserRole(user);
       
-      const finalRole = auxData.role || 'student';
+      const finalRole = roleData.role || 'student';
       setUserRole(finalRole);
 
       // Set company data based on role
       if (finalRole === 'company') {
-        setCompanyUserData(auxData.companyData);
+        setCompanyUserData(roleData.companyData);
       } else if (finalRole === 'collaborator') {
-        setCompanyUserData(auxData.collaboratorData);
+        setCompanyUserData(roleData.collaboratorData);
       } else {
         setCompanyUserData(null);
       }
       
       console.log('✅ User role refreshed:', finalRole, { 
-        hasCompanyData: !!auxData.companyData, 
-        hasCollaboratorData: !!auxData.collaboratorData 
+        hasCompanyData: !!roleData.companyData, 
+        hasCollaboratorData: !!roleData.collaboratorData 
       });
     } catch (error) {
       console.error('❌ Error refreshing user role:', error);
@@ -108,20 +109,26 @@ export function useAuthMethods({
         // Load user role data asynchronously
         setTimeout(async () => {
           try {
-            const auxData = await fetchUserRoleAuxiliaryData(result.user as User);
-            const finalRole = auxData.role || result.user.user_metadata?.role || 'student';
+            const roleData = await unifiedRoleService.determineUserRole(result.user as User);
+            const finalRole = roleData.role || result.user.user_metadata?.role || 'student';
             
             setUserRole(finalRole);
-            setNeedsPasswordChange(false);
+            setNeedsPasswordChange(roleData.needsPasswordChange || false);
 
             // Set company data based on role
             if (finalRole === 'company') {
-              setCompanyUserData(auxData.companyData);
+              setCompanyUserData(roleData.companyData);
             } else if (finalRole === 'collaborator') {
-              setCompanyUserData(auxData.collaboratorData);
+              setCompanyUserData(roleData.collaboratorData);
             } else {
               setCompanyUserData(null);
             }
+
+            // Log successful login
+            await enhancedAuditService.logLoginSuccess(result.user.id, result.user.email || '', {
+              role: finalRole,
+              needsPasswordChange: roleData.needsPasswordChange
+            });
           } catch (auxError) {
             console.error('⚠️ Error loading user data:', auxError);
             setUserRole(result.user.user_metadata?.role || 'student');

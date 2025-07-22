@@ -11,7 +11,17 @@ interface LessonVideoSectionProps {
 }
 
 export const LessonVideoSection = ({ currentLesson, course, onTimeUpdate }: LessonVideoSectionProps) => {
-  const hasVideo = currentLesson.video_url || currentLesson.video_file_url;
+  const hasVideo = currentLesson.video_url || 
+                   currentLesson.video_file_url || 
+                   (currentLesson.bunny_video_id && currentLesson.bunny_library_id);
+
+  console.log('[LessonVideoSection] Video check:', {
+    video_url: currentLesson.video_url,
+    video_file_url: currentLesson.video_file_url,
+    bunny_video_id: currentLesson.bunny_video_id,
+    bunny_library_id: currentLesson.bunny_library_id,
+    hasVideo
+  });
 
   if (!hasVideo) {
     return (
@@ -32,13 +42,15 @@ export const LessonVideoSection = ({ currentLesson, course, onTimeUpdate }: Less
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full overflow-hidden">
       <CardContent className="p-0">
-        <VideoPlayer
-          currentLesson={currentLesson}
-          course={course}
-          onTimeUpdate={onTimeUpdate}
-        />
+        <div className="w-full max-w-full overflow-hidden">
+          <VideoPlayer
+            currentLesson={currentLesson}
+            course={course}
+            onTimeUpdate={onTimeUpdate}
+          />
+        </div>
       </CardContent>
     </Card>
   );

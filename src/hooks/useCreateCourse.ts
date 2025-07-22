@@ -45,17 +45,16 @@ export const useCreateCourse = () => {
       // Invalidate queries to refresh the course list
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       console.log('Course creation successful, queries invalidated');
-      toast({
+      toast.success({
         title: "Sucesso",
-        description: "Curso criado com sucesso!",
+        description: "Curso criado com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Mutation error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao criar curso: " + error.message,
-        variant: "destructive",
+        description: "Erro ao criar curso: " + error.message
       });
     },
   });

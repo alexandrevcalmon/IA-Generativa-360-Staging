@@ -13,6 +13,8 @@ export interface CollaboratorStats {
     phone?: string;
     position?: string;
     is_active: boolean;
+    company_name?: string; // Add company name for producer view
+    company_id?: string; // Add company_id for producer view
   };
   collaborator_id: string;
   lessons_completed: number;
@@ -32,28 +34,52 @@ export const useCollaboratorAnalytics = () => {
   const { data: companyData } = useCompanyData();
 
   return useQuery({
-    queryKey: ['collaborator-analytics', user?.id, companyData?.id],
+    queryKey: ['collaborator-analytics', user?.id, companyData?.id, userRole],
     queryFn: async () => {
-      if (!user?.id || !companyData?.id) {
-        throw new Error('User not authenticated or company not found');
+      if (!user?.id) {
+        throw new Error('User not authenticated');
       }
 
-      console.log('📊 Fetching collaborator analytics for company:', companyData.id);
+      console.log('📊 Fetching collaborator analytics for role:', userRole);
 
-      // Get all company users/collaborators
-      const { data: collaborators, error: collaboratorsError } = await supabase
-        .from('company_users')
-        .select('*')
-        .eq('company_id', companyData.id);
+      let collaborators: any[] = [];
 
-      if (collaboratorsError) {
-        console.error('❌ Error fetching collaborators:', collaboratorsError);
-        throw collaboratorsError;
+      if (userRole === 'producer') {
+        // Para produtor único, buscar todos os colaboradores de todas as empresas
+        const { data: allCollaborators, error: collaboratorsError } = await supabase
+          .from('company_users')
+          .select(`*, companies:company_id (id, name)`);
+
+        if (collaboratorsError) {
+          console.error('❌ Error fetching collaborators:', collaboratorsError);
+          throw collaboratorsError;
+        }
+
+        collaborators = allCollaborators || [];
+        console.log('✅ Found collaborators (all companies):', collaborators.length);
+
+      } else if (userRole === 'company' && companyData?.id) {
+        // For companies, get collaborators from their own company
+        console.log('🏢 Fetching collaborators for company:', companyData.id);
+        
+        const { data: companyCollaborators, error: collaboratorsError } = await supabase
+          .from('company_users')
+          .select('*')
+          .eq('company_id', companyData.id);
+
+        if (collaboratorsError) {
+          console.error('❌ Error fetching collaborators:', collaboratorsError);
+          throw collaboratorsError;
+        }
+
+        collaborators = companyCollaborators || [];
+        console.log('✅ Found collaborators:', collaborators.length);
+
+      } else {
+        throw new Error('Invalid user role or company not found');
       }
 
-      console.log('✅ Found collaborators:', collaborators?.length || 0);
-
-      if (!collaborators || collaborators.length === 0) {
+      if (collaborators.length === 0) {
         return [];
       }
 
@@ -113,6 +139,8 @@ export const useCollaboratorAnalytics = () => {
                 phone: collaborator.phone,
                 position: collaborator.position,
                 is_active: collaborator.is_active,
+                company_name: userRole === 'producer' ? collaborator.companies?.name : undefined,
+                company_id: userRole === 'producer' ? collaborator.companies?.id : undefined,
               },
               collaborator_id: collaborator.id,
               lessons_completed: lessonsCompleted || 0,
@@ -137,6 +165,8 @@ export const useCollaboratorAnalytics = () => {
                 phone: collaborator.phone,
                 position: collaborator.position,
                 is_active: collaborator.is_active,
+                company_name: userRole === 'producer' ? collaborator.companies?.name : undefined,
+                company_id: userRole === 'producer' ? collaborator.companies?.id : undefined,
               },
               collaborator_id: collaborator.id,
               lessons_completed: 0,
@@ -157,7 +187,7 @@ export const useCollaboratorAnalytics = () => {
       console.log('✅ Analytics processed for', analyticsData.length, 'collaborators');
       return analyticsData as CollaboratorStats[];
     },
-    enabled: !!user?.id && !!companyData?.id && userRole === 'company',
+    enabled: !!user?.id && (userRole === 'producer' || (userRole === 'company' && !!companyData?.id)),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };

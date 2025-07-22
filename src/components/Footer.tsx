@@ -25,6 +25,7 @@ export function Footer() {
               <li><Link to="/courses" className="hover:text-calmon-400 transition-colors">Cursos</Link></li>
               <li><Link to="/community" className="hover:text-calmon-400 transition-colors">Comunidade</Link></li>
               <li><Link to="/analytics" className="hover:text-calmon-400 transition-colors">Analytics</Link></li>
+              <li><Link to="/auth?role=producer" className="hover:text-calmon-400 transition-colors">Sou Produtor</Link></li>
             </ul>
           </div>
           

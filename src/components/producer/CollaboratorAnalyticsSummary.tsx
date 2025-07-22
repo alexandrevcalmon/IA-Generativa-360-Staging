@@ -34,53 +34,53 @@ export const CollaboratorAnalyticsSummary = ({ stats }: CollaboratorAnalyticsSum
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <Card>
+      <Card className="!bg-gray-800 !border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total de Colaboradores</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="!text-sm !font-medium !text-gray-300">Total de Colaboradores</CardTitle>
+          <Users className="h-4 w-4 !text-gray-400" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{totalCollaborators}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="!text-2xl !font-bold !text-white">{totalCollaborators}</div>
+          <p className="!text-xs !text-gray-400">
             {activeCollaborators} ativos
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="!bg-gray-800 !border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Tempo Total de Estudo</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="!text-sm !font-medium !text-gray-300">Tempo Total de Estudo</CardTitle>
+          <Clock className="h-4 w-4 !text-gray-400" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatWatchTime(totalWatchTime)}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="!text-2xl !font-bold !text-white">{formatWatchTime(totalWatchTime)}</div>
+          <p className="!text-xs !text-gray-400">
             {recentlyActive} ativos na semana
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="!bg-gray-800 !border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Lições Completadas</CardTitle>
-          <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="!text-sm !font-medium !text-gray-300">Lições Completadas</CardTitle>
+          <BookOpen className="h-4 w-4 !text-gray-400" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{totalLessonsCompleted}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="!text-2xl !font-bold !text-white">{totalLessonsCompleted}</div>
+          <p className="!text-xs !text-gray-400">
             {averageCompletionRate} por colaborador
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="!bg-gray-800 !border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Engajamento</CardTitle>
-          <Trophy className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="!text-sm !font-medium !text-gray-300">Engajamento</CardTitle>
+          <Trophy className="h-4 w-4 !text-gray-400" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{Math.round((recentlyActive / totalCollaborators) * 100)}%</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="!text-2xl !font-bold !text-white">{totalCollaborators > 0 ? Math.round((recentlyActive / totalCollaborators) * 100) : 0}%</div>
+          <p className="!text-xs !text-gray-400">
             Últimos 7 dias
           </p>
         </CardContent>

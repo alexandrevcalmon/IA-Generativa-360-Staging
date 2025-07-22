@@ -19,6 +19,11 @@ export interface Lesson {
   video_file_url?: string | null;
   material_url?: string | null;
   is_optional?: boolean;
+  // Campos do Bunny.net
+  bunny_video_id?: string | null;
+  bunny_library_id?: number | null;
+  bunny_video_status?: 'pending' | 'processing' | 'ready' | 'error' | null;
+  bunny_embed_url?: string | null;
 }
 
 export const useLessons = (moduleId: string) => {
@@ -32,8 +37,23 @@ export const useLessons = (moduleId: string) => {
       const { data: lessons, error: lessonsError } = await supabase
         .from('lessons')
         .select(`
-          *,
-          is_optional
+          id,
+          module_id,
+          title,
+          content,
+          video_url,
+          video_file_url,
+          material_url,
+          image_url,
+          duration_minutes,
+          order_index,
+          is_free,
+          resources,
+          is_optional,
+          bunny_video_id,
+          bunny_library_id,
+          bunny_video_status,
+          bunny_embed_url
         `)
         .eq('module_id', moduleId)
         .order('order_index', { ascending: true });
@@ -58,7 +78,25 @@ export const useLesson = (lessonId: string) => {
       if (!lessonId) return null;
       const { data, error } = await supabase
         .from('lessons')
-        .select('*')
+        .select(`
+          id,
+          module_id,
+          title,
+          content,
+          video_url,
+          video_file_url,
+          material_url,
+          image_url,
+          duration_minutes,
+          order_index,
+          is_free,
+          resources,
+          is_optional,
+          bunny_video_id,
+          bunny_library_id,
+          bunny_video_status,
+          bunny_embed_url
+        `)
         .eq('id', lessonId)
         .single();
       if (error) throw error;
@@ -95,7 +133,25 @@ export const useCreateLesson = () => {
       const { data, error } = await supabase
         .from('lessons')
         .insert([dataWithOrder])
-        .select()
+        .select(`
+          id,
+          module_id,
+          title,
+          content,
+          video_url,
+          video_file_url,
+          material_url,
+          image_url,
+          duration_minutes,
+          order_index,
+          is_free,
+          resources,
+          is_optional,
+          bunny_video_id,
+          bunny_library_id,
+          bunny_video_status,
+          bunny_embed_url
+        `)
         .single();
 
       if (error) {
@@ -122,17 +178,16 @@ export const useCreateLesson = () => {
         queryClient.invalidateQueries({ queryKey: ['course-modules', moduleData.course_id] });
       }
       
-      toast({
+      toast.success({
         title: "Sucesso",
-        description: "Aula criada com sucesso!",
+        description: "Aula criada com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Create lesson error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao criar aula: " + error.message,
-        variant: "destructive",
+        description: "Erro ao criar aula: " + error.message
       });
     },
   });
@@ -155,7 +210,25 @@ export const useUpdateLesson = () => {
         .from('lessons')
         .update(lessonData)
         .eq('id', id)
-        .select()
+        .select(`
+          id,
+          module_id,
+          title,
+          content,
+          video_url,
+          video_file_url,
+          material_url,
+          image_url,
+          duration_minutes,
+          order_index,
+          is_free,
+          resources,
+          is_optional,
+          bunny_video_id,
+          bunny_library_id,
+          bunny_video_status,
+          bunny_embed_url
+        `)
         .single();
 
       if (error) {
@@ -167,6 +240,9 @@ export const useUpdateLesson = () => {
       return data;
     },
     onSuccess: async (data) => {
+      console.log('=== DEBUG: useUpdateLesson onSuccess ===');
+      console.log('Updated lesson data:', data);
+      
       // Invalidar a query das aulas do módulo
       queryClient.invalidateQueries({ queryKey: ['lessons', data.module_id] });
       
@@ -178,21 +254,26 @@ export const useUpdateLesson = () => {
         .single();
       
       if (moduleData) {
+        console.log('Module data found:', moduleData);
         // Invalidar a query dos módulos do curso (que inclui as aulas)
         queryClient.invalidateQueries({ queryKey: ['course-modules', moduleData.course_id] });
+        
+        // Forçar refetch das queries
+        await queryClient.refetchQueries({ queryKey: ['course-modules', moduleData.course_id] });
       }
       
-      toast({
+      console.log('=== END DEBUG ===');
+      
+      toast.success({
         title: "Sucesso",
-        description: "Aula atualizada com sucesso!",
+        description: "Aula atualizada com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Update lesson error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao atualizar aula: " + error.message,
-        variant: "destructive",
+        description: "Erro ao atualizar aula: " + error.message
       });
     },
   });
@@ -243,17 +324,16 @@ export const useUpdateLessonOrder = () => {
         queryClient.invalidateQueries({ queryKey: ['course-modules', moduleData.course_id] });
       }
       
-      toast({
+      toast.success({
         title: "Sucesso",
-        description: "Ordem das aulas atualizada com sucesso!",
+        description: "Ordem das aulas atualizada com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Update lesson order error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao atualizar ordem das aulas: " + error.message,
-        variant: "destructive",
+        description: "Erro ao atualizar ordem das aulas: " + error.message
       });
     },
   });
@@ -300,17 +380,16 @@ export const useDeleteLesson = () => {
         queryClient.invalidateQueries({ queryKey: ['course-modules', moduleData.course_id] });
       }
       
-      toast({
+      toast.success({
         title: "Sucesso",
-        description: "Aula excluída com sucesso!",
+        description: "Aula excluída com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Delete lesson error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao excluir aula: " + error.message,
-        variant: "destructive",
+        description: "Erro ao excluir aula: " + error.message
       });
     },
   });

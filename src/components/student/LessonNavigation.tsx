@@ -20,6 +20,17 @@ interface LessonNavigationProps {
 export const LessonNavigation = ({ courseId, prevLesson, nextLesson, nextLessonBlocked, nextLessonBlockedReason, nextLessonBlockedAction, currentLessonId, quizzesByLesson, allAttempts }: LessonNavigationProps) => {
   const navigate = useNavigate();
 
+  // Log para debug
+  console.log('[LessonNavigation] Props received:', {
+    courseId,
+    prevLesson,
+    nextLesson,
+    nextLessonBlocked,
+    currentLessonId,
+    hasQuizzes: !!quizzesByLesson,
+    hasAttempts: !!allAttempts
+  });
+
   const handlePrevClick = () => {
     console.log('Previous lesson clicked:', prevLesson?.id);
     if (prevLesson) {
@@ -47,15 +58,17 @@ export const LessonNavigation = ({ courseId, prevLesson, nextLesson, nextLessonB
   };
 
   return (
-    <Card className="border-gray-200 bg-white shadow-lg">
-      <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6 bg-white text-gray-900 rounded-t-lg border-b border-gray-200">
+    <Card className="border-slate-700/50 bg-slate-900/20 shadow-lg">
+      <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6 bg-slate-900/20 text-white rounded-t-lg border-b border-slate-700/50">
         <CardTitle className="text-base sm:text-lg font-semibold">Navegação</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-4 px-4 sm:px-6 pb-4 sm:pb-6">
+        {console.log('[LessonNavigation] Rendering buttons:', { hasPrevLesson: !!prevLesson, hasNextLesson: !!nextLesson })}
+        
         {prevLesson && (
           <Button 
             variant="outline" 
-            className="w-full justify-start text-sm h-12 sm:h-14 touch-manipulation font-medium border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700"
+            className="w-full justify-start text-sm h-12 sm:h-14 touch-manipulation font-medium border-2 border-slate-600 hover:bg-slate-800/50 hover:border-slate-500 text-slate-300 bg-transparent"
             onClick={handlePrevClick}
           >
             <ArrowLeft className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -66,7 +79,7 @@ export const LessonNavigation = ({ courseId, prevLesson, nextLesson, nextLessonB
         {nextLesson && (
           <div className="relative w-full flex flex-col items-center gap-2">
             <Button 
-              className="w-full justify-start text-sm h-12 sm:h-14 touch-manipulation font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:bg-gray-300 disabled:text-gray-500"
+              className="w-full justify-start text-sm h-12 sm:h-14 touch-manipulation font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg disabled:bg-slate-700/50 disabled:text-slate-500"
               onClick={handleNextClick}
               disabled={!!nextLessonBlocked}
               title={nextLessonBlocked ? (nextLessonBlockedReason || 'Você não pode avançar para a próxima aula ainda.') : undefined}
@@ -79,12 +92,18 @@ export const LessonNavigation = ({ courseId, prevLesson, nextLesson, nextLessonB
                 {nextLessonBlockedAction && (
                   <div className="flex justify-center">{nextLessonBlockedAction}</div>
                 )}
-                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800 text-xs sm:text-sm w-full justify-center">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 rounded-md px-3 py-2 text-amber-300 text-xs sm:text-sm w-full justify-center">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-400" />
                   <span>Complete o quiz com pelo menos 75% de acerto para avançar.</span>
                 </div>
               </div>
             )}
+          </div>
+        )}
+        
+        {!prevLesson && !nextLesson && (
+          <div className="text-center text-slate-400 text-sm py-4">
+            Nenhuma navegação disponível
           </div>
         )}
       </CardContent>

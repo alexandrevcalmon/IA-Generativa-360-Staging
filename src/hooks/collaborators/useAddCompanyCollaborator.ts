@@ -21,7 +21,7 @@ export const useAddCompanyCollaborator = () => {
 
       try {
         // Call the Edge Function to create the collaborator (simplified payload)
-        const { data, error } = await supabase.functions.invoke('create-collaborator', {
+        const { data, error } = await supabase.functions.invoke('create-collaborator-v2', {
           body: {
             company_id: collaboratorData.company_id,
             name: collaboratorData.name,
@@ -67,17 +67,16 @@ export const useAddCompanyCollaborator = () => {
         description = `${variables.name} foi cadastrado e receberá um e-mail para completar o cadastro.`;
       }
 
-      toast({
+      toast.success({
         title: isReactivation ? "Colaborador reativado!" : "Colaborador cadastrado!",
-        description: description,
+        description: description
       });
     },
     onError: (error: Error) => {
       console.error("Error adding collaborator:", error);
-      toast({
+      toast.error({
         title: "Erro ao cadastrar colaborador",
-        description: error.message || "Ocorreu um erro inesperado.",
-        variant: "destructive",
+        description: error.message || "Ocorreu um erro inesperado."
       });
     },
   });

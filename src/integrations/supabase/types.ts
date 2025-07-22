@@ -343,7 +343,7 @@ export type Database = {
             foreignKeyName: "certificates_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
@@ -655,19 +655,27 @@ export type Database = {
           contact_name: string | null
           contact_phone: string | null
           created_at: string | null
+          created_via_stripe: boolean | null
           current_students: number | null
           email: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
+          max_collaborators: number | null
           max_students: number | null
           name: string
           needs_password_change: boolean
           notes: string | null
           official_name: string | null
           phone: string | null
+          stripe_customer_id: string | null
+          stripe_plan_id: string | null
+          stripe_subscription_id: string | null
+          subscription_ends_at: string | null
+          subscription_period: string | null
           subscription_plan: string | null
           subscription_plan_id: string | null
+          subscription_status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -685,19 +693,27 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
+          created_via_stripe?: boolean | null
           current_students?: number | null
           email?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
+          max_collaborators?: number | null
           max_students?: number | null
           name: string
           needs_password_change?: boolean
           notes?: string | null
           official_name?: string | null
           phone?: string | null
+          stripe_customer_id?: string | null
+          stripe_plan_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_period?: string | null
           subscription_plan?: string | null
           subscription_plan_id?: string | null
+          subscription_status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -715,19 +731,27 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
+          created_via_stripe?: boolean | null
           current_students?: number | null
           email?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
+          max_collaborators?: number | null
           max_students?: number | null
           name?: string
           needs_password_change?: boolean
           notes?: string | null
           official_name?: string | null
           phone?: string | null
+          stripe_customer_id?: string | null
+          stripe_plan_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_period?: string | null
           subscription_plan?: string | null
           subscription_plan_id?: string | null
+          subscription_status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -975,7 +999,7 @@ export type Database = {
             foreignKeyName: "discussion_replies_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1026,7 +1050,7 @@ export type Database = {
             foreignKeyName: "discussions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1373,7 +1397,7 @@ export type Database = {
             foreignKeyName: "mentorship_participants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1489,7 +1513,7 @@ export type Database = {
             foreignKeyName: "mentorships_mentor_id_fkey"
             columns: ["mentor_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1721,7 +1745,7 @@ export type Database = {
             foreignKeyName: "quiz_attempts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "company_users"
             referencedColumns: ["id"]
           },
         ]
@@ -1889,47 +1913,7 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          avatar_url: string | null
-          company_id: string | null
-          created_at: string | null
-          email: string
-          id: string
-          name: string
-          role: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          company_id?: string | null
-          created_at?: string | null
-          email: string
-          id?: string
-          name: string
-          role?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          company_id?: string | null
-          created_at?: string | null
-          email?: string
-          id?: string
-          name?: string
-          role?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_users_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+
     }
     Views: {
       [_ in never]: never

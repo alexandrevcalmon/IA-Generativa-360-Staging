@@ -17,8 +17,9 @@ export const createCompanySignInService = (toast: any) => {
 
         if (companySearchError) {
           console.error(`[CompanySignIn] Error checking company by email ${email}: ${companySearchError.message}`);
-          toast({ title: "Erro no login", description: "Email ou senha incorretos.", variant: "destructive" });
-          return { error: new Error("Invalid login credentials") };
+          const errorMessage = "Email ou senha incorretos.";
+          toast.error({ title: "Erro no login", description: errorMessage });
+          return { error: { message: errorMessage } };
         }
 
         if (companies && companies.length > 0) {
@@ -28,39 +29,46 @@ export const createCompanySignInService = (toast: any) => {
 
           if (createError || !createResult?.success) {
             console.error(`[CompanySignIn] Failed to create/link auth user for company ${company.id}. Error: ${createError?.message}`);
-            toast({ title: "Falha ao vincular usuário à empresa", description: createError?.message || "Erro desconhecido na função Edge.", variant: "destructive" });
-            return { error: createError || new Error("Failed Edge Function createCompanyAuthUser")};
+            const errorMessage = createError?.message || "Erro desconhecido na função Edge.";
+            toast.error({ title: "Falha ao vincular usuário à empresa", description: errorMessage });
+            return { error: { message: errorMessage } };
           }
 
           console.log(`[CompanySignIn] Auth user created/linked for ${company.name}. Retrying login.`);
           const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({ email, password });
           if (retryError) {
             console.error(`[CompanySignIn] Retry login failed for ${email} after company link. Error: ${retryError.message}`);
-            toast({ title: "Erro no Login", description: "Falha ao tentar login após vincular à empresa.", variant: "destructive" });
-            return { error: retryError };
+            const errorMessage = "Falha ao tentar login após vincular à empresa.";
+            toast.error({ title: "Erro no Login", description: errorMessage });
+            return { error: { message: errorMessage } };
           }
 
           if (retryData.user) {
             console.log(`[CompanySignIn] Retry login successful for ${email}. Updating metadata to 'company'.`);
             await updateUserMetadata({ role: 'company', company_id: company.id, company_name: company.name });
-            toast({ title: "Login de Empresa bem-sucedido!", description: "Bem-vindo! Sua senha precisa ser alterada." });
+            toast.success({ title: "Login de Empresa bem-sucedido!", description: "Bem-vindo! Sua senha precisa ser alterada." });
             return { error: null, user: retryData.user, session: retryData.session, needsPasswordChange: true };
           }
           console.error(`[CompanySignIn] Retry login for ${email} for company flow succeeded but user data is missing.`);
-          return { error: new Error("User data not found on company retry.") };
+          const errorMessage = "Dados do usuário não encontrados após login.";
+          return { error: { message: errorMessage } };
         } else {
           console.log(`[CompanySignIn] No company found with email ${email}. Allowing general login attempt.`);
-          toast({ title: "Credenciais inválidas", description: "Email ou senha incorretos.", variant: "destructive" });
-          return { error: new Error("Invalid login credentials") };
+          const errorMessage = "Email ou senha incorretos.";
+          toast.error({ title: "Credenciais inválidas", description: errorMessage });
+          return { error: { message: errorMessage } };
         }
       }
       
+      let errorMessage = "";
       if (loginError.message.includes('Email not confirmed')) {
-        toast({ title: "Email não confirmado", description: "Verifique seu email para confirmação.", variant: "destructive"});
+        errorMessage = "Verifique seu email para confirmação.";
+        toast.error({ title: "Email não confirmado", description: errorMessage });
       } else {
-        toast({ title: "Credenciais Inválidas", description: "Email ou senha incorretos.", variant: "destructive"});
+        errorMessage = "Email ou senha incorretos.";
+        toast.error({ title: "Credenciais Inválidas", description: errorMessage });
       }
-      return { error: loginError };
+      return { error: { ...loginError, message: errorMessage } };
     }
 
     // Login successful - check if user should have company role

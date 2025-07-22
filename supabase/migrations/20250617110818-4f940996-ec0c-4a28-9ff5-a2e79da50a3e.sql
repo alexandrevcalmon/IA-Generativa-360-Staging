@@ -114,7 +114,7 @@ CREATE POLICY "Producers can manage all learning path courses"
 CREATE TABLE IF NOT EXISTS public.mentorships (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  mentor_id UUID REFERENCES public.users(id),
+  mentor_id UUID REFERENCES public.company_users(id),
   title VARCHAR(255) NOT NULL,
   description TEXT,
   scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -146,7 +146,7 @@ CREATE POLICY "Producers can manage all mentorships"
 CREATE TABLE IF NOT EXISTS public.mentorship_participants (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   mentorship_id UUID NOT NULL REFERENCES public.mentorships(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.company_users(id) ON DELETE CASCADE,
   registered_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   attended BOOLEAN DEFAULT NULL,
   UNIQUE(mentorship_id, user_id)

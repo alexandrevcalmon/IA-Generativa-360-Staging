@@ -39,20 +39,20 @@ export const LessonItem = ({ lesson, onEdit, onDelete }: LessonItemProps) => {
   };
 
   return (
-    <Card className="group hover:shadow-md transition-shadow">
+    <Card className="group hover:shadow-lg transition-shadow bg-gray-800/50 border-gray-600">
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h4 className="font-medium text-sm">{lesson.title}</h4>
+              <h4 className="font-medium text-sm text-white">{lesson.title}</h4>
               {lesson.is_free && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-green-900/20 text-green-400 border-green-800">
                   Gratuita
                 </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-xs text-gray-400">
               {lesson.duration_minutes && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -76,12 +76,12 @@ export const LessonItem = ({ lesson, onEdit, onDelete }: LessonItemProps) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onEdit(lesson)}
-              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
               title="Editar aula"
             >
               <Edit className="h-3 w-3" />
@@ -92,25 +92,27 @@ export const LessonItem = ({ lesson, onEdit, onDelete }: LessonItemProps) => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
                   title="Excluir aula"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="bg-gray-800 border-gray-600">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir Aula</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="text-white">Excluir Aula</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-300">
                     Tem certeza que deseja excluir a aula "{lesson.title}"? 
                     Esta ação não pode ser desfeita.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel className="bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600">
+                    Cancelar
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     Excluir
                   </AlertDialogAction>

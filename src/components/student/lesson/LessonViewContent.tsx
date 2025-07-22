@@ -37,6 +37,25 @@ export const LessonViewContent = ({
   const [watchTime, setWatchTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [quizModalOpen, setQuizModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detectar se é mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024; // lg breakpoint
+      setIsMobile(mobile);
+      console.log('[LessonViewContent] Mobile detection:', { 
+        windowWidth: window.innerWidth, 
+        isMobile: mobile 
+      });
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   // Buscar quizzes da aula atual
   const { data: quizzes = [], isLoading: quizzesLoading } = useLessonQuizzes(currentLesson.id);
   // Buscar todas as tentativas do usuário para todos os quizzes da aula atual (hook customizado)
@@ -150,7 +169,34 @@ export const LessonViewContent = ({
     watch_time_seconds: currentLesson.watch_time_seconds || 0,
     video_file_url: currentLesson.video_file_url || null,
     material_url: currentLesson.material_url || null,
+    // Garantir que os campos do Bunny.net sejam incluídos
+    bunny_video_id: currentLesson.bunny_video_id,
+    bunny_library_id: currentLesson.bunny_library_id,
+    bunny_video_status: currentLesson.bunny_video_status,
+    bunny_embed_url: currentLesson.bunny_embed_url,
   };
+
+  console.log('[LessonViewContent] Current lesson data:', {
+    id: currentLesson.id,
+    title: currentLesson.title,
+    bunny_video_id: currentLesson.bunny_video_id,
+    bunny_library_id: currentLesson.bunny_library_id,
+    bunny_video_status: currentLesson.bunny_video_status,
+    bunny_embed_url: currentLesson.bunny_embed_url,
+    video_url: currentLesson.video_url,
+    video_file_url: currentLesson.video_file_url
+  });
+
+  console.log('[LessonViewContent] Student lesson data:', {
+    id: studentLesson.id,
+    title: studentLesson.title,
+    bunny_video_id: studentLesson.bunny_video_id,
+    bunny_library_id: studentLesson.bunny_library_id,
+    bunny_video_status: studentLesson.bunny_video_status,
+    bunny_embed_url: studentLesson.bunny_embed_url,
+    video_url: studentLesson.video_url,
+    video_file_url: studentLesson.video_file_url
+  });
 
   // Definir bloqueio de avanço - sempre liberado
   const nextLessonBlocked = false;
@@ -180,6 +226,14 @@ export const LessonViewContent = ({
   // Ref para controlar se o toast já foi exibido para esta aula
   const completionToastShownRef = useRef<string | null>(null);
 
+  // Log para debug dos dados de navegação
+  console.log('[LessonViewContent] Navigation data:', {
+    prevLesson,
+    nextLesson,
+    currentLessonId: currentLesson.id,
+    courseId
+  });
+
   useEffect(() => {
     if (lessonReallyCompleted && completionToastShownRef.current !== currentLesson.id) {
       toast.success('Aula concluída! Parabéns! Você completou esta aula.', {
@@ -196,7 +250,7 @@ export const LessonViewContent = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-950 max-w-full overflow-x-hidden">
       {/* Header */}
       <LessonHeader 
         currentLesson={studentLesson} 
@@ -208,109 +262,30 @@ export const LessonViewContent = ({
       {/* Main Content */}
       <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
         <div className="max-w-7xl mx-auto">
+          {console.log('[LessonViewContent] Rendering layout:', { isMobile })}
+          
           {/* Mobile Layout - Stack vertically */}
-          <div className="block lg:hidden space-y-4">
-            {/* Video Section */}
-            <LessonVideoSection
-              currentLesson={studentLesson}
-              course={course}
-              onTimeUpdate={handleTimeUpdate}
-            />
-            {/* Quiz Modal (simples, substitua por seu componente real) */}
-            {quizModalOpen && quiz && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
-                  <h2 className="text-lg font-bold mb-4">Quiz da Aula</h2>
-                  <div className="max-h-[70vh] overflow-y-auto pr-2">
-                    {quizResult ? (
-                      <div className="flex flex-col items-center justify-center gap-4 py-6">
-                        <div className={`text-2xl font-bold ${quizResult.passed ? 'text-green-600' : 'text-red-600'}`}>{quizResult.score.toFixed(0)}%</div>
-                        <div className="text-lg font-medium text-center">
-                          {quizResult.passed ? (
-                            <>
-                              Parabéns! Você atingiu o percentual necessário e pode avançar para a próxima aula.
-                            </>
-                          ) : (
-                            <>
-                              Você não atingiu 75% de acerto.<br />Assista novamente a aula e tente o quiz de novo.
-                            </>
-                          )}
-                        </div>
-                        <Button className="mt-2" onClick={handleCloseQuizModal}>Fechar</Button>
-                      </div>
-                    ) : (
-                      <form onSubmit={e => { e.preventDefault(); handleQuizRealSubmit(); }}>
-                        {quiz.questions.map((q: any, idx: number) => (
-                          <div key={idx} className="mb-4">
-                            <div className="font-medium mb-2">{idx + 1}. {q.pergunta}</div>
-                            <div className="space-y-2">
-                              {q.alternativas.map((alt: string, altIdx: number) => (
-                                <label key={altIdx} className="flex items-center gap-2 cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name={`question-${idx}`}
-                                    value={alt}
-                                    checked={quizAnswers[idx] === alt}
-                                    onChange={() => handleQuizAnswerChange(idx, alt)}
-                                    className="accent-blue-600"
-                                  />
-                                  <span>{alt}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                        {quizError && <div className="text-red-600 text-sm mb-2">{quizError}</div>}
-                        <div className="flex justify-end gap-2 mt-4">
-                          <Button type="button" variant="outline" onClick={handleCloseQuizModal}>Cancelar</Button>
-                          <Button type="submit" className="bg-blue-600 text-white" disabled={quizSubmitting}>Enviar Respostas</Button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                </div>
+          {isMobile && (
+            <div className="space-y-4">
+              {console.log('[LessonViewContent] Rendering MOBILE layout')}
+              {/* Video Section - Ajustado para melhor responsividade */}
+              <div className="w-full overflow-hidden">
+                <LessonVideoSection
+                  currentLesson={studentLesson}
+                  course={course}
+                  onTimeUpdate={handleTimeUpdate}
+                />
               </div>
-            )}
-            
-            {/* Progress and Navigation */}
-            <LessonSidebar
-              currentLesson={studentLesson}
-              courseId={courseId}
-              watchTime={watchTime}
-              duration={duration}
-              prevLesson={prevLesson}
-              nextLesson={nextLesson}
-              nextLessonBlocked={nextLessonBlocked}
-              quizzesByLesson={quizzesByLesson}
-              allAttempts={allAttempts}
-            />
-            
-            {/* Content */}
-            <LessonContent 
-              currentLesson={studentLesson} 
-              currentModule={currentModule}
-            />
-          </div>
-
-          {/* Desktop Layout - Grid */}
-          <div className="hidden lg:grid lg:grid-cols-4 gap-6">
-            {/* Main Content - Left side */}
-            <div className="lg:col-span-3 space-y-6">
-              <LessonVideoSection
-                currentLesson={studentLesson}
-                course={course}
-                onTimeUpdate={handleTimeUpdate}
-              />
               {/* Quiz Modal (simples, substitua por seu componente real) */}
               {quizModalOpen && quiz && (
                 <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                  <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
-                    <h2 className="text-lg font-bold mb-4">Quiz da Aula</h2>
+                  <div className="bg-gray-900/95 p-6 rounded shadow-lg w-full max-w-4xl border border-gray-700 max-h-[90vh] overflow-y-auto">
+                    <h2 className="text-lg font-bold mb-4 text-white">Quiz da Aula</h2>
                     <div className="max-h-[70vh] overflow-y-auto pr-2">
                       {quizResult ? (
                         <div className="flex flex-col items-center justify-center gap-4 py-6">
-                          <div className={`text-2xl font-bold ${quizResult.passed ? 'text-green-600' : 'text-red-600'}`}>{quizResult.score.toFixed(0)}%</div>
-                          <div className="text-lg font-medium text-center">
+                          <div className={`text-2xl font-bold ${quizResult.passed ? 'text-emerald-400' : 'text-red-400'}`}>{quizResult.score.toFixed(0)}%</div>
+                          <div className="text-lg font-medium text-center text-gray-300">
                             {quizResult.passed ? (
                               <>
                                 Parabéns! Você atingiu o percentual necessário e pode avançar para a próxima aula.
@@ -321,34 +296,43 @@ export const LessonViewContent = ({
                               </>
                             )}
                           </div>
-                          <Button className="mt-2" onClick={handleCloseQuizModal}>Fechar</Button>
+                          <Button className="mt-2 !bg-gradient-to-r !from-emerald-500 !to-green-600 hover:!from-emerald-600 hover:!to-green-700 !text-white !border-0 !shadow-lg" onClick={handleCloseQuizModal}>Fechar</Button>
                         </div>
                       ) : (
                         <form onSubmit={e => { e.preventDefault(); handleQuizRealSubmit(); }}>
-                          {quiz.questions.map((q: any, idx: number) => (
-                            <div key={idx} className="mb-4">
-                              <div className="font-medium mb-2">{idx + 1}. {q.pergunta}</div>
-                              <div className="space-y-2">
-                                {q.alternativas.map((alt: string, altIdx: number) => (
-                                  <label key={altIdx} className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                      type="radio"
-                                      name={`question-${idx}`}
-                                      value={alt}
-                                      checked={quizAnswers[idx] === alt}
-                                      onChange={() => handleQuizAnswerChange(idx, alt)}
-                                      className="accent-blue-600"
-                                    />
-                                    <span>{alt}</span>
-                                  </label>
-                                ))}
+                          <div className="space-y-6">
+                            {quiz.questions.map((q: any, idx: number) => (
+                              <div key={idx} className="border border-gray-600 rounded p-4 bg-gray-800/50 relative">
+                                <div className="pr-16">
+                                  <div className="font-medium mb-3 text-white text-lg">{idx + 1}. {q.pergunta}</div>
+                                  <div className="space-y-2">
+                                    {q.alternativas.map((alt: string, altIdx: number) => (
+                                      <label key={altIdx} className={`flex items-center gap-3 cursor-pointer p-2 rounded transition-colors ${
+                                        quizAnswers[idx] === alt 
+                                          ? 'bg-blue-500/20 border border-blue-500/30' 
+                                          : 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700/70'
+                                      }`}>
+                                        <input
+                                          type="radio"
+                                          name={`question-${idx}`}
+                                          value={alt}
+                                          checked={quizAnswers[idx] === alt}
+                                          onChange={() => handleQuizAnswerChange(idx, alt)}
+                                          className="accent-blue-500"
+                                        />
+                                        <span className="font-medium mr-2 text-gray-300">{String.fromCharCode(65 + altIdx)}.</span>
+                                        <span className="text-gray-300">{alt}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                          {quizError && <div className="text-red-600 text-sm mb-2">{quizError}</div>}
-                          <div className="flex justify-end gap-2 mt-4">
-                            <Button type="button" variant="outline" onClick={handleCloseQuizModal}>Cancelar</Button>
-                            <Button type="submit" className="bg-blue-600 text-white" disabled={quizSubmitting}>Enviar Respostas</Button>
+                            ))}
+                          </div>
+                          {quizError && <div className="text-red-400 text-sm mb-4 mt-4 bg-red-500/10 p-3 rounded border border-red-500/30">{quizError}</div>}
+                          <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-700">
+                            <Button type="button" variant="outline" className="!border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent" onClick={handleCloseQuizModal}>Cancelar</Button>
+                            <Button type="submit" className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg" disabled={quizSubmitting}>Enviar Respostas</Button>
                           </div>
                         </form>
                       )}
@@ -357,14 +341,7 @@ export const LessonViewContent = ({
                 </div>
               )}
               
-              <LessonContent 
-                currentLesson={studentLesson} 
-                currentModule={currentModule}
-              />
-            </div>
-
-            {/* Sidebar - Right side */}
-            <div className="lg:col-span-1">
+              {/* Progress and Navigation */}
               <LessonSidebar
                 currentLesson={studentLesson}
                 courseId={courseId}
@@ -376,8 +353,113 @@ export const LessonViewContent = ({
                 quizzesByLesson={quizzesByLesson}
                 allAttempts={allAttempts}
               />
+              
+              {/* Content */}
+              <LessonContent 
+                currentLesson={studentLesson} 
+                currentModule={currentModule}
+              />
             </div>
-          </div>
+          )}
+
+          {/* Desktop Layout - Grid */}
+          {!isMobile && (
+            <div className="grid grid-cols-4 gap-6">
+              {console.log('[LessonViewContent] Rendering DESKTOP layout')}
+              {/* Main Content - Left side */}
+              <div className="col-span-3 space-y-6">
+                <LessonVideoSection
+                  currentLesson={studentLesson}
+                  course={course}
+                  onTimeUpdate={handleTimeUpdate}
+                />
+                {/* Quiz Modal (simples, substitua por seu componente real) */}
+                {quizModalOpen && quiz && (
+                  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div className="bg-gray-900/95 p-6 rounded shadow-lg w-full max-w-4xl border border-gray-700 max-h-[90vh] overflow-y-auto">
+                      <h2 className="text-lg font-bold mb-4 text-white">Quiz da Aula</h2>
+                      <div className="max-h-[70vh] overflow-y-auto pr-2">
+                        {quizResult ? (
+                          <div className="flex flex-col items-center justify-center gap-4 py-6">
+                            <div className={`text-2xl font-bold ${quizResult.passed ? 'text-emerald-400' : 'text-red-400'}`}>{quizResult.score.toFixed(0)}%</div>
+                            <div className="text-lg font-medium text-center text-gray-300">
+                              {quizResult.passed ? (
+                                <>
+                                  Parabéns! Você atingiu o percentual necessário e pode avançar para a próxima aula.
+                                </>
+                              ) : (
+                                <>
+                                  Você não atingiu 75% de acerto.<br />Assista novamente a aula e tente o quiz de novo.
+                                </>
+                              )}
+                            </div>
+                            <Button className="mt-2 !bg-gradient-to-r !from-emerald-500 !to-green-600 hover:!from-emerald-600 hover:!to-green-700 !text-white !border-0 !shadow-lg" onClick={handleCloseQuizModal}>Fechar</Button>
+                          </div>
+                        ) : (
+                          <form onSubmit={e => { e.preventDefault(); handleQuizRealSubmit(); }}>
+                            <div className="space-y-6">
+                              {quiz.questions.map((q: any, idx: number) => (
+                                <div key={idx} className="border border-gray-600 rounded p-4 bg-gray-800/50 relative">
+                                  <div className="pr-16">
+                                    <div className="font-medium mb-3 text-white text-lg">{idx + 1}. {q.pergunta}</div>
+                                    <div className="space-y-2">
+                                      {q.alternativas.map((alt: string, altIdx: number) => (
+                                        <label key={altIdx} className={`flex items-center gap-3 cursor-pointer p-2 rounded transition-colors ${
+                                          quizAnswers[idx] === alt 
+                                            ? 'bg-blue-500/20 border border-blue-500/30' 
+                                            : 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700/70'
+                                        }`}>
+                                          <input
+                                            type="radio"
+                                            name={`question-${idx}`}
+                                            value={alt}
+                                            checked={quizAnswers[idx] === alt}
+                                            onChange={() => handleQuizAnswerChange(idx, alt)}
+                                            className="accent-blue-500"
+                                          />
+                                          <span className="font-medium mr-2 text-gray-300">{String.fromCharCode(65 + altIdx)}.</span>
+                                          <span className="text-gray-300">{alt}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {quizError && <div className="text-red-400 text-sm mb-4 mt-4 bg-red-500/10 p-3 rounded border border-red-500/30">{quizError}</div>}
+                            <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-700">
+                              <Button type="button" variant="outline" className="!border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent" onClick={handleCloseQuizModal}>Cancelar</Button>
+                              <Button type="submit" className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg" disabled={quizSubmitting}>Enviar Respostas</Button>
+                            </div>
+                          </form>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <LessonContent 
+                  currentLesson={studentLesson} 
+                  currentModule={currentModule}
+                />
+              </div>
+
+              {/* Sidebar - Right side */}
+              <div className="col-span-1">
+                <LessonSidebar
+                  currentLesson={studentLesson}
+                  courseId={courseId}
+                  watchTime={watchTime}
+                  duration={duration}
+                  prevLesson={prevLesson}
+                  nextLesson={nextLesson}
+                  nextLessonBlocked={nextLessonBlocked}
+                  quizzesByLesson={quizzesByLesson}
+                  allAttempts={allAttempts}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -390,18 +472,18 @@ export const LessonViewContent = ({
       {/* Modal de Revisão do Quiz */}
       {reviewQuizModalOpen && quiz && lastAttempt && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
-            <h2 className="text-lg font-bold mb-4">Revisão do Quiz</h2>
+          <div className="bg-slate-900/95 p-6 rounded shadow-lg w-full max-w-lg border border-slate-700/50">
+            <h2 className="text-lg font-bold mb-4 text-white">Revisão do Quiz</h2>
             <div className="max-h-[70vh] overflow-y-auto pr-2">
               {quiz.questions.map((q: any, idx: number) => (
                 <div key={idx} className="mb-4">
-                  <div className="font-medium mb-2">{idx + 1}. {q.pergunta}</div>
+                  <div className="font-medium mb-2 text-white">{idx + 1}. {q.pergunta}</div>
                   <div className="space-y-2">
                     {q.alternativas.map((alt: string, altIdx: number) => {
                       const isSelected = lastAttempt.answers && lastAttempt.answers[idx] === alt;
                       const isCorrect = q.correta === alt;
                       return (
-                        <div key={altIdx} className={`flex items-center gap-2 p-1 rounded ${isCorrect ? 'bg-green-100' : isSelected ? 'bg-blue-100' : ''}`}>
+                        <div key={altIdx} className={`flex items-center gap-2 p-1 rounded ${isCorrect ? 'bg-emerald-500/20' : isSelected ? 'bg-blue-500/20' : 'bg-slate-800/50'}`}>
                           <input
                             type="radio"
                             name={`review-question-${idx}`}
@@ -409,11 +491,11 @@ export const LessonViewContent = ({
                             checked={isSelected}
                             readOnly
                             disabled
-                            className="accent-blue-600"
+                            className="accent-emerald-500"
                           />
-                          <span className={isCorrect ? 'font-semibold text-green-700' : isSelected ? 'font-semibold text-blue-700' : ''}>{alt}</span>
-                          {isCorrect && <span className="ml-2 text-green-600 text-xs">Correta</span>}
-                          {isSelected && !isCorrect && <span className="ml-2 text-blue-600 text-xs">Sua resposta</span>}
+                          <span className={isCorrect ? 'font-semibold text-emerald-300' : isSelected ? 'font-semibold text-blue-300' : 'text-slate-300'}>{alt}</span>
+                          {isCorrect && <span className="ml-2 text-emerald-400 text-xs">Correta</span>}
+                          {isSelected && !isCorrect && <span className="ml-2 text-blue-400 text-xs">Sua resposta</span>}
                         </div>
                       );
                     })}
@@ -422,7 +504,7 @@ export const LessonViewContent = ({
               ))}
             </div>
             <div className="flex justify-end mt-4">
-              <Button onClick={handleCloseReviewQuiz} variant="outline">Fechar</Button>
+              <Button onClick={handleCloseReviewQuiz} variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800/50">Fechar</Button>
             </div>
           </div>
         </div>

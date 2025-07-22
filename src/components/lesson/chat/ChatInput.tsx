@@ -42,14 +42,14 @@ export const ChatInput = ({
   });
 
   return (
-    <div className="border-t bg-white p-3">
+    <div className="border-t border-slate-700/50 bg-slate-900/20 p-3">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           value={inputMessage || ''}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           placeholder={lessonId ? "Pergunte sobre a lição..." : "Digite sua pergunta..."}
-          className="flex-1 text-sm"
+          className="flex-1 text-sm border-slate-600 bg-slate-800/50 text-slate-200 placeholder:text-slate-400"
           disabled={isDisabled}
           autoComplete="off"
           autoFocus={false}
@@ -58,7 +58,7 @@ export const ChatInput = ({
           type="submit"
           size="sm"
           disabled={!inputMessage?.trim() || isDisabled}
-          className="px-3 flex-shrink-0"
+          className="px-3 flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white disabled:bg-slate-700/50 disabled:text-slate-500"
         >
           <Send className="h-4 w-4" />
         </Button>

@@ -310,7 +310,7 @@ const ProducerCompanyDetails = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-muted-foreground">Cursos Ativos</p>
-                          <p className="text-2xl font-bold text-orange-600">8</p>
+                          <p className="text-2xl font-bold text-orange-600">-</p>
                         </div>
                         <Building2 className="h-8 w-8 text-orange-600" />
                       </div>

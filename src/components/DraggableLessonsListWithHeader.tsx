@@ -66,8 +66,8 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
     <Card
       ref={setNodeRef}
       style={style}
-      className={`group hover:shadow-md transition-shadow ${
-        isDragging ? 'shadow-lg z-50' : ''
+      className={`group hover:shadow-lg transition-shadow bg-gray-800/50 border-gray-600 ${
+        isDragging ? 'shadow-xl z-50' : ''
       }`}
     >
       <CardContent className="p-4">
@@ -76,26 +76,28 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
           <div
             {...attributes}
             {...listeners}
-            className="flex items-center text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-600"
+            className="flex items-center text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-300"
           >
             <GripVertical className="h-4 w-4" />
           </div>
           
           {/* Order Number */}
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-xs font-medium text-gray-300">
             {index + 1}
           </div>
           
           {/* Lesson Info */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h5 className="font-medium text-sm">{lesson.title}</h5>
+              <h5 className="font-medium text-sm text-white">{lesson.title}</h5>
               {lesson.is_free && (
-                <Badge variant="secondary" className="text-xs">Gratuita</Badge>
+                <Badge variant="secondary" className="text-xs bg-green-900/20 text-green-400 border-green-800">
+                  Gratuita
+                </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-xs text-gray-400">
               {lesson.duration_minutes && (
                 <span>{formatDuration(lesson.duration_minutes)}</span>
               )}
@@ -105,12 +107,12 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
           </div>
           
           {/* Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onEdit(lesson)}
-              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
               title="Editar aula"
             >
               <Edit className="h-3 w-3" />
@@ -121,25 +123,27 @@ const SortableLessonItem = ({ lesson, index, onEdit, onDelete }: SortableLessonI
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
                   title="Excluir aula"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="bg-gray-800 border-gray-600">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir Aula</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="text-white">Excluir Aula</AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-300">
                     Tem certeza que deseja excluir a aula "{lesson.title}"? 
                     Esta ação não pode ser desfeita.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel className="bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600">
+                    Cancelar
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => onDelete(lesson.id)}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     Excluir
                   </AlertDialogAction>
@@ -217,13 +221,13 @@ export const DraggableLessonsListWithHeader = ({ module, onEditLesson, onCreateL
 
   if (!lessons || lessons.length === 0) {
     return (
-      <Card>
+      <Card className="bg-gray-800/50 border-gray-600">
         <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground mb-4">Nenhuma aula neste módulo</p>
+          <p className="text-gray-400 mb-4">Nenhuma aula neste módulo</p>
           <Button
             variant="outline"
             onClick={() => onCreateLesson(module.id)}
-            className="text-sm"
+            className="text-sm bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600"
           >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Primeira Aula
@@ -236,7 +240,7 @@ export const DraggableLessonsListWithHeader = ({ module, onEditLesson, onCreateL
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="font-medium text-base text-gray-700 flex items-center gap-2">
+        <h4 className="font-medium text-base text-white flex items-center gap-2">
           <BookOpen className="h-4 w-4" />
           {module.title} ({lessons.length} aulas)
         </h4>
@@ -244,7 +248,7 @@ export const DraggableLessonsListWithHeader = ({ module, onEditLesson, onCreateL
           variant="outline"
           size="sm"
           onClick={() => onCreateLesson(module.id)}
-          className="text-xs"
+          className="text-xs bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600"
         >
           <Plus className="h-3 w-3 mr-1" />
           Adicionar Aula

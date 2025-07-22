@@ -22,7 +22,7 @@ export const ProducerMentorshipContent = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p>Carregando sessões...</p>
+        <p className="text-gray-300">Carregando sessões...</p>
       </div>
     );
   }

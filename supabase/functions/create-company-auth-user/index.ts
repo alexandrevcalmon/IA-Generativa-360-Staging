@@ -101,7 +101,14 @@ serve(async (req) => {
       console.log(`[create-company-auth-user] No existing auth user. Inviting new one for email: ${email}`);
       const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         data: { role: 'company', company_id: companyId, company_name: effectiveCompanyName, name: contactName || effectiveCompanyName },
-        redirectTo
+        redirectTo,
+        // Configurar tempo de expiração mais longo (7 dias em segundos)
+        options: {
+          data: { role: 'company', company_id: companyId, company_name: effectiveCompanyName, name: contactName || effectiveCompanyName },
+          emailRedirectTo: redirectTo,
+          // Definir tempo de expiração personalizado (7 dias)
+          expiresIn: 7 * 24 * 60 * 60 // 7 dias em segundos
+        }
       });
       if (inviteError || !inviteData?.user) {
         console.error('[create-company-auth-user] Error inviting new auth user:', inviteError?.message || 'User object not returned.');
@@ -156,6 +163,43 @@ serve(async (req) => {
       // Non-fatal, but log it. The main goal was to link auth user to company.
     } else {
       console.log('[create-company-auth-user] Profile record upserted successfully.');
+    }
+
+    // NOVO: Upsert em company_users para garantir vínculo
+    console.log('[create-company-auth-user] Upserting company_users record...');
+    const { data: existingCompanyUser, error: findCompanyUserError } = await supabaseAdmin
+      .from('company_users')
+      .select('id')
+      .eq('auth_user_id', authUserId)
+      .maybeSingle();
+    let companyUserId = existingCompanyUser?.id;
+    if (!companyUserId) {
+      // Gerar novo uuid se necessário
+      const { data: uuidData, error: uuidError } = await supabaseAdmin.rpc('gen_random_uuid');
+      if (uuidError || !uuidData) {
+        // Fallback para Date.now se não houver função uuid
+        companyUserId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+      } else {
+        companyUserId = uuidData;
+      }
+    }
+    const companyUserUpsert = {
+      id: companyUserId,
+      email: email,
+      company_id: companyId,
+      auth_user_id: authUserId,
+      name: contactName || effectiveCompanyName || email,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    const { error: upsertCompanyUserError } = await supabaseAdmin
+      .from('company_users')
+      .upsert(companyUserUpsert, { onConflict: 'auth_user_id' });
+    if (upsertCompanyUserError) {
+      console.error('[create-company-auth-user] Error upserting company_users record:', upsertCompanyUserError.message, upsertCompanyUserError.details);
+      // Non-fatal, mas importante logar
+    } else {
+      console.log('[create-company-auth-user] company_users record upserted successfully.');
     }
 
     console.log('[create-company-auth-user] Process completed successfully:', { authUserId, companyId, isNewUser, needsPasswordChange: true });

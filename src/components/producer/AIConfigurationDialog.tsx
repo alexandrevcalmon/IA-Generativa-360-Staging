@@ -75,19 +75,19 @@ export const AIConfigurationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto !bg-gray-800 !border-gray-700">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="!text-white">
             {config ? 'Editar Configuração de IA' : 'Nova Configuração de IA'}
             {userRole === 'producer' && (
-              <span className="text-sm text-gray-500 ml-2">(Configuração Global)</span>
+              <span className="text-sm !text-gray-400 ml-2">(Configuração Global)</span>
             )}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="provider">Provedor de IA</Label>
+            <Label htmlFor="provider" className="!text-gray-300">Provedor de IA</Label>
             <Select
               value={formData.provider_id}
               onValueChange={(value) => {
@@ -99,12 +99,12 @@ export const AIConfigurationDialog = ({
                 }));
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="!bg-gray-700 !border-gray-600 !text-white">
                 <SelectValue placeholder="Selecione um provedor" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="!bg-gray-700 !border-gray-600">
                 {providers.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.id}>
+                  <SelectItem key={provider.id} value={provider.id} className="!text-gray-300 hover:!bg-gray-600">
                     {provider.display_name}
                   </SelectItem>
                 ))}
@@ -114,17 +114,17 @@ export const AIConfigurationDialog = ({
 
           {selectedProvider && (
             <div className="space-y-2">
-              <Label htmlFor="model">Modelo</Label>
+              <Label htmlFor="model" className="!text-gray-300">Modelo</Label>
               <Select
                 value={formData.model_name}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, model_name: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="!bg-gray-700 !border-gray-600 !text-white">
                   <SelectValue placeholder="Selecione um modelo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="!bg-gray-700 !border-gray-600">
                   {selectedProvider.supported_models.map((model) => (
-                    <SelectItem key={model} value={model}>
+                    <SelectItem key={model} value={model} className="!text-gray-300 hover:!bg-gray-600">
                       {model}
                     </SelectItem>
                   ))}
@@ -135,31 +135,33 @@ export const AIConfigurationDialog = ({
 
           {selectedProvider?.requires_api_key && (
             <div className="space-y-2">
-              <Label htmlFor="api_key">Chave da API</Label>
+              <Label htmlFor="api_key" className="!text-gray-300">Chave da API</Label>
               <Input
                 id="api_key"
                 type="password"
                 value={formData.api_key_encrypted}
                 onChange={(e) => setFormData(prev => ({ ...prev, api_key_encrypted: e.target.value }))}
                 placeholder="Digite sua chave da API"
+                className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400"
               />
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="system_prompt">Prompt do Sistema</Label>
+            <Label htmlFor="system_prompt" className="!text-gray-300">Prompt do Sistema</Label>
             <Textarea
               id="system_prompt"
               value={formData.system_prompt}
               onChange={(e) => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
               placeholder="Instruções para o assistente de IA"
               rows={4}
+              className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400"
             />
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Temperatura: {formData.temperature}</Label>
+              <Label className="!text-gray-300">Temperatura: {formData.temperature}</Label>
               <Slider
                 value={[formData.temperature]}
                 onValueChange={([value]) => setFormData(prev => ({ ...prev, temperature: value }))}
@@ -168,14 +170,14 @@ export const AIConfigurationDialog = ({
                 step={0.1}
                 className="w-full"
               />
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs !text-gray-400">
                 <span>Determinístico (0)</span>
                 <span>Criativo (2)</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="max_tokens">Máximo de Tokens</Label>
+              <Label htmlFor="max_tokens" className="!text-gray-300">Máximo de Tokens</Label>
               <Input
                 id="max_tokens"
                 type="number"
@@ -183,15 +185,23 @@ export const AIConfigurationDialog = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, max_tokens: Number(e.target.value) }))}
                 min={1}
                 max={8000}
+                className="!bg-gray-700 !border-gray-600 !text-white"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end gap-3 pt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="!bg-gray-700 !border-gray-600 !text-gray-300 hover:!bg-gray-600 hover:!text-white transition-colors duration-200"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
+            <Button 
+              onClick={handleSave}
+              className="!bg-gradient-to-r !from-blue-600 !to-blue-700 hover:!from-blue-700 hover:!to-blue-800 !text-white !border-0 shadow-lg hover:!shadow-xl transition-all duration-200"
+            >
               {config ? 'Atualizar' : 'Criar'}
             </Button>
           </div>

@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Building2, CreditCard, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { STRIPE_PLANS, getPlanInfo } from '@/lib/stripe';
 import { CompanyAddressFields } from '@/components/company/CompanyAddressFields';
 
 interface CompanyData {
@@ -28,13 +27,28 @@ interface CompanyData {
   contact_phone: string;
 }
 
+interface PlanData {
+  id: string;
+  name: string;
+  max_collaborators: number;
+  subscription_period_days: number;
+  stripe_product_id: string;
+  stripe_price_id: string;
+  price?: number;
+  currency?: string;
+  features?: any[];
+  created_at: string;
+  updated_at: string;
+}
+
 export default function CompanyData() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const plan = searchParams.get('plan');
+  const planId = searchParams.get('plan');
   const [loading, setLoading] = useState(false);
-  const [planInfo, setPlanInfo] = useState<any>(null);
+  const [planInfo, setPlanInfo] = useState<PlanData | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState(true);
 
   const [formData, setFormData] = useState<CompanyData>({
     name: '',
@@ -55,23 +69,76 @@ export default function CompanyData() {
   });
 
   useEffect(() => {
-    if (plan && typeof plan === 'string') {
-      const info = getPlanInfo(plan);
-      if (info) {
-        setPlanInfo({ id: plan, ...info });
-      } else {
+    const fetchPlanData = async () => {
+      if (!planId) {
         toast({
-          title: "Plano inválido",
-          description: "O plano selecionado não foi encontrado.",
+          title: "Plano não especificado",
+          description: "Nenhum plano foi selecionado.",
           variant: "destructive",
         });
         navigate('/planos');
+        return;
       }
-    }
-  }, [plan, navigate, toast]);
+
+      try {
+        const response = await fetch('https://ldlxebhnkayiwksipvyc.supabase.co/functions/v1/get-stripe-prices', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbHhlYmhua2F5aXdrc2lwdnljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NDA2NTMsImV4cCI6MjA2NzIxNjY1M30.XTc1M64yGVGuY4FnOsy9D3q5Ov1HAoyuZAV8IPwYEZ0'}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao buscar dados do plano');
+        }
+
+        const data = await response.json();
+        const plan = data.plans.find((p: PlanData) => p.id === planId);
+
+        if (!plan) {
+          toast({
+            title: "Plano não encontrado",
+            description: "O plano selecionado não foi encontrado.",
+            variant: "destructive",
+          });
+          navigate('/planos');
+          return;
+        }
+
+        setPlanInfo(plan);
+      } catch (error) {
+        console.error('Error fetching plan data:', error);
+        toast({
+          title: "Erro ao carregar plano",
+          description: "Erro ao buscar informações do plano selecionado.",
+          variant: "destructive",
+        });
+        navigate('/planos');
+      } finally {
+        setLoadingPlan(false);
+      }
+    };
+
+    fetchPlanData();
+  }, [planId, navigate, toast]);
 
   const handleInputChange = (field: keyof CompanyData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Função para auto-preenchimento do Nome Fantasia para Nome da Empresa
+  const handleNameBlur = (value: string) => {
+    if (value.trim()) {
+      setFormData(prev => ({ ...prev, contact_name: value.trim() }));
+    }
+  };
+
+  // Função para auto-preenchimento do Email da Empresa para Email da Empresa na seção de contato
+  const handleEmailBlur = (value: string) => {
+    if (value.trim()) {
+      setFormData(prev => ({ ...prev, contact_email: value.trim() }));
+    }
   };
 
   // Função utilitária para formatar CNPJ
@@ -128,26 +195,38 @@ export default function CompanyData() {
     setLoading(true);
 
     try {
+      const requestData = {
+        planId: planInfo.id,
+        companyData: formData,
+      };
+      
+      console.log('Enviando dados para create-stripe-checkout:', requestData);
+      
       const response = await fetch('https://ldlxebhnkayiwksipvyc.supabase.co/functions/v1/create-stripe-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbHhlYmhua2F5aXdrc2lwdnljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NDA2NTMsImV4cCI6MjA2NzIxNjY1M30.XTc1M64yGVGuY4FnOsy9D3q5Ov1HAoyuZAV8IPwYEZ0'}`,
         },
-        body: JSON.stringify({
-          planId: planInfo.id,
-          companyData: formData,
-        }),
+        body: JSON.stringify(requestData),
       });
 
       const data = await response.json();
+      console.log('Resposta da função create-stripe-checkout:', data);
 
       if (!response.ok) {
+        console.error('Erro na resposta:', data);
         throw new Error(data.error || 'Erro ao criar sessão de checkout');
       }
 
       // Redirecionar para o Stripe Checkout
-      window.location.href = data.url;
+      if (data.checkout_url) {
+        console.log('Redirecionando para:', data.checkout_url);
+        window.location.href = data.checkout_url;
+      } else {
+        console.error('URL de checkout não encontrada na resposta:', data);
+        throw new Error('URL de checkout não encontrada na resposta');
+      }
 
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -161,38 +240,49 @@ export default function CompanyData() {
     }
   };
 
+  if (loadingPlan) {
+    return (
+      <div className="min-h-screen !bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin !text-blue-400 mx-auto mb-4" />
+          <p className="!text-gray-300">Carregando dados do plano...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!planInfo) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen !bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-calmon-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <Loader2 className="h-8 w-8 animate-spin !text-blue-400 mx-auto mb-4" />
+          <p className="!text-gray-300">Plano não encontrado.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen !bg-gray-900">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="!bg-gray-800 shadow-sm border-b !border-gray-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/planos')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 !bg-gray-700 !border-gray-600 !text-gray-300 hover:!bg-gray-600 hover:!text-white"
             >
               <ArrowLeft className="h-4 w-4" />
               Voltar
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold !text-white">
                 Dados da Empresa
               </h1>
-              <p className="text-gray-600">
-                Plano selecionado: {planInfo.displayName}
+              <p className="!text-gray-300">
+                Plano selecionado: {planInfo.name}
               </p>
             </div>
           </div>
@@ -204,9 +294,9 @@ export default function CompanyData() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Formulário */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="!bg-gray-800 !border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 !text-white">
                   <Building2 className="h-5 w-5" />
                   Informações da Empresa
                 </CardTitle>
@@ -216,22 +306,25 @@ export default function CompanyData() {
                   {/* Dados Básicos */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nome Fantasia *</Label>
+                      <Label htmlFor="name" className="!text-gray-300">Nome Fantasia *</Label>
                       <Input
                         id="name"
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
+                        onBlur={(e) => handleNameBlur(e.target.value)}
                         placeholder="Nome Fantasia da Empresa"
+                        className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="official_name">Razão Social *</Label>
+                      <Label htmlFor="official_name" className="!text-gray-300">Razão Social *</Label>
                       <Input
                         id="official_name"
                         value={formData.official_name}
                         onChange={(e) => handleInputChange('official_name', e.target.value)}
                         placeholder="Razão Social da Empresa"
+                        className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
                         required
                       />
                     </div>
@@ -239,7 +332,7 @@ export default function CompanyData() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="cnpj">CNPJ *</Label>
+                      <Label htmlFor="cnpj" className="!text-gray-300">CNPJ *</Label>
                       <Input
                         id="cnpj"
                         value={formData.cnpj}
@@ -248,19 +341,23 @@ export default function CompanyData() {
                           setFormData(prev => ({ ...prev, cnpj: formatted }));
                         }}
                         placeholder="00.000.000/0000-00"
+                        className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
                         required
                         maxLength={18}
                         inputMode="numeric"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email da Empresa</Label>
+                      <Label htmlFor="email" className="!text-gray-300">Email da Empresa *</Label>
                       <Input
                         id="email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
+                        onBlur={(e) => handleEmailBlur(e.target.value)}
                         placeholder="contato@empresa.com"
+                        className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
+                        required
                       />
                     </div>
                   </div>
@@ -270,29 +367,31 @@ export default function CompanyData() {
 
                   {/* Contato */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-gray-900">Contato Principal</h3>
+                    <h3 className="text-lg font-medium !text-white">Contato Principal</h3>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="contact_name">Nome do Contato *</Label>
+                        <Label htmlFor="contact_name" className="!text-gray-300">Nome da Empresa *</Label>
                         <Input
                           id="contact_name"
                           value={formData.contact_name}
                           onChange={(e) => handleInputChange('contact_name', e.target.value)}
                           placeholder="Nome completo"
+                          className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contact_email">Email do Contato *</Label>
+                        <Label htmlFor="contact_email" className="!text-gray-300">Email da Empresa *</Label>
                         <Input
                           id="contact_email"
                           type="email"
                           value={formData.contact_email}
                           onChange={(e) => handleInputChange('contact_email', e.target.value)}
                           placeholder="contato@exemplo.com"
+                          className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
                           required
                         />
-                        <p className="text-xs text-blue-600">
+                        <p className="text-xs !text-blue-400">
                           Este email será usado para criar o acesso à plataforma
                         </p>
                       </div>
@@ -301,7 +400,7 @@ export default function CompanyData() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-calmon-500 hover:bg-calmon-600 text-white"
+                    className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white"
                     disabled={loading}
                   >
                     {loading ? (
@@ -318,33 +417,45 @@ export default function CompanyData() {
 
           {/* Resumo do Plano */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-8">
+            <Card className="sticky top-8 !bg-gray-800 !border-gray-700">
               <CardHeader>
-                <CardTitle>Resumo do Plano</CardTitle>
+                <CardTitle className="!text-white">Resumo do Plano</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-medium text-gray-900">{planInfo.displayName}</h3>
-                  <p className="text-sm text-gray-600">
-                    Até {planInfo.maxCollaborators} colaboradores
+                  <h3 className="font-medium !text-white">{planInfo.name}</h3>
+                  <p className="text-sm !text-gray-300">
+                    Até {planInfo.max_collaborators} colaboradores
                   </p>
                 </div>
                 
-                <div className="border-t pt-4">
+                <div className="border-t !border-gray-600 pt-4">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Período:</span>
-                      <span className="font-medium">{planInfo.period}</span>
+                      <span className="!text-gray-300">Período:</span>
+                      <span className="font-medium !text-white">
+                        {planInfo.subscription_period_days === 180 ? 'Semestral' : 
+                         planInfo.subscription_period_days === 365 ? 'Anual' : 
+                         `${planInfo.subscription_period_days} dias`}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Colaboradores:</span>
-                      <span className="font-medium">Até {planInfo.maxCollaborators}</span>
+                      <span className="!text-gray-300">Colaboradores:</span>
+                      <span className="font-medium !text-white">Até {planInfo.max_collaborators}</span>
                     </div>
+                    {planInfo.price && (
+                      <div className="flex justify-between">
+                        <span className="!text-gray-300">Preço:</span>
+                        <span className="font-medium !text-white">
+                          R$ {planInfo.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="border-t pt-4">
-                  <p className="text-xs text-gray-500">
+                <div className="border-t !border-gray-600 pt-4">
+                  <p className="text-xs !text-gray-400">
                     O pagamento será processado de forma segura pelo Stripe.
                   </p>
                 </div>

@@ -30,17 +30,16 @@ export const useDeleteCourse = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      toast({
+      toast.success({
         title: "Sucesso",
-        description: "Curso excluído com sucesso!",
+        description: "Curso excluído com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Delete mutation error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao excluir curso: " + error.message,
-        variant: "destructive",
+        description: "Erro ao excluir curso: " + error.message
       });
     },
   });

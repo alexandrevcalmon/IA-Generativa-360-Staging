@@ -42,6 +42,8 @@ export const useCompaniesWithPlans = () => {
   return useQuery({
     queryKey: ['companies-with-plans'],
     queryFn: async () => {
+      console.log('🔍 Fetching companies with plans...');
+      
       const { data, error } = await supabase
         .from('companies')
         .select(`
@@ -82,9 +84,19 @@ export const useCompaniesWithPlans = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching companies with plans:', error);
+        console.error('❌ Error fetching companies with plans:', error);
         throw error;
       }
+
+      console.log('✅ Companies with plans fetched:', {
+        total: data?.length || 0,
+        companies: data?.map(c => ({
+          name: c.name,
+          subscription_plan_id: c.subscription_plan_id,
+          billing_period: c.billing_period,
+          plan_name: c.subscription_plan?.name
+        }))
+      });
 
       return data as CompanyWithPlan[];
     }

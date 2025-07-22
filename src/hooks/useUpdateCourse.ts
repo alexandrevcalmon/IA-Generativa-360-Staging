@@ -54,17 +54,16 @@ export const useUpdateCourse = () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       queryClient.invalidateQueries({ queryKey: ['course', data.id] });
       console.log('Course update successful, queries invalidated');
-      toast({
+      toast.success({
         title: "Sucesso",
-        description: "Curso atualizado com sucesso!",
+        description: "Curso atualizado com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Update mutation error:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: `Erro ao atualizar curso: ${error.message}`,
-        variant: "destructive",
+        description: `Erro ao atualizar curso: ${error.message}`
       });
     },
   });

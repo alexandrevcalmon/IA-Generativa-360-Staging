@@ -44,17 +44,17 @@ const ProducerCourseDetails = () => {
   if (authLoading) {
     return (
       <div className="flex flex-col h-full">
-        <header className="border-b bg-white px-6 py-4">
+        <header className="border-b border-gray-700 bg-gray-900 px-6 py-6">
           <div className="flex items-center space-x-4">
             <SidebarTrigger />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Verificando permissões...</h1>
+              <h1 className="text-2xl font-bold text-white">Verificando permissões...</h1>
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-auto p-6 bg-gray-900">
           <div className="animate-pulse space-y-6">
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-gray-800 rounded-lg"></div>
           </div>
         </div>
       </div>
@@ -65,27 +65,32 @@ const ProducerCourseDetails = () => {
   if (userRole !== 'producer') {
     return (
       <div className="flex flex-col h-full">
-        <header className="border-b bg-white px-6 py-4">
+        <header className="border-b border-gray-700 bg-gray-900 px-6 py-6">
           <div className="flex items-center space-x-4">
             <SidebarTrigger />
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-gray-300 hover:text-white hover:bg-gray-700">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
-          <Card>
+        <div className="flex-1 overflow-auto p-6 bg-gray-900">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardContent className="p-12 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto text-red-600 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Acesso Negado</h3>
-              <p className="text-muted-foreground mb-4">
+              <div className="p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg w-fit mx-auto mb-4">
+                <AlertCircle className="h-12 w-12 text-white" />
+              </div>
+              <h3 className="text-lg font-medium mb-2 text-white">Acesso Negado</h3>
+              <p className="text-gray-300 mb-4">
                 Você não tem permissão para acessar esta página. Apenas produtores podem gerenciar cursos.
               </p>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-400 mb-4">
                 Seu perfil atual: {userRole || 'indefinido'}
               </p>
-              <Button onClick={() => navigate(-1)}>
+              <Button 
+                onClick={() => navigate(-1)}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg border-0"
+              >
                 Voltar
               </Button>
             </CardContent>
@@ -99,20 +104,20 @@ const ProducerCourseDetails = () => {
   if (courseLoading || modulesLoading) {
     return (
       <div className="flex flex-col h-full">
-        <header className="border-b bg-white px-6 py-4">
+        <header className="border-b border-gray-700 bg-gray-900 px-6 py-6">
           <div className="flex items-center space-x-4">
             <SidebarTrigger />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Carregando curso...</h1>
+              <h1 className="text-2xl font-bold text-white">Carregando curso...</h1>
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-auto p-6 bg-gray-900">
           <div className="animate-pulse space-y-6">
-            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-32 bg-gray-800 rounded-lg"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[1,2,3,4].map((i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-24 bg-gray-800 rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -127,27 +132,32 @@ const ProducerCourseDetails = () => {
     
     return (
       <div className="flex flex-col h-full">
-        <header className="border-b bg-white px-6 py-4">
+        <header className="border-b border-gray-700 bg-gray-900 px-6 py-6">
           <div className="flex items-center space-x-4">
             <SidebarTrigger />
-            <Button variant="ghost" size="sm" onClick={() => navigate('/producer/courses')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/producer/courses')} className="text-gray-300 hover:text-white hover:bg-gray-700">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
-          <Card>
+        <div className="flex-1 overflow-auto p-6 bg-gray-900">
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardContent className="p-12 text-center">
-              <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Curso não encontrado</h3>
-              <p className="text-muted-foreground mb-4">
+              <div className="p-3 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg w-fit mx-auto mb-4">
+                <BookOpen className="h-12 w-12 text-white" />
+              </div>
+              <h3 className="text-lg font-medium mb-2 text-white">Curso não encontrado</h3>
+              <p className="text-gray-300 mb-4">
                 O curso solicitado não foi encontrado ou você não tem permissão para acessá-lo.
               </p>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-400 mb-4">
                 ID do curso: {courseId}
               </p>
-              <Button onClick={() => navigate('/producer/courses')}>
+              <Button 
+                onClick={() => navigate('/producer/courses')}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg border-0"
+              >
                 Ver todos os cursos
               </Button>
             </CardContent>
@@ -196,54 +206,50 @@ const ProducerCourseDetails = () => {
         onCreateModule={handleCreateModule}
       />
 
-      <div className="flex-1 overflow-auto p-6 bg-gray-50">
+      <div className="flex-1 overflow-auto p-6 bg-gray-900">
         <div className="space-y-6">
           <CourseInfoCard course={course} modules={modules} />
 
           <Tabs defaultValue="modules" className="w-full">
-            <TabsList>
-              <TabsTrigger value="modules">Módulos</TabsTrigger>
-              <TabsTrigger value="lessons">Todas as Aulas</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
+              <TabsTrigger value="modules" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+                Módulos
+              </TabsTrigger>
+              <TabsTrigger value="lessons" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+                Todas as Aulas
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="modules" className="space-y-4">
-              <ModulesTabContent 
+            <TabsContent value="modules" className="mt-6">
+              <ModulesTabContent
                 modules={modules}
-                onCreateModule={handleCreateModule}
-                onEditModule={handleEditModule}
                 onCreateLesson={handleCreateLesson}
+                onEditModule={handleEditModule}
                 onEditLesson={handleEditLesson}
               />
             </TabsContent>
             
-            <TabsContent value="lessons" className="space-y-4">
-              <LessonsTabContent 
+            <TabsContent value="lessons" className="mt-6">
+              <LessonsTabContent
                 modules={modules}
-                onEditLesson={handleEditLesson}
                 onCreateLesson={handleCreateLesson}
+                onEditLesson={handleEditLesson}
               />
             </TabsContent>
           </Tabs>
         </div>
       </div>
 
-      <CreateModuleDialog 
-        isOpen={createModuleOpen} 
-        onClose={() => {
-          setCreateModuleOpen(false);
-          setEditingModule(null);
-        }}
+      <CreateModuleDialog
+        isOpen={createModuleOpen}
+        onClose={() => setCreateModuleOpen(false)}
         courseId={courseId!}
-        module={editingModule}
+        editingModule={editingModule}
       />
 
       <CreateLessonDialog
         isOpen={createLessonOpen}
-        onClose={() => {
-          setCreateLessonOpen(false);
-          setEditingLesson(null);
-          setSelectedModuleId(null);
-        }}
+        onClose={() => setCreateLessonOpen(false)}
         moduleId={selectedModuleId!}
         lesson={editingLesson}
       />

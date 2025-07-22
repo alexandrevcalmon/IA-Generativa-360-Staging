@@ -123,7 +123,7 @@ export function GenerateQuizDialog({
           description: content?.slice(0, 100) || '',
           questions,
         });
-        toast({ title: 'Quiz atualizado com sucesso!' });
+        toast.success({ title: 'Quiz atualizado com sucesso!' });
       } else {
         // Criação
         await createQuizMutation.mutateAsync({
@@ -133,16 +133,15 @@ export function GenerateQuizDialog({
           description: content?.slice(0, 100) || '',
           questions,
         });
-        toast({ title: 'Quiz salvo com sucesso!' });
+        toast.success({ title: 'Quiz salvo com sucesso!' });
       }
       if (onQuizApproved) onQuizApproved(questions);
       onOpenChange(false);
     } catch (error: any) {
       console.error('[GenerateQuizDialog] Erro ao salvar quiz:', error);
-      toast({
+      toast.error({
         title: 'Erro ao salvar quiz',
-        description: error.message || String(error),
-        variant: 'destructive',
+        description: error.message || String(error)
       });
     }
   };
@@ -151,24 +150,24 @@ export function GenerateQuizDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle>Quiz Gerado com IA</DialogTitle>
+          <DialogTitle className="text-white">Quiz Gerado com IA</DialogTitle>
         </DialogHeader>
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin mb-4" />
-            <span>Gerando perguntas com IA...</span>
+            <Loader2 className="h-8 w-8 animate-spin mb-4 text-gray-400" />
+            <span className="text-gray-300">Gerando perguntas com IA...</span>
           </div>
         ) : error ? (
-          <div className="text-red-600 text-center py-8">{error}</div>
+          <div className="text-red-400 text-center py-8">{error}</div>
         ) : (
           <div className="space-y-6">
             {questions.length === 0 && (
-              <div className="text-center text-gray-500">Nenhuma pergunta gerada.</div>
+              <div className="text-center text-gray-400">Nenhuma pergunta gerada.</div>
             )}
             {questions.map((q, idx) => (
-              <div key={idx} className="border rounded p-4 mb-2 bg-gray-50 relative">
+              <div key={idx} className="border border-gray-600 rounded p-4 mb-2 bg-gray-800/50 relative">
                 {editingIndex === idx ? (
                   <div className="space-y-2">
                     <Textarea
@@ -176,6 +175,7 @@ export function GenerateQuizDialog({
                       onChange={e => setEditData(d => d ? { ...d, pergunta: e.target.value } : d)}
                       placeholder="Pergunta"
                       rows={2}
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
                     />
                     {editData?.alternativas.map((alt, i) => (
                       <Input
@@ -183,45 +183,67 @@ export function GenerateQuizDialog({
                         value={alt}
                         onChange={e => setEditData(d => d ? { ...d, alternativas: d.alternativas.map((a, j) => j === i ? e.target.value : a) } : d)}
                         placeholder={`Alternativa ${String.fromCharCode(65 + i)}`}
-                        className="mb-1"
+                        className="mb-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
                       />
                     ))}
                     <Input
                       value={editData?.correta || ''}
                       onChange={e => setEditData(d => d ? { ...d, correta: e.target.value } : d)}
                       placeholder="Alternativa correta (copie exatamente uma das alternativas acima)"
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
                     />
-                    <Button size="sm" onClick={handleSaveEdit}>Salvar</Button>
-                    <Button size="sm" variant="outline" onClick={() => { setEditingIndex(null); setEditData(null); }}>Cancelar</Button>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleSaveEdit} className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg">Salvar</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setEditingIndex(null); setEditData(null); }} className="!border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent">Cancelar</Button>
+                    </div>
                   </div>
                 ) : (
                   <>
-                    <div className="font-medium mb-1">{q.pergunta}</div>
-                    <ul className="mb-1">
-                      {q.alternativas.map((alt, i) => (
-                        <li key={i} className={alt === q.correta ? 'font-semibold text-green-700' : ''}>
-                          {String.fromCharCode(65 + i)}. {alt}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="text-xs text-gray-500 mb-1">Correta: {q.correta}</div>
-                    <div className="flex gap-2 absolute top-2 right-2">
-                      <Button size="icon" variant="ghost" onClick={() => handleEdit(idx)}><span className="sr-only">Editar</span>✏️</Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(idx)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                    <div className="pr-16">
+                      <div className="font-medium mb-3 text-white text-lg">{q.pergunta}</div>
+                      <ul className="mb-3 space-y-2">
+                        {q.alternativas.map((alt, i) => (
+                          <li key={i} className={`p-2 rounded ${alt === q.correta ? 'bg-green-500/20 border border-green-500/30 font-semibold text-green-400' : 'bg-gray-700/50 border border-gray-600 text-gray-300'}`}>
+                            <span className="font-medium mr-2">{String.fromCharCode(65 + i)}.</span> {alt}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="text-sm text-gray-400 bg-gray-700/30 p-2 rounded">
+                        <span className="font-medium">Correta:</span> {q.correta}
+                      </div>
+                    </div>
+                    <div className="absolute top-3 right-3 flex gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => handleEdit(idx)} className="!text-orange-400 hover:!text-orange-300 hover:!bg-gray-700 !h-8 !w-8">
+                        <span className="sr-only">Editar</span>✏️
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(idx)} className="!text-red-400 hover:!text-red-300 hover:!bg-gray-700 !h-8 !w-8">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </>
                 )}
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={handleAdd} className="flex items-center gap-2"><Plus className="h-4 w-4" />Adicionar Pergunta</Button>
-            <Button variant="secondary" size="sm" onClick={handleGenerateWithAI} className="flex items-center gap-2 ml-2">Gerar perguntas com IA</Button>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button onClick={handleSaveQuiz} disabled={!canSave}>Salvar Quiz</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleAdd} className="!border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent">
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Pergunta
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleGenerateWithAI} className="!bg-gray-700 !text-gray-300 hover:!text-white hover:!bg-gray-600">
+                Gerar perguntas com IA
+              </Button>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="!border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent">
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveQuiz} disabled={!canSave} className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg">
+                Salvar Quiz
+              </Button>
             </div>
           </div>
         )}
       </DialogContent>
     </Dialog>
   );
-} 
+}

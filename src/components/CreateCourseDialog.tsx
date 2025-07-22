@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -72,6 +72,22 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
     },
   });
 
+  useEffect(() => {
+    if (course) {
+      form.reset({
+        title: course.title,
+        description: course.description || "",
+        category: course.category || "",
+        difficulty_level: course.difficulty_level as "beginner" | "intermediate" | "advanced" || "beginner",
+        estimated_hours: course.estimated_hours || 0,
+        thumbnail_url: course.thumbnail_url || "",
+        is_published: course.is_published || false,
+        tags: course.tags || [],
+      });
+      setPreviewUrl(course.thumbnail_url || null);
+    }
+  }, [course, form]);
+
   const uploadBannerImage = async (file: File): Promise<string | null> => {
     try {
       const fileExt = file.name.split('.').pop();
@@ -93,10 +109,9 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
       return data.publicUrl;
     } catch (error) {
       console.error('Error uploading banner:', error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: "Erro ao fazer upload da imagem",
-        variant: "destructive",
+        description: "Erro ao fazer upload da imagem"
       });
       return null;
     }
@@ -177,12 +192,12 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-white">
             {course ? "Editar Curso" : "Criar Novo Curso"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-300">
             {course 
               ? "Edite as informações do curso abaixo." 
               : "Preencha as informações para criar um novo curso."
@@ -198,9 +213,13 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título *</FormLabel>
+                    <FormLabel className="text-gray-300">Título *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do curso" {...field} />
+                      <Input 
+                        {...field} 
+                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-orange-500 focus:ring-orange-500"
+                        placeholder="Digite o título do curso"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -212,9 +231,13 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categoria</FormLabel>
+                    <FormLabel className="text-gray-300">Categoria</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Programação, Design..." {...field} />
+                      <Input 
+                        {...field} 
+                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-orange-500 focus:ring-orange-500"
+                        placeholder="Ex: Tecnologia, Marketing, etc."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -227,12 +250,13 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel className="text-gray-300">Descrição</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Descreva o conteúdo e objetivos do curso"
-                      className="min-h-[100px]"
                       {...field} 
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-orange-500 focus:ring-orange-500"
+                      placeholder="Descreva o conteúdo do curso..."
+                      rows={4}
                     />
                   </FormControl>
                   <FormMessage />
@@ -246,17 +270,17 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
                 name="difficulty_level"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nível de Dificuldade</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "beginner"}>
+                    <FormLabel className="text-gray-300">Nível de Dificuldade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                          <SelectValue placeholder="Selecione o nível" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="beginner">Iniciante</SelectItem>
-                        <SelectItem value="intermediate">Intermediário</SelectItem>
-                        <SelectItem value="advanced">Avançado</SelectItem>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="beginner" className="text-gray-300 hover:text-white hover:bg-gray-700">Iniciante</SelectItem>
+                        <SelectItem value="intermediate" className="text-gray-300 hover:text-white hover:bg-gray-700">Intermediário</SelectItem>
+                        <SelectItem value="advanced" className="text-gray-300 hover:text-white hover:bg-gray-700">Avançado</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -269,16 +293,14 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
                 name="estimated_hours"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duração Estimada (horas)</FormLabel>
+                    <FormLabel className="text-gray-300">Horas Estimadas</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        placeholder="Ex: 40"
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? Number(value) : 0);
-                        }}
+                        {...field} 
+                        type="number"
+                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-orange-500 focus:ring-orange-500"
+                        placeholder="0"
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -287,105 +309,83 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
               />
             </div>
 
+            {/* Thumbnail Upload */}
             <div className="space-y-4">
-              <FormLabel>Imagem do Banner</FormLabel>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                {previewUrl ? (
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview do banner" 
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setPreviewUrl(null);
-                          setBannerFile(null);
-                        }}
-                        className="absolute top-2 right-2"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <Image className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="mt-4">
-                      <label htmlFor="banner-upload" className="cursor-pointer">
-                        <span className="mt-2 block text-sm font-medium text-gray-900">
-                          Clique para fazer upload da imagem do banner
-                        </span>
-                        <span className="mt-1 block text-xs text-gray-500">
-                          PNG, JPG até 5MB
-                        </span>
-                      </label>
-                      <input
-                        id="banner-upload"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                      />
-                    </div>
-                  </div>
-                )}
-                
-                {!previewUrl && (
-                  <div className="mt-4">
-                    <Button type="button" variant="outline" asChild>
-                      <label htmlFor="banner-upload" className="cursor-pointer">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Escolher Arquivo
-                      </label>
-                    </Button>
+              <FormLabel className="text-gray-300">Imagem de Capa</FormLabel>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="banner-upload"
+                  />
+                  <label
+                    htmlFor="banner-upload"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Imagem
+                  </label>
+                </div>
+                {previewUrl && (
+                  <div className="relative">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="h-16 w-16 object-cover rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewUrl(null);
+                        setBannerFile(null);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="thumbnail_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL da Imagem (alternativa)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="https://exemplo.com/imagem.jpg"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div>
-              <FormLabel>Tags</FormLabel>
-              <div className="flex gap-2 mt-2">
+            {/* Tags */}
+            <div className="space-y-4">
+              <FormLabel className="text-gray-300">Tags</FormLabel>
+              <div className="flex items-center space-x-2">
                 <Input
-                  placeholder="Digite uma tag e pressione Enter"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   onKeyPress={handleKeyPress}
+                  placeholder="Digite uma tag e pressione Enter"
+                  className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-orange-500 focus:ring-orange-500"
                 />
-                <Button type="button" onClick={addTag} variant="outline">
+                <Button
+                  type="button"
+                  onClick={addTag}
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
+                >
                   Adicionar
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="flex flex-wrap gap-2">
                 {form.watch("tags").map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="bg-gray-700 text-gray-300 border-gray-600"
+                  >
                     {tag}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
+                    <button
+                      type="button"
                       onClick={() => removeTag(tag)}
-                    />
+                      className="ml-2 hover:text-red-400"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>
@@ -395,11 +395,11 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
               control={form.control}
               name="is_published"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-600 p-4">
                   <div className="space-y-0.5">
-                    <FormLabel>Publicar Curso</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Torne o curso visível para os alunos
+                    <FormLabel className="text-gray-300">Publicar Curso</FormLabel>
+                    <div className="text-sm text-gray-400">
+                      Marque esta opção para tornar o curso público
                     </div>
                   </div>
                   <FormControl>
@@ -412,15 +412,21 @@ export const CreateCourseDialog = ({ isOpen, onClose, course }: CreateCourseDial
               )}
             />
 
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700"
+              >
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
-                disabled={createCourseMutation.isPending || updateCourseMutation.isPending || isUploading}
+              <Button
+                type="submit"
+                disabled={isUploading}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg border-0"
               >
-                {isUploading ? "Enviando..." : course ? "Atualizar" : "Criar"} Curso
+                {isUploading ? "Salvando..." : course ? "Atualizar Curso" : "Criar Curso"}
               </Button>
             </div>
           </form>

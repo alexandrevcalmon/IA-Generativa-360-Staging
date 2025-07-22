@@ -21,49 +21,57 @@ export const MentorshipStatsGrid = ({ mentorships }: MentorshipStatsGridProps) =
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card>
+      <Card className="bg-gray-800/50 backdrop-blur-xl border border-gray-700/30 shadow-2xl">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <CalendarDays className="h-8 w-8 text-blue-600" />
+            <div className="p-2 rounded-full bg-blue-900/20 border border-blue-500/30">
+              <CalendarDays className="h-6 w-6 text-blue-400" />
+            </div>
             <div>
-              <p className="text-2xl font-bold">{upcomingMentorships.length}</p>
-              <p className="text-sm text-gray-600">Próximas Sessões</p>
+              <p className="text-2xl font-bold text-white">{upcomingMentorships.length}</p>
+              <p className="text-sm text-gray-400">Próximas Sessões</p>
             </div>
           </div>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-gray-800/50 backdrop-blur-xl border border-gray-700/30 shadow-2xl">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-8 w-8 text-green-600" />
+            <div className="p-2 rounded-full bg-emerald-900/20 border border-emerald-500/30">
+              <CheckCircle className="h-6 w-6 text-emerald-400" />
+            </div>
             <div>
-              <p className="text-2xl font-bold">{pastMentorships.length}</p>
-              <p className="text-sm text-gray-600">Concluídas</p>
+              <p className="text-2xl font-bold text-white">{pastMentorships.length}</p>
+              <p className="text-sm text-gray-400">Concluídas</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gray-800/50 backdrop-blur-xl border border-gray-700/30 shadow-2xl">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <Users className="h-8 w-8 text-purple-600" />
+            <div className="p-2 rounded-full bg-purple-900/20 border border-purple-500/30">
+              <Users className="h-6 w-6 text-purple-400" />
+            </div>
             <div>
-              <p className="text-2xl font-bold">{companyMentorships.length}</p>
-              <p className="text-sm text-gray-600">Da Empresa</p>
+              <p className="text-2xl font-bold text-white">{companyMentorships.length}</p>
+              <p className="text-sm text-gray-400">Da Empresa</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gray-800/50 backdrop-blur-xl border border-gray-700/30 shadow-2xl">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <Globe className="h-8 w-8 text-indigo-600" />
+            <div className="p-2 rounded-full bg-indigo-900/20 border border-indigo-500/30">
+              <Globe className="h-6 w-6 text-indigo-400" />
+            </div>
             <div>
-              <p className="text-2xl font-bold">{collectiveMentorships.length}</p>
-              <p className="text-sm text-gray-600">Coletivas</p>
+              <p className="text-2xl font-bold text-white">{collectiveMentorships.length}</p>
+              <p className="text-sm text-gray-400">Coletivas</p>
             </div>
           </div>
         </CardContent>

@@ -55,20 +55,6 @@ export function createAuthStateHandler(props: AuthStateHandlerProps) {
     setSession(session);
     setUser(session.user);
     // Garante que o usuário exista na tabela users (não bloqueia o fluxo)
-    if (session.user?.id && session.user?.email) {
-      supabase
-        .from('users')
-        .upsert([{
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.email
-        }], { onConflict: 'id' })
-        .then(({ error }) => {
-          if (error) {
-            console.error('Erro ao garantir usuário na tabela users:', error);
-          }
-        });
-    }
     
     // Fetch role data asynchronously with simplified error handling
     setTimeout(async () => {

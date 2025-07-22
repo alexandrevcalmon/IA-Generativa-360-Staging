@@ -72,13 +72,13 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 text-white">
+          <User className="h-5 w-5 text-blue-400" />
           Cadastrar Novo Colaborador
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-slate-300">
           Preencha os dados básicos. O colaborador receberá um e-mail para definir senha e completar o cadastro.
         </CardDescription>
       </CardHeader>
@@ -86,8 +86,8 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center gap-1">
-                <User className="h-4 w-4" />
+              <Label htmlFor="name" className="flex items-center gap-1 text-slate-200">
+                <User className="h-4 w-4 text-blue-400" />
                 Nome Completo *
               </Label>
               <Input
@@ -95,14 +95,16 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
                 placeholder="Digite o nome completo"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className={errors.name ? "border-red-500" : ""}
+                className={`bg-slate-700/50 border-slate-600/50 text-slate-200 placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 ${
+                  errors.name ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20" : ""
+                }`}
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+              {errors.name && <p className="text-sm text-red-400">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-1">
-                <Mail className="h-4 w-4" />
+              <Label htmlFor="email" className="flex items-center gap-1 text-slate-200">
+                <Mail className="h-4 w-4 text-blue-400" />
                 E-mail *
               </Label>
               <Input
@@ -111,14 +113,16 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
                 placeholder="Digite o e-mail"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                className={errors.email ? "border-red-500" : ""}
+                className={`bg-slate-700/50 border-slate-600/50 text-slate-200 placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 ${
+                  errors.email ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20" : ""
+                }`}
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && <p className="text-sm text-red-400">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
+              <Label htmlFor="phone" className="flex items-center gap-1 text-slate-200">
+                <Phone className="h-4 w-4 text-green-400" />
                 Telefone
               </Label>
               <Input
@@ -126,12 +130,13 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
                 placeholder="(11) 99999-9999"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
+                className="bg-slate-700/50 border-slate-600/50 text-slate-200 placeholder:text-slate-400 focus:border-green-500/50 focus:ring-green-500/20"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="position" className="flex items-center gap-1">
-                <Briefcase className="h-4 w-4" />
+              <Label htmlFor="position" className="flex items-center gap-1 text-slate-200">
+                <Briefcase className="h-4 w-4 text-purple-400" />
                 Cargo *
               </Label>
               <Input
@@ -139,9 +144,11 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
                 placeholder="Digite o cargo"
                 value={formData.position}
                 onChange={(e) => handleInputChange("position", e.target.value)}
-                className={errors.position ? "border-red-500" : ""}
+                className={`bg-slate-700/50 border-slate-600/50 text-slate-200 placeholder:text-slate-400 focus:border-purple-500/50 focus:ring-purple-500/20 ${
+                  errors.position ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20" : ""
+                }`}
               />
-              {errors.position && <p className="text-sm text-red-500">{errors.position}</p>}
+              {errors.position && <p className="text-sm text-red-400">{errors.position}</p>}
             </div>
           </div>
 
@@ -154,12 +161,13 @@ export const CollaboratorForm: React.FC<CollaboratorFormProps> = ({
                 setErrors({});
               }}
               disabled={isLoading}
+              className="bg-slate-800/50 border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:text-white hover:border-slate-500/50 transition-all duration-300"
             >
               Limpar
             </Button>
             <Button
               type="submit"
-              className="bg-gradient-to-r from-calmon-500 to-calmon-700 hover:from-calmon-600 hover:to-calmon-800 text-white min-w-[140px]"
+              className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white min-w-[140px] shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               disabled={isLoading}
             >
               {isLoading ? (

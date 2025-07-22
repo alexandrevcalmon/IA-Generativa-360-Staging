@@ -9,6 +9,8 @@ import { useLesson } from '@/hooks/useLessons';
 import { awardPointsToStudent } from '@/hooks/gamification/useStudentPoints';
 import { GAMIFICATION_RULES } from '@/hooks/gamification/gamificationRules';
 import { useStudentProfile } from '@/hooks/useStudentProfile';
+import { PageLayout } from '@/components/PageLayout';
+import { ArrowLeft } from 'lucide-react';
 
 export default function StudentQuizView() {
   const { courseId, quizId, lessonId } = useParams();
@@ -25,8 +27,39 @@ export default function StudentQuizView() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<null | { score: number; passed: boolean }>(null);
 
-  if (isLoading) return <div>Carregando quiz...</div>;
-  if (!quiz) return <div>Quiz não encontrado.</div>;
+  if (isLoading) {
+    return (
+      <PageLayout
+        title="Carregando..."
+        subtitle="Preparando o quiz"
+        background="dark"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-white">Carregando quiz...</div>
+        </div>
+      </PageLayout>
+    );
+  }
+  
+  if (!quiz) {
+    return (
+      <PageLayout
+        title="Quiz não encontrado"
+        subtitle="O quiz solicitado não foi encontrado"
+        background="dark"
+        headerContent={
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-slate-300 hover:bg-slate-800/50">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+        }
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-white">Quiz não encontrado.</div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   const handleAnswerChange = (idx: number, value: string) => {
     setAnswers((prev: any) => ({ ...prev, [idx]: value }));
@@ -155,72 +188,95 @@ export default function StudentQuizView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8">
-      <div className="bg-white rounded shadow-lg w-full max-w-2xl p-8">
-        <div className="mb-6">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            Voltar
-          </Button>
-        </div>
-        <h2 className="text-lg font-semibold text-blue-700 mb-1 uppercase tracking-wide">Quiz da Aula</h2>
-        {lesson?.title && (
-          <h1 className="text-2xl font-bold mb-2 text-gray-900">{lesson.title}</h1>
-        )}
-        {/* Removido: descrição do quiz/aula */}
-        {lastAttempt && (
-          <div className="mb-4">
-            <span>Status: </span>
-            <span className={lastAttempt.passed ? 'text-green-600' : 'text-red-600'}>
-              {lastAttempt.passed ? 'Aprovado' : 'Não Aprovado'}
-            </span>
-            {typeof lastAttempt.score === 'number' && (
-              <span className="ml-2">Pontuação: {lastAttempt.score.toFixed(0)}%</span>
-            )}
-          </div>
-        )}
-        {!result ? (
-          <form onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
-            {quiz.questions.map((q: any, idx: number) => (
-              <div key={idx} className="mb-6">
-                <div className="font-medium mb-2">{idx + 1}. {q.pergunta}</div>
-                <div className="space-y-2">
-                  {q.alternativas.map((alt: string, altIdx: number) => (
-                    <label key={altIdx} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`question-${idx}`}
-                        value={alt}
-                        checked={answers[idx] === alt}
-                        onChange={() => handleAnswerChange(idx, alt)}
-                        className="accent-blue-600"
-                      />
-                      <span>{alt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-            {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
-            <div className="flex justify-end gap-2 mt-4">
-              <Button type="submit" className="bg-blue-600 text-white" disabled={submitting}>Enviar Respostas</Button>
-            </div>
-          </form>
-        ) : (
-          <div className="flex flex-col items-center gap-4 py-6">
-            <div className={`text-2xl font-bold ${result.passed ? 'text-green-600' : 'text-red-600'}`}>{result.score.toFixed(0)}%</div>
-            <div className="text-lg font-medium text-center">
-              {result.passed ? (
-                <>Parabéns! Você atingiu o percentual necessário e pode avançar para a próxima aula.</>
-              ) : (
-                <>Você não atingiu a pontuação mínima.<br />Tente novamente.</>
+    <PageLayout
+      title={lesson?.title ? `Quiz: ${lesson.title}` : 'Quiz da Aula'}
+      subtitle="Responda às questões para avaliar seu conhecimento"
+      background="dark"
+      headerContent={
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-slate-300 hover:bg-slate-800/50">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
+      }
+    >
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-gray-900/50 border border-gray-700 rounded-lg shadow-xl p-8">
+          {lastAttempt && (
+            <div className="mb-6 p-4 bg-gray-800/50 border border-gray-600 rounded-lg">
+              <span className="font-medium text-white">Status: </span>
+              <span className={lastAttempt.passed ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
+                {lastAttempt.passed ? 'Aprovado' : 'Não Aprovado'}
+              </span>
+              {typeof lastAttempt.score === 'number' && (
+                <span className="ml-2 text-gray-300">Pontuação: {lastAttempt.score.toFixed(0)}%</span>
               )}
             </div>
-            {result.passed && (
-              <Button className="mt-2" onClick={handleNext}>Próxima Aula</Button>
-            )}
-          </div>
-        )}
+          )}
+        
+          {!result ? (
+            <form onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
+              <div className="space-y-6">
+                {quiz.questions.map((q: any, idx: number) => (
+                  <div key={idx} className="border border-gray-600 rounded p-4 bg-gray-800/50 relative">
+                    <div className="pr-16">
+                      <div className="font-medium mb-3 text-white text-lg">{idx + 1}. {q.pergunta}</div>
+                      <div className="space-y-2">
+                        {q.alternativas.map((alt: string, altIdx: number) => (
+                          <label key={altIdx} className={`flex items-center gap-3 cursor-pointer p-2 rounded transition-colors ${
+                            answers[idx] === alt 
+                              ? 'bg-blue-500/20 border border-blue-500/30' 
+                              : 'bg-gray-700/50 border border-gray-600 hover:bg-gray-700/70'
+                          }`}>
+                            <input
+                              type="radio"
+                              name={`question-${idx}`}
+                              value={alt}
+                              checked={answers[idx] === alt}
+                              onChange={() => handleAnswerChange(idx, alt)}
+                              className="accent-blue-500"
+                            />
+                            <span className="font-medium mr-2 text-gray-300">{String.fromCharCode(65 + altIdx)}.</span>
+                            <span className="text-gray-300">{alt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {error && <div className="text-red-400 text-sm mb-4 mt-4 bg-red-500/10 p-3 rounded border border-red-500/30">{error}</div>}
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-700">
+                <Button 
+                  type="submit" 
+                  className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg" 
+                  disabled={submitting}
+                >
+                  Enviar Respostas
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex flex-col items-center gap-4 py-6">
+              <div className={`text-2xl font-bold ${result.passed ? 'text-emerald-400' : 'text-red-400'}`}>{result.score.toFixed(0)}%</div>
+              <div className="text-lg font-medium text-center text-gray-300">
+                {result.passed ? (
+                  <>Parabéns! Você atingiu o percentual necessário e pode avançar para a próxima aula.</>
+                ) : (
+                  <>Você não atingiu a pontuação mínima.<br />Tente novamente.</>
+                )}
+              </div>
+              {result.passed && (
+                <Button 
+                  className="mt-2 !bg-gradient-to-r !from-emerald-500 !to-green-600 hover:!from-emerald-600 hover:!to-green-700 !text-white !border-0 !shadow-lg" 
+                  onClick={handleNext}
+                >
+                  Próxima Aula
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
-} 
+}

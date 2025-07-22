@@ -1,23 +1,23 @@
 
 import { useAuth } from '@/hooks/auth';
 import { Navigate, Outlet } from 'react-router-dom';
-import { AppSidebar } from './AppSidebar';
+import { UnifiedSidebar } from './UnifiedSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 const ProdutorLayout = () => {
   console.log('🏭 ProdutorLayout: Initializing...');
-  
+
   let user, loading, userRole;
-  
+
   try {
     const authData = useAuth();
     user = authData.user;
     loading = authData.loading;
     userRole = authData.userRole;
-    console.log('🏭 ProdutorLayout: Auth data retrieved', { 
-      user: user?.email, 
-      userRole, 
-      loading 
+    console.log('🏭 ProdutorLayout: Auth data retrieved', {
+      user: user?.email,
+      userRole,
+      loading
     });
   } catch (error) {
     console.error('🏭 ProdutorLayout: Error using auth hook:', error);
@@ -40,13 +40,13 @@ const ProdutorLayout = () => {
 
   // Enhanced role checking with better error messages
   if (userRole !== 'producer') {
-    console.warn('🏭 ProdutorLayout: Access denied', { 
+    console.warn('🏭 ProdutorLayout: Access denied', {
       userEmail: user.email,
       userId: user.id,
-      currentRole: userRole, 
-      requiredRole: 'producer' 
+      currentRole: userRole,
+      requiredRole: 'producer'
     });
-    
+
     // Redirect based on actual user role
     const redirectPath = (() => {
       switch (userRole) {
@@ -69,7 +69,7 @@ const ProdutorLayout = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <UnifiedSidebar />
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>

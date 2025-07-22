@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth';
 import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
+import { SubscriptionBlockedMessage } from '@/components/SubscriptionBlockedMessage';
 import { logger } from '@/lib/logger';
 
 interface AuthGuardProps {
@@ -12,7 +13,16 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, requiredRole, redirectTo = '/auth' }: AuthGuardProps) {
-  const { user, loading, userRole, needsPasswordChange, refreshUserRole } = useAuth();
+  const { 
+    user, 
+    loading, 
+    userRole, 
+    needsPasswordChange, 
+    isSubscriptionBlocked,
+    subscriptionStatus,
+    subscriptionAlert,
+    refreshUserRole 
+  } = useAuth();
   const navigate = useNavigate();
   const [isValidating, setIsValidating] = useState(true);
 
@@ -61,6 +71,17 @@ export function AuthGuard({ children, requiredRole, redirectTo = '/auth' }: Auth
   // Redirect if no user
   if (!user) {
     return null;
+  }
+
+  // Show subscription blocked message if subscription is blocked
+  if (isSubscriptionBlocked && subscriptionStatus) {
+    logger.debug('Subscription blocked, showing blocked message');
+    return (
+      <SubscriptionBlockedMessage 
+        status={subscriptionStatus}
+        alert={subscriptionAlert}
+      />
+    );
   }
 
   // Show password change dialog if needed

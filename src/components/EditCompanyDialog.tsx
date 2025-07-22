@@ -39,10 +39,9 @@ export function EditCompanyDialog({ isOpen, onClose, company }: EditCompanyDialo
     if (!company) return;
 
     if (!formData.name) {
-        toast({
+        toast.error({
           title: "Erro",
-          description: "Nome Fantasia é obrigatório.",
-          variant: "destructive",
+          description: "Nome Fantasia é obrigatório."
         });
         return;
     }
@@ -57,10 +56,9 @@ export function EditCompanyDialog({ isOpen, onClose, company }: EditCompanyDialo
       onClose();
     } catch (error) {
       console.error("Failed to update company from dialog:", error);
-      toast({
+      toast.error({
         title: "Erro",
-        description: `Erro ao atualizar empresa: ${error.message}`,
-        variant: "destructive",
+        description: `Erro ao atualizar empresa: ${error.message}`
       });
     }
   };

@@ -53,6 +53,7 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
         
         // Extract meaningful error message
         const errorMessage = result.error.message || result.error || 'Erro no login';
+        console.log('Error message received:', errorMessage);
         setError(errorMessage);
       }
     } catch (err: any) {
@@ -73,7 +74,7 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
+          <Label htmlFor="email" className="text-white font-medium">E-mail</Label>
           <Input
             id="email"
             type="email"
@@ -82,11 +83,12 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
             placeholder="seu@email.com"
             disabled={loading}
             autoComplete="email"
+            className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
+          <Label htmlFor="password" className="text-white font-medium">Senha</Label>
           <div className="relative">
             <Input
               id="password"
@@ -96,12 +98,13 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
               placeholder="••••••••"
               disabled={loading}
               autoComplete="current-password"
+              className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20 pr-12"
             />
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-gray-600/30 text-gray-400 hover:text-white transition-colors"
               onClick={() => setShowPassword(!showPassword)}
               disabled={loading}
             >
@@ -114,14 +117,16 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
           </div>
         </div>
 
-        <AuthErrorHandler 
-          error={error}
-          attempts={attempts}
-        />
+        {error && (
+          <AuthErrorHandler 
+            error={error}
+            attempts={attempts}
+          />
+        )}
 
         <Button 
           type="submit" 
-          className="w-full bg-emerald-600 hover:bg-emerald-700"
+          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/30"
           disabled={loading || !email.trim() || !password.trim()}
         >
           {loading ? (
@@ -135,7 +140,7 @@ export function SimpleAuthForm({ onLogin, defaultRole = 'student' }: SimpleAuthF
         </Button>
       </form>
 
-      <div className="space-y-3 border-t pt-4">
+      <div className="space-y-3 border-t border-gray-600/30 pt-4">
         {/* Removido botão de usuário demo */}
         <div className="text-center">
           <ForgotPasswordDialog />
