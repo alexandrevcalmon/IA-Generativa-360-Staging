@@ -1,15 +1,19 @@
+// @ts-ignore
 // Edge Function para processar webhooks do Stripe
 // IMPORTANTE: Esta função NÃO deve ter verify_jwt habilitado
 // pois o Stripe não envia tokens de autorização do Supabase
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-ignore
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+// @ts-ignore
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -18,6 +22,7 @@ serve(async (req) => {
   try {
     const body = await req.text()
     const signature = req.headers.get('stripe-signature')
+    // @ts-ignore
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
     if (!signature || !webhookSecret) {
@@ -27,33 +32,40 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Stripe com versão mais recente
-    const stripeModule = await import('https://esm.sh/stripe@15.0.0')
-    const stripe = new stripeModule.default(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2025-06-30.basil',
+    // Initialize Stripe
+    // @ts-ignore
+    const Stripe = (await import('https://esm.sh/stripe@14.21.0')).default
+    // @ts-ignore
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2024-12-18.acacia',
+      httpClient: Stripe.createFetchHttpClient(),
     })
 
-    // Verify webhook signature
-    let event
-    try {
-      // Usar constructEventAsync em vez de constructEvent
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err)
-      return new Response(
-        JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+              // Verify webhook signature
+          let event
+          try {
+            event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
+          } catch (err: any) {
+            return new Response(
+              JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
 
     // Initialize Supabase client
+    // @ts-ignore
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    // @ts-ignore
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Handle the event
-    switch (event.type) {
-      case 'checkout.session.completed':
+            console.log(`[stripe-webhook] Processing event type: ${event.type}`)
+        console.log(`[stripe-webhook] Event data:`, JSON.stringify(event.data, null, 2))
+        
+                // Handle the event
+        try {
+          switch (event.type) {
+            case 'checkout.session.completed':
         const session = event.data.object
         
         // Parse company data from metadata
@@ -144,7 +156,7 @@ serve(async (req) => {
           const { data: { users: userList }, error: listUsersError } = await supabase.auth.admin.listUsers()
           
           if (!listUsersError && userList) {
-            const existingUser = userList.find(user => user.email === companyData.contact_email)
+            const existingUser = userList.find((user: any) => user.email === companyData.contact_email)
             if (existingUser) {
               console.log(`[stripe-webhook] Found existing auth user: ${existingUser.id}`)
               // Link existing user to company
@@ -177,7 +189,8 @@ serve(async (req) => {
                 company_id: companyResult.company_id,
                 company_name: companyData.name,
                 contact_name: companyData.contact_name,
-              }
+              },
+              options: { expiresIn: 7 * 24 * 60 * 60 }
             }
           )
 
@@ -225,45 +238,33 @@ serve(async (req) => {
         const invoice = event.data.object
         console.log(`[stripe-webhook] Processing invoice.payment_succeeded for subscription: ${invoice.subscription}`)
         
-        // Use the sync function to handle the update safely
-        const { data: syncResult, error: syncError } = await supabase.rpc(
-          'sync_company_with_stripe_webhook',
-          {
-            subscription_id: invoice.subscription,
-            customer_id: invoice.customer,
-            status: 'active'
-          }
+        // Chama a nova função robusta que lida com o evento de pagamento bem-sucedido
+        const { error: syncError } = await supabase.rpc(
+          'handle_invoice_payment_succeeded',
+          { event_payload: event }
         )
 
         if (syncError) {
-          console.error('Error syncing company with webhook:', syncError)
+          console.error('[stripe-webhook] Error processing invoice payment:', syncError)
           return new Response(
             JSON.stringify({ 
-              error: 'Failed to sync company from invoice',
+              error: 'Failed to process invoice payment',
               details: syncError.message 
             }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
 
-        if (!syncResult.success) {
-          console.error('Sync failed:', syncResult.error)
-          return new Response(
-            JSON.stringify({ 
-              error: syncResult.error,
-              details: syncResult.details 
-            }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        console.log(`[stripe-webhook] Successfully synced company: ${syncResult.company_name} (${syncResult.company_id})`)
+        console.log(`[stripe-webhook] Successfully processed invoice payment for subscription: ${invoice.subscription}`)
         break
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         const subscription = event.data.object
         const status = subscription.status
+
+        console.log(`[stripe-webhook] Processing ${event.type} for subscription: ${subscription.id}, status: ${status}`)
 
         // Update subscription status in database
         const { error: updateError } = await supabase
@@ -275,19 +276,34 @@ serve(async (req) => {
           .eq('stripe_subscription_id', subscription.id)
 
         if (updateError) {
-          console.error('Error updating subscription:', updateError)
+          console.error('[stripe-webhook] Error updating subscription:', updateError)
           return new Response(
             JSON.stringify({ error: 'Failed to update subscription' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
 
+        console.log(`[stripe-webhook] Successfully updated subscription status to: ${status}`)
         break
 
-      default:
-        // Unhandled event type
-        console.log(`[stripe-webhook] Unhandled event type: ${event.type}`)
-        break
+              default:
+          // Unhandled event type
+          console.log(`[stripe-webhook] Unhandled event type: ${event.type}`)
+          break
+      }
+    } catch (eventError) {
+      console.error(`[stripe-webhook] Error processing event ${event.type}:`, eventError)
+      console.error(`[stripe-webhook] Event error stack:`, eventError.stack)
+      
+      // Return success to Stripe even if event processing fails
+      // This prevents Stripe from retrying the webhook indefinitely
+      return new Response(
+        JSON.stringify({ 
+          received: true,
+          warning: `Event ${event.type} processing failed: ${eventError.message}`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     return new Response(
@@ -296,9 +312,15 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('[stripe-webhook] Webhook error:', error)
+    console.error('[stripe-webhook] Error stack:', error.stack)
+    console.error('[stripe-webhook] Error message:', error.message)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message,
+        stack: error.stack
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

@@ -28,32 +28,12 @@ export function CollaboratorAccessGuard({ children, fallback }: CollaboratorAcce
     if (fallback) {
       return <>{fallback}</>;
     }
-
-    // Prepare the status object for SubscriptionBlockedMessage
-    const status = {
-      isActive: subscriptionStatus === 'active' || subscriptionStatus === 'trialing',
-      status: subscriptionStatus || 'inactive',
-      expiresAt: subscriptionEndsAt,
-      needsRenewal: subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid',
-      isExpired: subscriptionEndsAt ? new Date(subscriptionEndsAt) < new Date() : false,
-      daysUntilExpiry: subscriptionEndsAt ?
-        Math.ceil((new Date(subscriptionEndsAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) :
-        null
-    };
-
-    // Create alert message based on subscription status
-    const alert = {
-      type: 'warning' as const,
-      message: companyName ?
-        `A assinatura da empresa ${companyName} está ${subscriptionStatus === 'canceled' ? 'cancelada' : 'inativa'}.` :
-        'A assinatura da sua empresa está inativa.',
-      actionRequired: true
-    };
-
+    
     return (
       <SubscriptionBlockedMessage
-        status={status}
-        alert={alert}
+        companyName={companyName}
+        subscriptionStatus={subscriptionStatus}
+        subscriptionEndsAt={subscriptionEndsAt}
       />
     );
   }
