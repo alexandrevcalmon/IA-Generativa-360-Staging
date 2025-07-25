@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { translateSupabaseError } from '@/hooks/auth/commonAuthUtils';
 
 export function PasswordChangeDialog() {
   const [newPassword, setNewPassword] = useState('');
@@ -47,7 +48,7 @@ export function PasswordChangeDialog() {
         console.error('❌ Password change failed:', error);
         toast.error({
           title: "Erro ao alterar senha",
-          description: error.message
+          description: translateSupabaseError(error)
         });
       } else {
         console.log('✅ Password changed successfully, refreshing user role...');

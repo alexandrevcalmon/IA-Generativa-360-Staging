@@ -554,7 +554,7 @@ const CompanyDashboard = () => {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-300">Limite de Alunos</p>
+                    <p className="text-sm font-medium text-gray-300">Limite de Colaboradores</p>
                     <p className="text-lg font-semibold text-white">
                       {companyData?.subscription_plan_data?.max_students ?? 'N/A'}
                     </p>

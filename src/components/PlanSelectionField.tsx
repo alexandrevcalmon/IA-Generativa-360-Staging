@@ -46,7 +46,7 @@ export function PlanSelectionField({
     if (plan.semester_price && plan.semester_price > 0) {
       options.push({
         value: `${plan.id}:semester`,
-        label: `${plan.name} (Semestral: R$${plan.semester_price.toFixed(2)}) - Máx: ${plan.max_students} alunos`,
+        label: `${plan.name} (Semestral: R$${plan.semester_price.toFixed(2)}) - Máx: ${plan.max_students} colaboradores`,
         planId: plan.id,
         billingPeriod: 'semester' as const,
         price: plan.semester_price
@@ -57,7 +57,7 @@ export function PlanSelectionField({
     if (plan.annual_price && plan.annual_price > 0) {
       options.push({
         value: `${plan.id}:annual`,
-        label: `${plan.name} (Anual: R$${plan.annual_price.toFixed(2)}) - Máx: ${plan.max_students} alunos`,
+        label: `${plan.name} (Anual: R$${plan.annual_price.toFixed(2)}) - Máx: ${plan.max_students} colaboradores`,
         planId: plan.id,
         billingPeriod: 'annual' as const,
         price: plan.annual_price

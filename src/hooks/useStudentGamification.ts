@@ -4,7 +4,8 @@ export {
   useStudentPoints, 
   useStudentAchievements, 
   useAvailableAchievements, 
-  usePointsHistory 
+  usePointsHistory,
+  useAchievementNotification
 } from './gamification';
 export type { 
   StudentPoints, 

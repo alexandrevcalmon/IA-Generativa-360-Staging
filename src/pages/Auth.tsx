@@ -8,7 +8,7 @@ import { SimpleAuthForm } from '@/components/auth/SimpleAuthForm';
 import { RoleIndicator } from '@/components/auth/RoleIndicator';
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
 import { useAuthRedirects } from '@/hooks/auth/useAuthRedirects';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Auth() {
@@ -45,9 +45,22 @@ export default function Auth() {
   const { user, userRole, needsPasswordChange, loading: authLoading, signIn } = authData;
   const [searchParams] = useSearchParams();
   const [role, setRole] = useState(searchParams.get('role') || 'student');
+  const [showPasswordUpdatedMessage, setShowPasswordUpdatedMessage] = useState(false);
 
   // Handle redirects for authenticated users
   useAuthRedirects({ user, userRole, authLoading, needsPasswordChange });
+
+  // Check for password updated message
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message === 'password_updated') {
+      setShowPasswordUpdatedMessage(true);
+      // Remove the message from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('message');
+      navigate(`/auth?${newSearchParams.toString()}`, { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const handleLogin = async (email: string, password: string, selectedRole: string) => {
     return await signIn(email, password, selectedRole);
@@ -77,6 +90,17 @@ export default function Auth() {
           
           <RoleIndicator role={role} />
         </CardHeader>
+        
+        {showPasswordUpdatedMessage && (
+          <div className="mx-6 mb-4 p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+              <span className="text-green-300 text-sm font-medium">
+                Senha atualizada com sucesso! Agora você pode fazer login com sua nova senha.
+              </span>
+            </div>
+          </div>
+        )}
         <CardContent>
           <SimpleAuthForm
             onLogin={handleLogin}

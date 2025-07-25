@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getRedirectUrl } from './authUtils';
 import { createAuditService } from './auditService';
-import { validateEmail, validatePassword } from './commonAuthUtils';
+import { validateEmail, validatePassword, translateSupabaseError } from './commonAuthUtils';
 
 export const createSignUpService = (toast: ReturnType<typeof useToast>['toast']) => {
   const auditService = createAuditService();
@@ -81,7 +81,7 @@ export const createSignUpService = (toast: ReturnType<typeof useToast>['toast'])
         } else {
           toast.error({
             title: "Erro no cadastro",
-            description: error.message
+            description: translateSupabaseError(error)
           });
         }
         return { error };

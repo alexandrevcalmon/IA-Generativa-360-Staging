@@ -12,8 +12,6 @@ export const usePointsHistory = () => {
     queryFn: async (): Promise<PointsHistoryEntry[]> => {
       if (!user) throw new Error('User not authenticated');
 
-      console.log('📈 Fetching points history for user:', user.id);
-
       // Get the student record from company_users first
       const { data: studentRecord, error: studentError } = await supabase
         .from('company_users')
@@ -22,12 +20,11 @@ export const usePointsHistory = () => {
         .maybeSingle();
 
       if (studentError) {
-        console.error('❌ Error fetching student record:', studentError);
+        console.error('Error fetching student record:', studentError);
         throw studentError;
       }
 
       if (!studentRecord) {
-        console.log('⚠️ No student record found for points history');
         return [];
       }
 
@@ -36,16 +33,19 @@ export const usePointsHistory = () => {
         .select('*')
         .eq('student_id', studentRecord.id)
         .order('earned_at', { ascending: false })
-        .limit(10);
+        .limit(20); // Aumentar o limite para mostrar mais entradas
 
       if (error) {
-        console.error('❌ Error fetching points history:', error);
+        console.error('Error fetching points history:', error);
         throw error;
       }
-
-      console.log('✅ Successfully fetched points history');
+      
       return data || [];
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 };

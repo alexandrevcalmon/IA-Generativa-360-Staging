@@ -59,7 +59,7 @@ export const ProducerQuickActions = () => {
         </Button>
         <Button className="w-full justify-start" variant="outline" disabled>
           <MessageCircle className="h-4 w-4 mr-2" />
-          Suporte ao Aluno
+          Suporte ao Colaborador
         </Button>
       </CardContent>
     </Card>

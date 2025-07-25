@@ -72,15 +72,26 @@ export default function Ranking() {
   useEffect(() => {
     if (!user?.id) return;
     const fetchMyPosition = async () => {
-      const { data, error } = await supabase
-        .from('global_collaborator_ranking_new')
-        .select('*')
-        .eq('collaborator_email', user.email)
-        .single();
-      if (!error && data) {
-        setMyPosition(data);
-      } else if (error) {
-        console.error('Erro ao buscar posição do usuário:', error);
+      try {
+        // Buscar posição usando a função RPC
+        const { data, error } = await supabase.rpc('get_global_collaborator_ranking_period');
+        
+        if (!error && data) {
+          // Encontrar a posição do usuário atual
+          const userPosition = data.find(item => item.collaborator_email === user.email);
+          if (userPosition) {
+            // Calcular a posição baseada no total_points
+            const position = data.filter(item => item.total_points > userPosition.total_points).length + 1;
+            setMyPosition({
+              ...userPosition,
+              position: position
+            });
+          }
+        } else if (error) {
+          console.error('Erro ao buscar posição do usuário:', error);
+        }
+      } catch (err) {
+        console.error('Erro inesperado ao buscar posição:', err);
       }
     };
     fetchMyPosition();

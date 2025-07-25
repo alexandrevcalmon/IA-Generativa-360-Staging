@@ -1,7 +1,8 @@
+import React from "react";
 import { useCompanyData } from "@/hooks/useCompanyData";
 import { CollaboratorManagement } from "@/components/collaborator/CollaboratorManagement";
 
-const CompanyCollaborators = () => {
+const CompanyCollaborators: React.FC = () => {
   const { data: companyData } = useCompanyData();
 
   return (

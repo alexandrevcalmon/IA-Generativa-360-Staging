@@ -474,12 +474,12 @@ export default function ActivateAccount() {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <Card className="w-full max-w-md bg-slate-800 border-slate-700">
           <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Validando link de ativação...</p>
-            <p className="text-sm text-gray-500 mt-2">Processando com múltiplos métodos de compatibilidade</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-300">Validando link de ativação...</p>
+            <p className="text-sm text-gray-400 mt-2">Processando com múltiplos métodos de compatibilidade</p>
           </CardContent>
         </Card>
       </div>
@@ -488,15 +488,15 @@ export default function ActivateAccount() {
 
   if (!isValidToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <Card className="w-full max-w-md bg-slate-800 border-slate-700">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Link Inválido</h2>
-            <p className="text-gray-600 mb-4">
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-white mb-2">Link Inválido</h2>
+            <p className="text-gray-300 mb-4">
               Este link de ativação expirou ou é inválido.
             </p>
-            <Button onClick={() => navigate('/auth')} variant="outline">
+            <Button onClick={() => navigate('/auth')} variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
               Voltar ao Login
             </Button>
           </CardContent>
@@ -506,36 +506,35 @@ export default function ActivateAccount() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <Card className="w-full max-w-md bg-slate-800 border-slate-700">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle className="w-6 h-6 text-green-600" />
+          <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-white mb-2">
             {needsCompleteRegistration ? 'Complete seu Cadastro' : 'Ativar Conta'}
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-gray-300 text-base">
             {needsCompleteRegistration
               ? 'Defina sua senha e complete suas informações pessoais para acessar a plataforma'
               : `Olá, ${userEmail}! Defina sua senha para ativar sua conta`
             }
           </CardDescription>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-400 mt-3 bg-slate-700 rounded-lg p-2 border border-slate-600">
             Observação: Por questões de conformidade, apenas usuários com idade entre 16 e 100 anos podem criar contas.
           </p>
           {userEmail && (
-            <p className="text-sm text-blue-600 font-medium mt-2">
+            <p className="text-sm text-blue-400 font-medium mt-3 bg-slate-700 rounded-lg p-2 border border-slate-600">
               {userEmail}
             </p>
           )}
-          {/* Removido: Processado via: {activationMethod} */}
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha *</Label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <Label htmlFor="password" className="text-white font-medium">Senha *</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -543,26 +542,26 @@ export default function ActivateAccount() {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
                   placeholder="Crie uma senha"
-                  className={passwordError ? "border-red-500" : ""}
+                  className={`bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20 ${passwordError ? "border-red-500" : ""}`}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-400 transition-colors"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
-              {passwordError && <p className="text-sm text-red-500 mt-1">{passwordError}</p>}
+              {passwordError && <p className="text-sm text-red-400 mt-1">{passwordError}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="confirmPassword" className="text-white font-medium">Confirmar Senha *</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -570,28 +569,31 @@ export default function ActivateAccount() {
                   value={confirmPassword}
                   onChange={(e) => { setConfirmPassword(e.target.value); setConfirmPasswordError(null); }}
                   placeholder="Repita a senha"
-                  className={confirmPasswordError ? "border-red-500" : ""}
+                  className={`bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20 ${confirmPasswordError ? "border-red-500" : ""}`}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-400 transition-colors"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
-              {confirmPasswordError && <p className="text-sm text-red-500 mt-1">{confirmPasswordError}</p>}
+              {confirmPasswordError && <p className="text-sm text-red-400 mt-1">{confirmPasswordError}</p>}
             </div>
 
             {needsCompleteRegistration && (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="birthDate">Data de Nascimento</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="birthDate" className="text-white font-medium flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-blue-400" />
+                    Data de Nascimento
+                  </Label>
                   <Input
                     id="birthDate"
                     type="date"
@@ -607,21 +609,24 @@ export default function ActivateAccount() {
                       }
                     }}
                     placeholder="DD/MM/AAAA"
-                    className="pr-10"
+                    className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20"
                     required
                   />
-                  {birthDateError && <p className="text-sm text-red-500 mt-1">{birthDateError}</p>}
+                  {birthDateError && <p className="text-sm text-red-400 mt-1">{birthDateError}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Sexo</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="gender" className="text-white font-medium flex items-center gap-2">
+                    <User className="w-5 h-5 text-purple-400" />
+                    Sexo
+                  </Label>
                   <Select onValueChange={(value) => setGender(value as GenderType)} defaultValue={gender} required>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20">
                       <SelectValue placeholder="Selecione seu sexo" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-slate-600">
                       {Object.entries(GenderOptions).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
+                        <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
                           {label}
                         </SelectItem>
                       ))}
@@ -629,9 +634,11 @@ export default function ActivateAccount() {
                   </Select>
                 </div>
 
-                {/* Estado antes da cidade */}
-                <div className="space-y-2">
-                  <Label htmlFor="state">Estado</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="state" className="text-white font-medium flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-green-400" />
+                    Estado
+                  </Label>
                   <Select
                     onValueChange={(value) => {
                       setState(value);
@@ -640,15 +647,17 @@ export default function ActivateAccount() {
                     value={state}
                     required
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20">
                       <SelectValue placeholder={loadingEstados ? "Carregando estados..." : "Selecione seu estado"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-slate-600">
                       {loadingEstados ? (
-                        <div className="flex items-center justify-center p-4"><Loader2 className="animate-spin mr-2" />Carregando...</div>
+                        <div className="flex items-center justify-center p-4 text-white">
+                          <Loader2 className="animate-spin mr-2" />Carregando...
+                        </div>
                       ) : (
                         estados.map((uf) => (
-                          <SelectItem key={uf.sigla} value={uf.sigla}>
+                          <SelectItem key={uf.sigla} value={uf.sigla} className="text-white hover:bg-slate-700">
                             {uf.nome} ({uf.sigla})
                           </SelectItem>
                         ))
@@ -657,23 +666,28 @@ export default function ActivateAccount() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="city">Cidade</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="city" className="text-white font-medium flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-orange-400" />
+                    Cidade
+                  </Label>
                   <Select
                     onValueChange={(value) => setCity(value)}
                     value={city}
                     required
                     disabled={!state || loadingCidades}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500/20 disabled:opacity-50">
                       <SelectValue placeholder={state ? (loadingCidades ? "Carregando cidades..." : "Selecione sua cidade") : "Selecione o estado primeiro"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-slate-600">
                       {loadingCidades ? (
-                        <div className="flex items-center justify-center p-4"><Loader2 className="animate-spin mr-2" />Carregando...</div>
+                        <div className="flex items-center justify-center p-4 text-white">
+                          <Loader2 className="animate-spin mr-2" />Carregando...
+                        </div>
                       ) : (
                         cidades.map((cidade) => (
-                          <SelectItem key={cidade} value={cidade}>
+                          <SelectItem key={cidade} value={cidade} className="text-white hover:bg-slate-700">
                             {cidade}
                           </SelectItem>
                         ))
@@ -682,26 +696,29 @@ export default function ActivateAccount() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="country">País</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="country" className="text-white font-medium flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-cyan-400" />
+                    País
+                  </Label>
                   <Input
                     id="country"
                     type="text"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     placeholder="Digite seu país"
-                    className="pr-10"
+                    className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20"
                     required
                   />
                 </div>
               </>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-800">
+            <div className="bg-slate-700 border border-slate-600 rounded-lg p-4">
+              <p className="text-sm text-blue-300 font-medium mb-2">
                 <strong>Requisitos da senha:</strong>
               </p>
-              <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <ul className="text-sm text-gray-300 space-y-1">
                 <li>• Mínimo de 8 caracteres</li>
                 <li>• Recomendado: letras, números e símbolos</li>
               </ul>
@@ -709,17 +726,17 @@ export default function ActivateAccount() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                   Ativando conta...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <CheckCircle className="h-5 w-5 mr-3" />
                   Ativar Conta
                 </>
               )}

@@ -16,6 +16,33 @@ html, body {
   min-height: 100vh;
 }
 
+/* Garantir que o sidebar seja sempre visível */
+.group\/sidebar-wrapper {
+  min-height: 100vh !important;
+  width: 100% !important;
+}
+
+/* Garantir que o SidebarInset funcione corretamente */
+[data-sidebar="inset"] {
+  flex: 1 !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Garantir que o sidebar principal seja sempre visível */
+[data-sidebar="main"] {
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+/* Garantir que o conteúdo principal tenha overflow correto */
+[data-sidebar="inset"] > div {
+  flex: 1 !important;
+  overflow: auto !important;
+  min-height: 0 !important;
+}
+
 /* Transições suaves para mudanças de página */
 .page-transition {
   transition: opacity 0.2s ease-in-out;
@@ -631,6 +658,113 @@ html, body {
     --border: transparent !important;
     --input: 240 3.7% 15.9% !important;
     --ring: 240 4.9% 83.9% !important;
+  }
+
+  .dark-theme-override {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+  }
+
+  .dark-theme-override * {
+    color: inherit;
+  }
+
+  .dark-theme-override input,
+  .dark-theme-override textarea,
+  .dark-theme-override select {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #d1d5db !important;
+  }
+
+  .dark-theme-override input:focus,
+  .dark-theme-override textarea:focus,
+  .dark-theme-override select:focus {
+    background-color: #374151 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+  }
+
+  .dark-theme-override::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .dark-theme-override::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+
+  .dark-theme-override::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+  }
+
+  .dark-theme-override::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
+
+  /* Estilos específicos para a página do perfil da empresa */
+  .dark-theme-override .bg-gray-800 {
+    background-color: #1f2937 !important;
+  }
+
+  .dark-theme-override .border-gray-700 {
+    border-color: #374151 !important;
+  }
+
+  .dark-theme-override .text-white {
+    color: #ffffff !important;
+  }
+
+  .dark-theme-override .text-gray-300 {
+    color: #d1d5db !important;
+  }
+
+  .dark-theme-override .bg-gray-700 {
+    background-color: #374151 !important;
+  }
+
+  .dark-theme-override .border-gray-600 {
+    border-color: #4b5563 !important;
+  }
+
+  .dark-theme-override .bg-blue-600 {
+    background-color: #2563eb !important;
+  }
+
+  .dark-theme-override .text-blue-600 {
+    color: #2563eb !important;
+  }
+
+  .dark-theme-override .bg-blue-100 {
+    background-color: #1e40af !important;
+  }
+
+  .dark-theme-override .text-blue-700 {
+    color: #ffffff !important;
+  }
+
+  /* Estilos para os tabs */
+  .dark-theme-override [data-state="active"] {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+  }
+
+  /* Estilos para os cards */
+  .dark-theme-override .card-premium {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+
+  /* Estilos para os badges */
+  .dark-theme-override .badge-secondary {
+    background-color: #374151 !important;
+    color: #d1d5db !important;
+  }
+
+  .dark-theme-override .badge-outline {
+    background-color: #1f2937 !important;
+    border-color: #4b5563 !important;
+    color: #d1d5db !important;
   }
 
   /* Remover todas as bordas dos componentes */

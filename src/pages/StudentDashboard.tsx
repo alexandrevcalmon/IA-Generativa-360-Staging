@@ -1,69 +1,138 @@
-import { useAuth } from '@/hooks/auth';
-import { useStudentPoints } from '@/hooks/useStudentGamification';
-import { useStudentCourses } from '@/hooks/useStudentCourses';
-import { usePointsHistory } from '@/hooks/useStudentGamification';
-import { PageLayout } from '@/components/PageLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { 
   BookOpen, 
-  Clock, 
   Award, 
+  Clock, 
+  Trophy, 
+  Diamond, 
+  Flame, 
+  Users, 
   TrendingUp,
-  Trophy,
-  MessageCircle,
   Calendar,
-  User,
-  Zap,
-  Star,
   Target,
-  Sparkles,
-  Crown,
-  ArrowUpRight,
-  Play,
-  CheckCircle,
-  BarChart3,
-  Users,
-  Brain,
-  Rocket,
-  Flame,
-  Lightbulb,
-  Heart,
-  Shield,
-  Gem,
-  Diamond,
-  Coins,
-  Sparkle
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { StudentAchievements } from '@/components/student/StudentAchievements';
-import { motion, AnimatePresence } from 'framer-motion';
+  Star,
+  ArrowRight
+} from "lucide-react";
+import { useAuth } from "@/hooks/auth";
+import { useStudentCourses } from "@/hooks/useStudentCourses";
+import { useStudentPoints } from "@/hooks/gamification/useStudentPoints";
+import { usePointsHistory } from "@/hooks/gamification/usePointsHistory";
+import { useCollaboratorAnalytics } from "@/hooks/useCollaboratorAnalytics";
+import { PageLayout } from "@/components/PageLayout";
+import { PageSection } from "@/components/PageSection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from '@/lib/utils';
+import { StudentAchievements } from "@/components/student/StudentAchievements";
 
 const StudentDashboard = () => {
   const { companyUserData } = useAuth();
   const { data: studentPoints } = useStudentPoints();
   const { data: courses = [] } = useStudentCourses();
   const { data: pointsHistory = [] } = usePointsHistory();
+  const { data: analyticsData = [] } = useCollaboratorAnalytics();
 
   const totalPoints = studentPoints?.total_points || 0;
   const currentStreak = studentPoints?.streak_days || 0;
 
-  // Calculate real stats from actual data
-  const coursesInProgress = courses.filter(course => 
-    course.progress_percentage > 0 && course.progress_percentage < 100
-  ).length;
-  
-  const completedCourses = courses.filter(course => 
-    course.progress_percentage >= 100
-  ).length;
+  // Buscar dados reais do banco de dados
+  const [realStats, setRealStats] = useState({
+    coursesInProgress: 0,
+    completedCourses: 0,
+    hoursStudied: 0,
+    totalPoints: totalPoints
+  });
 
-  // Calculate total hours studied based on course progress
-  const hoursStudied = courses.reduce((total, course) => {
-    const progressDecimal = course.progress_percentage / 100;
-    return total + (course.estimated_hours * progressDecimal);
-  }, 0);
+  useEffect(() => {
+    const fetchRealStats = async () => {
+      if (!companyUserData?.auth_user_id) return;
+
+      try {
+        // Buscar progresso real das aulas de forma mais simples
+        const { data: lessonProgress } = await supabase
+          .from('lesson_progress')
+          .select(`
+            lesson_id,
+            completed,
+            watch_time_seconds,
+            lessons!inner(
+              title,
+              course_modules!inner(
+                course_id,
+                courses!inner(id, title, estimated_hours)
+              )
+            )
+          `)
+          .eq('user_id', companyUserData.auth_user_id);
+
+        if (lessonProgress) {
+          // Agrupar por curso
+          const courseStats = new Map();
+          
+          lessonProgress.forEach(progress => {
+            const courseId = progress.lessons.course_modules.course_id;
+            const courseTitle = progress.lessons.course_modules.courses.title;
+            const estimatedHours = progress.lessons.course_modules.courses.estimated_hours || 0;
+            
+            if (!courseStats.has(courseId)) {
+              courseStats.set(courseId, {
+                title: courseTitle,
+                estimatedHours,
+                totalLessons: 0,
+                completedLessons: 0,
+                totalWatchTime: 0
+              });
+            }
+            
+            const stats = courseStats.get(courseId);
+            stats.totalLessons++;
+            stats.totalWatchTime += progress.watch_time_seconds || 0;
+            
+            if (progress.completed) {
+              stats.completedLessons++;
+            }
+          });
+
+          // Calcular estatísticas
+          let coursesInProgress = 0;
+          let completedCourses = 0;
+          let totalHoursStudied = 0;
+
+          courseStats.forEach((stats, courseId) => {
+            const progressPercentage = stats.totalLessons > 0 
+              ? (stats.completedLessons / stats.totalLessons) * 100 
+              : 0;
+
+            // Horas estudadas baseadas no tempo real assistido (em segundos)
+            const hoursStudied = stats.totalWatchTime / 3600; // Converter segundos para horas
+            totalHoursStudied += hoursStudied;
+
+            if (progressPercentage > 0 && progressPercentage < 100) {
+              coursesInProgress++;
+            } else if (progressPercentage >= 100) {
+              completedCourses++;
+            }
+          });
+
+          setRealStats({
+            coursesInProgress,
+            completedCourses,
+            hoursStudied: totalHoursStudied,
+            totalPoints
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas reais:', error);
+      }
+    };
+
+    fetchRealStats();
+  }, [companyUserData?.auth_user_id, totalPoints]);
 
   // Header content com badges premium dark theme
   const headerContent = (
@@ -79,7 +148,7 @@ const StudentDashboard = () => {
       >
         <Badge className="bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 text-white border-0 shadow-lg backdrop-blur-sm">
           <Diamond className="w-3 h-3 mr-1" />
-          {totalPoints} pontos
+          {realStats.totalPoints} pontos
         </Badge>
       </motion.div>
       <motion.div
@@ -98,7 +167,7 @@ const StudentDashboard = () => {
   const statsCards = [
     {
       title: "Cursos em Andamento",
-      value: coursesInProgress,
+      value: realStats.coursesInProgress,
       icon: BookOpen,
       gradient: "from-emerald-400 via-green-500 to-teal-600",
       bgGradient: "from-emerald-400/20 via-green-500/15 to-teal-600/20",
@@ -107,7 +176,7 @@ const StudentDashboard = () => {
     },
     {
       title: "Cursos Concluídos",
-      value: completedCourses,
+      value: realStats.completedCourses,
       icon: Award,
       gradient: "from-purple-400 via-violet-500 to-purple-600",
       bgGradient: "from-purple-400/20 via-violet-500/15 to-purple-600/20",
@@ -116,7 +185,9 @@ const StudentDashboard = () => {
     },
     {
       title: "Horas Estudadas",
-      value: `${hoursStudied.toFixed(1)}h`,
+      value: realStats.hoursStudied < 1 
+        ? `${Math.round(realStats.hoursStudied * 60)}min` 
+        : `${realStats.hoursStudied.toFixed(1)}h`,
       icon: Clock,
       gradient: "from-blue-400 via-cyan-500 to-blue-600",
       bgGradient: "from-blue-400/20 via-cyan-500/15 to-blue-600/20",
@@ -125,7 +196,7 @@ const StudentDashboard = () => {
     },
     {
       title: "Pontos Acumulados",
-      value: totalPoints,
+      value: realStats.totalPoints,
       icon: Trophy,
       gradient: "from-orange-400 via-yellow-500 to-orange-600",
       bgGradient: "from-orange-400/20 via-yellow-500/15 to-orange-600/20",
@@ -146,8 +217,8 @@ const StudentDashboard = () => {
     },
     {
       title: "Comunidade",
-      description: "Interagir com outros alunos",
-      icon: MessageCircle,
+      description: "Interagir com outros colaboradores",
+      icon: Users,
       href: "/student/community",
       gradient: "from-blue-400 via-cyan-500 to-blue-600",
       bgGradient: "from-blue-400/10 via-cyan-500/8 to-blue-600/10"
@@ -163,7 +234,7 @@ const StudentDashboard = () => {
     {
       title: "Meu Perfil",
       description: "Ver meu progresso",
-      icon: User,
+      icon: Users,
       href: "/student/profile",
       gradient: "from-orange-400 via-yellow-500 to-orange-600",
       bgGradient: "from-orange-400/10 via-yellow-500/8 to-orange-600/10"
@@ -283,7 +354,7 @@ const StudentDashboard = () => {
                     transition={{ duration: 0.5, delay: 0.4 }}
                   >
                     <CardTitle className="text-xl font-bold bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 bg-clip-text text-transparent flex items-center gap-2">
-                      <Sparkle className="h-5 w-5 text-emerald-400" />
+                      <TrendingUp className="h-5 w-5 text-emerald-400" />
                       Ações Rápidas
                     </CardTitle>
                   </motion.div>
@@ -334,7 +405,7 @@ const StudentDashboard = () => {
                                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                                 whileHover={{ x: 3 }}
                               >
-                                <ArrowUpRight className="h-5 w-5 text-slate-400" />
+                                <ArrowRight className="h-5 w-5 text-slate-400" />
                               </motion.div>
                             </div>
                           </div>
@@ -360,56 +431,51 @@ const StudentDashboard = () => {
                     transition={{ duration: 0.5, delay: 0.5 }}
                   >
                     <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-400 via-violet-500 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-                      <Gem className="h-5 w-5 text-purple-400" />
+                      <Star className="h-5 w-5 text-purple-400" />
                       Atividades Recentes
                     </CardTitle>
                   </motion.div>
                 </CardHeader>
                 <CardContent>
-                  <AnimatePresence>
-                    {pointsHistory.length > 0 ? (
-                      <div className="space-y-4">
-                        {pointsHistory.slice(0, 5).map((entry, index) => (
-                          <motion.div
-                            key={entry.id || index}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
-                            whileHover={{ x: 4 }}
-                            className="flex items-center justify-between p-4 rounded-xl bg-slate-800/60 backdrop-blur-sm border border-slate-700/40 hover:bg-slate-800/80 hover:border-slate-600/60 transition-all duration-300"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium text-sm text-slate-200">
-                                {entry.description || entry.action_type}
-                              </p>
-                              <p className="text-xs text-slate-400 mt-1">
-                                {new Date(entry.earned_at).toLocaleDateString('pt-BR')}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 text-white border-0 shadow-lg">
-                                {entry.action_type}
-                              </Badge>
-                              <Badge className="bg-gradient-to-r from-orange-400 via-yellow-500 to-orange-600 text-white border-0 shadow-lg">
-                                +{entry.points} pts
-                              </Badge>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    ) : (
-                      <motion.div 
-                        className="text-center py-8 text-slate-400"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.7 }}
-                      >
-                        <Brain className="h-12 w-12 mx-auto mb-4 text-slate-500" />
-                        <p>Nenhuma atividade recente encontrada.</p>
-                        <p className="text-sm mt-1">Comece a aprender para ver suas conquistas!</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {pointsHistory.length > 0 ? (
+                    <div className="space-y-4">
+                      {pointsHistory.slice(0, 5).map((entry, index) => (
+                        <motion.div
+                          key={entry.id || index}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
+                          whileHover={{ x: 4 }}
+                          className="flex items-center justify-between p-4 rounded-xl bg-slate-800/60 backdrop-blur-sm border border-slate-700/40 hover:bg-slate-800/80 hover:border-slate-600/60 transition-all duration-300"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-sm text-slate-200">
+                              {entry.description || entry.action_type}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {new Date(entry.earned_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-gradient-to-r from-orange-400 via-yellow-500 to-orange-600 text-white border-0 shadow-lg">
+                              +{entry.points} pts
+                            </Badge>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <motion.div 
+                      className="text-center py-8 text-slate-400"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7 }}
+                    >
+                      <Users className="h-12 w-12 mx-auto mb-4 text-slate-500" />
+                      <p>Nenhuma atividade recente encontrada.</p>
+                      <p className="text-sm mt-1">Comece a aprender para ver suas conquistas!</p>
+                    </motion.div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -429,18 +495,18 @@ const StudentDashboard = () => {
                   transition={{ duration: 0.5, delay: 0.6 }}
                 >
                   <CardTitle className="text-xl font-bold bg-gradient-to-r from-orange-400 via-yellow-500 to-orange-600 bg-clip-text text-transparent flex items-center gap-2">
-                    <Crown className="h-5 w-5 text-orange-400" />
+                    <Trophy className="h-5 w-5 text-orange-400" />
                     Conquistas
                   </CardTitle>
                 </motion.div>
               </CardHeader>
-              <CardContent>
-                <StudentAchievements 
-                  coursesInProgress={coursesInProgress} 
-                  completedCourses={completedCourses} 
-                  totalPoints={totalPoints} 
-                />
-              </CardContent>
+                              <CardContent>
+                  <StudentAchievements 
+                    coursesInProgress={realStats.coursesInProgress}
+                    completedCourses={realStats.completedCourses}
+                    totalPoints={realStats.totalPoints}
+                  />
+                </CardContent>
             </Card>
           </motion.div>
         </div>
@@ -460,7 +526,7 @@ const StudentDashboard = () => {
                 className="flex flex-col items-center gap-4"
               >
                 <div className="p-4 rounded-full bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 shadow-2xl">
-                  <Rocket className="h-8 w-8 text-white" />
+                  <Users className="h-8 w-8 text-white" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-400 via-green-500 to-teal-600 bg-clip-text text-transparent mb-2">
@@ -480,7 +546,7 @@ const StudentDashboard = () => {
                     asChild
                   >
                     <Link to="/student/courses">
-                      <Play className="h-4 w-4 mr-2" />
+                      <ArrowRight className="h-4 w-4 mr-2" />
                       Continuar Aprendendo
                     </Link>
                   </Button>

@@ -100,11 +100,11 @@ export function PageLayout({
   };
 
   return (
-    <div className={cn("flex flex-col h-full", className)}>
+    <div className={cn("flex flex-col h-full min-h-0", className)}>
       {/* Header */}
       <header className={cn(
         getHeaderClass(),
-        "min-h-[156px] flex items-center",
+        "min-h-[156px] flex items-center flex-shrink-0",
         headerClassName
       )}>
         <PageContainer centered={headerCentered}>
@@ -129,7 +129,7 @@ export function PageLayout({
 
       {/* Main Content */}
       <div className={cn(
-        "flex-1 overflow-auto p-4 md:p-6",
+        "flex-1 overflow-auto p-4 md:p-6 min-h-0",
         getBgClass(),
         contentClassName
       )}>

@@ -200,7 +200,7 @@ export const CreateModuleDialog = ({ isOpen, onClose, courseId, module }: Create
                   <div className="space-y-0.5">
                     <FormLabel className="text-gray-300">Publicar Módulo</FormLabel>
                     <div className="text-sm text-gray-400">
-                      Torne o módulo visível para os alunos
+                      Torne o módulo visível para os colaboradores
                     </div>
                   </div>
                   <FormControl>

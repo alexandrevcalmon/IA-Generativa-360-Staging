@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { updateUserMetadata } from './authUtils';
+import { translateSupabaseError } from './commonAuthUtils';
 
 export const createProducerSignInService = (toast: any) => {
   const signInProducer = async (email: string, password: string) => {
@@ -10,7 +11,7 @@ export const createProducerSignInService = (toast: any) => {
     
     if (error) {
       console.error(`[ProducerSignIn] Producer login error for ${email}: ${error.message}`);
-      toast.error({ title: "Erro no Login", description: error.message });
+      toast.error({ title: "Erro no Login", description: translateSupabaseError(error) });
       return { error };
     }
     

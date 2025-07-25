@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageLayout } from "@/components/PageLayout";
 import { PageSection } from "@/components/PageSection";
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,25 +18,29 @@ const StudentCommunity = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<CommunityTopic | null>(null);
 
-  const { data: topics = [], isLoading, refetch } = useCommunityTopics();
+  const { data: topics = [], isLoading, error, refetch } = useCommunityTopics();
 
+  // Refetch topics when component mounts
   useEffect(() => {
+    console.log('🔄 StudentCommunity: Component mounted, refetching topics');
     refetch();
-  }, []);
+  }, [refetch]);
 
   // Filter topics based on search and category
-  const filteredTopics = topics.filter(topic => {
-    const matchesSearch = topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         topic.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || topic.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredTopics = useCallback(() => {
+    return topics.filter(topic => {
+      const matchesSearch = topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           topic.content.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || topic.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [topics, searchTerm, selectedCategory]);
 
   // Get unique categories for filter
   const categories = Array.from(new Set(topics.map(topic => topic.category)));
 
   // Sort topics: pinned first, then by creation date
-  const sortedTopics = filteredTopics.sort((a, b) => {
+  const sortedTopics = filteredTopics().sort((a, b) => {
     if (a.is_pinned && !b.is_pinned) return -1;
     if (!a.is_pinned && b.is_pinned) return 1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -44,11 +48,62 @@ const StudentCommunity = () => {
 
   // Header content com botão de novo tópico
   const headerContent = (
-    <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-      <Plus className="h-4 w-4" />
-      <span className="hidden sm:inline">Novo Tópico</span>
-    </Button>
+    <div className="flex items-center gap-2">
+      <Button 
+        onClick={() => setIsCreateDialogOpen(true)} 
+        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+      >
+        <Plus className="h-4 w-4" />
+        <span className="hidden sm:inline">Novo Tópico</span>
+      </Button>
+      
+
+    </div>
   );
+
+  const handleCreateSuccess = useCallback(() => {
+    console.log('✅ Topic created successfully, refetching topics');
+    refetch();
+  }, [refetch]);
+
+  const handleEditSuccess = useCallback(() => {
+    console.log('✅ Topic edited successfully, refetching topics');
+    refetch();
+    setEditingTopic(null);
+  }, [refetch]);
+
+  if (error) {
+    return (
+      <PageLayout
+        title="Comunidade"
+        subtitle="Conecte-se com outros estudantes e tire suas dúvidas"
+        headerContent={headerContent}
+        background="dark"
+      >
+        <PageSection transparent>
+          <Card className="border-red-700/50 bg-red-900/20 shadow-lg">
+            <CardContent className="p-8 text-center bg-red-900/20">
+              <div className="text-red-500 mb-4">
+                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">Erro ao carregar tópicos</h3>
+              <p className="text-red-300 mb-4">
+                Ocorreu um erro ao carregar os tópicos da comunidade.
+              </p>
+              <Button 
+                onClick={() => refetch()} 
+                className="mt-2 bg-red-600 hover:bg-red-700 text-white"
+              >
+                Tentar Novamente
+              </Button>
+            </CardContent>
+          </Card>
+        </PageSection>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -140,7 +195,7 @@ const StudentCommunity = () => {
       {/* Dialogs */}
       <CreateTopicDialog 
         open={isCreateDialogOpen} 
-        onOpenChange={setIsCreateDialogOpen} 
+        onOpenChange={setIsCreateDialogOpen}
       />
       
       {editingTopic && (

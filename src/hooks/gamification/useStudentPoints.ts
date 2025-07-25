@@ -25,7 +25,6 @@ export const useStudentPoints = () => {
       }
 
       if (!studentRecord) {
-        console.log('No student record found for user:', user.id);
         return null;
       }
 
@@ -165,13 +164,11 @@ export async function awardPointsToStudent({ studentId, points, actionType, desc
   limitPerDay?: number;
   uniquePerReference?: boolean;
 }) {
-  console.log('[Gamificação] awardPointsToStudent chamado para', { studentId, points, actionType, description, referenceId, meta });
 
   // Checar limite diário se necessário
   if (checkLimit && limitPerDay) {
     const allowed = await checkAndUpdateDailyLimit({ studentId, actionType, maxPerDay: limitPerDay });
     if (!allowed) {
-      console.log('[Gamificação] Limite diário atingido para', actionType, studentId);
       return { skipped: true, reason: 'daily_limit' };
     }
   }
@@ -187,7 +184,6 @@ export async function awardPointsToStudent({ studentId, points, actionType, desc
       .maybeSingle();
     if (existingError) throw existingError;
     if (existing) {
-      console.log('[Gamificação] Pontos já atribuídos para esta referência:', { actionType, referenceId });
       return { skipped: true, reason: 'already_awarded' };
     }
   }

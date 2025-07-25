@@ -2,6 +2,12 @@
 import { Trophy, BookOpen, CheckCircle, Star, Zap, Crown, Target, Flame, Diamond, Gem } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { useAvailableAchievements } from '@/hooks/gamification/useAvailableAchievements';
+import { useStudentAchievements } from '@/hooks/gamification/useStudentAchievements';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/auth';
 
 interface StudentAchievementsProps {
   coursesInProgress: number;
@@ -14,128 +20,279 @@ export const StudentAchievements = ({
   completedCourses, 
   totalPoints 
 }: StudentAchievementsProps) => {
-  const achievements = [
-    {
-      title: "Primeira Semana",
-      icon: Flame,
-      gradient: "from-orange-400 via-red-500 to-pink-600",
-      bgGradient: "from-orange-400/20 via-red-500/15 to-pink-600/20",
-      description: "7 dias seguidos"
+  const { user } = useAuth();
+
+  // Buscar todas as conquistas disponíveis
+  const { data: allAchievements = [], isLoading: isLoadingAchievements } = useQuery({
+    queryKey: ['all-achievements-simple'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('is_active', true)
+        .order('points_required', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching achievements:', error);
+        return [];
+      }
+
+      return data || [];
     },
-    {
-      title: "Cursos Ativos",
-      icon: BookOpen,
-      gradient: "from-emerald-400 via-green-500 to-teal-600",
-      bgGradient: "from-emerald-400/20 via-green-500/15 to-teal-600/20",
-      value: coursesInProgress,
-      description: "em andamento"
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+
+  // Buscar conquistas do usuário
+  const { data: studentAchievements = [], isLoading: isLoadingStudentAchievements } = useQuery({
+    queryKey: ['student-achievements-simple', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // Buscar o company_user_id
+      const { data: companyUser, error: companyUserError } = await supabase
+        .from('company_users')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+
+      if (companyUserError || !companyUser) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('student_achievements')
+        .select('achievement_id')
+        .eq('student_id', companyUser.id);
+
+      if (error) {
+        console.error('Error fetching student achievements:', error);
+        return [];
+      }
+
+      return data || [];
     },
-    {
-      title: "Conquistas",
-      icon: CheckCircle,
-      gradient: "from-blue-400 via-cyan-500 to-blue-600",
-      bgGradient: "from-blue-400/20 via-cyan-500/15 to-blue-600/20",
-      value: completedCourses,
-      description: "cursos concluídos"
-    },
-    {
-      title: "Pontos",
-      icon: Trophy,
-      gradient: "from-purple-400 via-violet-500 to-purple-600",
-      bgGradient: "from-purple-400/20 via-violet-500/15 to-purple-600/20",
-      value: totalPoints,
-      description: "acumulados"
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+
+  // Criar um Set com os IDs das conquistas já conquistadas
+  const unlockedAchievementIds = new Set(
+    studentAchievements.map(sa => sa.achievement_id)
+  );
+
+  // Combinar todas as conquistas com informação de status
+  const achievementsWithStatus = allAchievements.map(achievement => ({
+    ...achievement,
+    isUnlocked: unlockedAchievementIds.has(achievement.id)
+  }));
+
+  // Definir cores e ícones baseados no nome da conquista e status
+  const getAchievementStyle = (name: string, index: number, isUnlocked: boolean) => {
+    const nameLower = name.toLowerCase();
+    
+    if (isUnlocked) {
+      // Cores vibrantes para conquistas conquistadas
+      if (nameLower.includes('primeira lição') || nameLower.includes('first lesson')) {
+        return {
+          icon: '📚',
+          bgColor: 'rgba(59, 130, 246, 0.15)',
+          borderColor: 'rgba(59, 130, 246, 0.3)',
+          iconBg: 'rgba(59, 130, 246, 0.25)',
+          textColor: '#60a5fa'
+        };
+      } else if (nameLower.includes('streak') || nameLower.includes('dias')) {
+        return {
+          icon: '🔥',
+          bgColor: 'rgba(245, 158, 11, 0.15)',
+          borderColor: 'rgba(245, 158, 11, 0.3)',
+          iconBg: 'rgba(245, 158, 11, 0.25)',
+          textColor: '#fbbf24'
+        };
+      } else if (nameLower.includes('mentoria') || nameLower.includes('mentorship')) {
+        return {
+          icon: '👨‍🏫',
+          bgColor: 'rgba(168, 85, 247, 0.15)',
+          borderColor: 'rgba(168, 85, 247, 0.3)',
+          iconBg: 'rgba(168, 85, 247, 0.25)',
+          textColor: '#a78bfa'
+        };
+      } else if (nameLower.includes('participação') || nameLower.includes('postagens')) {
+        return {
+          icon: '💬',
+          bgColor: 'rgba(16, 185, 129, 0.15)',
+          borderColor: 'rgba(16, 185, 129, 0.3)',
+          iconBg: 'rgba(16, 185, 129, 0.25)',
+          textColor: '#34d399'
+        };
+      } else if (nameLower.includes('primeiro curso') || nameLower.includes('first course')) {
+        return {
+          icon: '🎓',
+          bgColor: 'rgba(239, 68, 68, 0.15)',
+          borderColor: 'rgba(239, 68, 68, 0.3)',
+          iconBg: 'rgba(239, 68, 68, 0.25)',
+          textColor: '#f87171'
+        };
+      } else {
+        // Cores padrão para conquistas conquistadas
+        const colors = [
+          { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)', icon: 'rgba(59, 130, 246, 0.25)', text: '#60a5fa' },
+          { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', icon: 'rgba(16, 185, 129, 0.25)', text: '#34d399' },
+          { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)', icon: 'rgba(168, 85, 247, 0.25)', text: '#a78bfa' },
+          { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', icon: 'rgba(245, 158, 11, 0.25)', text: '#fbbf24' },
+          { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)', icon: 'rgba(239, 68, 68, 0.25)', text: '#f87171' }
+        ];
+        return {
+          icon: '🏆',
+          bgColor: colors[index % colors.length].bg,
+          borderColor: colors[index % colors.length].border,
+          iconBg: colors[index % colors.length].icon,
+          textColor: colors[index % colors.length].text
+        };
+      }
+    } else {
+      // Cores em cinza para conquistas não conquistadas
+      if (nameLower.includes('primeira lição') || nameLower.includes('first lesson')) {
+        return {
+          icon: '📚',
+          bgColor: 'rgba(71, 85, 105, 0.15)',
+          borderColor: 'rgba(71, 85, 105, 0.3)',
+          iconBg: 'rgba(71, 85, 105, 0.25)',
+          textColor: '#94a3b8'
+        };
+      } else if (nameLower.includes('streak') || nameLower.includes('dias')) {
+        return {
+          icon: '🔥',
+          bgColor: 'rgba(71, 85, 105, 0.15)',
+          borderColor: 'rgba(71, 85, 105, 0.3)',
+          iconBg: 'rgba(71, 85, 105, 0.25)',
+          textColor: '#94a3b8'
+        };
+      } else if (nameLower.includes('mentoria') || nameLower.includes('mentorship')) {
+        return {
+          icon: '👨‍🏫',
+          bgColor: 'rgba(71, 85, 105, 0.15)',
+          borderColor: 'rgba(71, 85, 105, 0.3)',
+          iconBg: 'rgba(71, 85, 105, 0.25)',
+          textColor: '#94a3b8'
+        };
+      } else if (nameLower.includes('participação') || nameLower.includes('postagens')) {
+        return {
+          icon: '💬',
+          bgColor: 'rgba(71, 85, 105, 0.15)',
+          borderColor: 'rgba(71, 85, 105, 0.3)',
+          iconBg: 'rgba(71, 85, 105, 0.25)',
+          textColor: '#94a3b8'
+        };
+      } else if (nameLower.includes('primeiro curso') || nameLower.includes('first course')) {
+        return {
+          icon: '🎓',
+          bgColor: 'rgba(71, 85, 105, 0.15)',
+          borderColor: 'rgba(71, 85, 105, 0.3)',
+          iconBg: 'rgba(71, 85, 105, 0.25)',
+          textColor: '#94a3b8'
+        };
+      } else {
+        // Cores padrão em cinza para não conquistadas
+        return {
+          icon: '⭐',
+          bgColor: 'rgba(71, 85, 105, 0.15)',
+          borderColor: 'rgba(71, 85, 105, 0.3)',
+          iconBg: 'rgba(71, 85, 105, 0.25)',
+          textColor: '#94a3b8'
+        };
+      }
     }
-  ];
+  };
+
+  // Mostrar loading se estiver carregando
+  if (isLoadingAchievements || isLoadingStudentAchievements) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 p-3 rounded-lg border bg-slate-800/50 border-slate-600 animate-pulse">
+          <div className="w-8 h-8 rounded-full bg-slate-600"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-slate-600 rounded w-3/4"></div>
+            <div className="h-3 bg-slate-600 rounded w-1/2"></div>
+          </div>
+          <div className="w-12 h-6 bg-slate-600 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não há conquistas disponíveis
+  if (achievementsWithStatus.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <div className="text-slate-400 text-sm">
+          Nenhuma conquista disponível no momento.
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {achievements.map((achievement, index) => (
-        <motion.div
-          key={achievement.title}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
-          whileHover={{ 
-            x: 4,
-            transition: { duration: 0.2 }
-          }}
-        >
-          <div className={cn(
-            "relative overflow-hidden p-4 rounded-2xl border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm transition-all duration-300 group cursor-pointer",
-            "hover:bg-slate-800/80 hover:border-slate-600/60 hover:shadow-xl"
-          )}>
-            {/* Animated background gradient premium dark */}
-            <div className={cn(
-              "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-              achievement.bgGradient
-            )} />
-            
-            <div className="relative flex items-center gap-4">
-              <motion.div 
-                className={cn(
-                  "p-3 rounded-xl bg-gradient-to-br shadow-xl group-hover:scale-110 transition-transform duration-300",
-                  achievement.gradient
-                )}
-                whileHover={{ rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <achievement.icon className="h-5 w-5 text-white" />
-              </motion.div>
-              
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm text-slate-200 group-hover:text-white transition-colors duration-300">
-                    {achievement.title}
-                  </h3>
-                  {achievement.value !== undefined && (
-                    <span className={cn(
-                      "text-lg font-bold bg-gradient-to-r bg-clip-text text-transparent",
-                      achievement.gradient
-                    )}>
-                      {achievement.value}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400 mt-1 font-medium">
-                  {achievement.description}
-                </p>
-              </div>
-              
-              {/* Progress indicator for some achievements */}
-              {achievement.title === "Primeira Semana" && (
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-400 via-red-500 to-pink-600"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              )}
+    <div className="space-y-2">
+      {achievementsWithStatus.slice(0, 5).map((achievement, index) => {
+        const style = getAchievementStyle(achievement.name, index, achievement.isUnlocked);
+        
+        return (
+          <motion.div
+            key={achievement.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-lg border transition-all duration-200",
+              achievement.isUnlocked 
+                ? "bg-slate-800/50 border-slate-600" 
+                : "bg-slate-800/30 border-slate-600/50 opacity-60"
+            )}
+            style={{
+              backgroundColor: style.bgColor,
+              borderColor: style.borderColor
+            }}
+          >
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
+              style={{ backgroundColor: style.iconBg }}
+            >
+              {style.icon}
             </div>
-          </div>
-        </motion.div>
-      ))}
+            <div className="flex-1">
+              <p 
+                className="font-medium"
+                style={{ color: style.textColor }}
+              >
+                {achievement.name}
+              </p>
+              <p className="text-sm text-slate-400">
+                {achievement.description}
+              </p>
+            </div>
+            <Badge 
+              className="text-xs font-bold"
+              style={{
+                backgroundColor: style.iconBg,
+                color: style.textColor,
+                borderColor: style.borderColor
+              }}
+            >
+              {achievement.points_required} pts
+            </Badge>
+          </motion.div>
+        );
+      })}
       
-      {/* Motivational message premium dark */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-        className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-400/20 via-violet-500/15 to-purple-600/20 border border-purple-500/30"
-      >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-full bg-gradient-to-br from-purple-400 via-violet-500 to-purple-600 shadow-xl">
-            <Gem className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-200">
-              Continue assim!
-            </p>
-            <p className="text-xs text-slate-400 font-medium">
-              Cada conquista te aproxima do sucesso
-            </p>
-          </div>
+      {achievementsWithStatus.length > 5 && (
+        <div className="text-center pt-2">
+          <p className="text-xs text-slate-500">
+            +{achievementsWithStatus.length - 5} conquistas disponíveis
+          </p>
         </div>
-      </motion.div>
+      )}
     </div>
   );
 };

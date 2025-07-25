@@ -12,8 +12,6 @@ export const useStudentAchievements = () => {
     queryFn: async (): Promise<StudentAchievement[]> => {
       if (!user) throw new Error('User not authenticated');
 
-      console.log('🏆 Fetching student achievements for user:', user.id);
-
       // Get the student record from company_users first
       const { data: studentRecord, error: studentError } = await supabase
         .from('company_users')
@@ -22,12 +20,11 @@ export const useStudentAchievements = () => {
         .maybeSingle();
 
       if (studentError) {
-        console.error('❌ Error fetching student record:', studentError);
+        console.error('Error fetching student record:', studentError);
         throw studentError;
       }
 
       if (!studentRecord) {
-        console.log('⚠️ No student record found for achievements');
         return [];
       }
 
@@ -48,13 +45,16 @@ export const useStudentAchievements = () => {
         .eq('student_id', studentRecord.id);
 
       if (error) {
-        console.error('❌ Error fetching achievements:', error);
+        console.error('Error fetching achievements:', error);
         throw error;
       }
 
-      console.log('✅ Successfully fetched achievements');
       return data || [];
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 };

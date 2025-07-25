@@ -190,7 +190,7 @@ export function AppSidebar() {
       title: 'Ranking',
       url: '/ranking',
       icon: Trophy,
-      description: 'Ranking de alunos',
+      description: 'Ranking de colaboradores',
       gradient: 'from-amber-500 to-yellow-500'
     },
     {

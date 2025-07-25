@@ -107,7 +107,7 @@ export function Header() {
                 </div>
               </div>
 
-              {/* Aluno */}
+              {/* Colaborador */}
               <div 
                 className="bg-gradient-to-br from-gray-800/80 to-gray-700/80 backdrop-blur-xl rounded-2xl p-8 text-center hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 border border-gray-600/30 cursor-pointer group hover:scale-[1.02]" 
                 onClick={handleStudentClick}
@@ -115,7 +115,7 @@ export function Header() {
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
                   <GraduationCap className="w-10 h-10 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Sou Aluno</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">Sou Colaborador</h3>
                 <p className="text-gray-300 mb-6 text-base leading-relaxed">
                   Acesse cursos, trilhas e desenvolva suas habilidades
                 </p>
@@ -138,7 +138,7 @@ export function Header() {
                   </li>
                 </ul>
                 <div className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white py-4 px-8 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-blue-500/30 group-hover:scale-105">
-                  Acessar Área do Aluno →
+                  Acessar Área do Colaborador →
                 </div>
               </div>
             </div>

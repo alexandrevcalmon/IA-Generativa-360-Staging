@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getResetPasswordRedirectUrl } from './authUtils';
 import { createAuditService } from './auditService';
-import { validateEmail, validatePassword } from './commonAuthUtils';
+import { validateEmail, validatePassword, translateSupabaseError } from './commonAuthUtils';
 
 export const createPasswordService = (toast: ReturnType<typeof useToast>['toast']) => {
   const auditService = createAuditService();
@@ -64,7 +64,7 @@ export const createPasswordService = (toast: ReturnType<typeof useToast>['toast'
         } else {
           toast({
             title: "Erro ao enviar email",
-            description: error.message,
+            description: translateSupabaseError(error),
             variant: "destructive",
           });
         }
@@ -228,7 +228,7 @@ export const createPasswordService = (toast: ReturnType<typeof useToast>['toast'
         } else {
           toast({
             title: "Erro ao alterar senha",
-            description: error.message,
+            description: translateSupabaseError(error),
             variant: "destructive",
           });
         }

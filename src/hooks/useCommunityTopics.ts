@@ -48,24 +48,33 @@ export const useCommunityTopics = () => {
       const { data: { user } } = await supabase.auth.getUser();
       console.log('👤 Current user:', user?.email || 'Not authenticated');
       
-      const { data, error } = await supabase
-        .from('community_topics')
-        .select('*')
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('community_topics')
+          .select('*')
+          .order('is_pinned', { ascending: false })
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching community topics:', error);
+        if (error) {
+          console.error('❌ Error fetching community topics:', error);
+          throw error;
+        }
+        
+        console.log('📊 Community topics fetched:', { 
+          count: data?.length || 0,
+          topics: data?.map(t => ({ id: t.id, title: t.title })) || []
+        });
+        
+        return data as CommunityTopic[];
+      } catch (error) {
+        console.error('❌ Error in community topics query:', error);
         throw error;
       }
-      
-      console.log('📊 Community topics fetched:', { 
-        count: data?.length || 0,
-        topics: data?.map(t => ({ id: t.id, title: t.title })) || []
-      });
-      
-      return data as CommunityTopic[];
-    }
+    },
+    staleTime: 30 * 1000, // 30 segundos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
 
@@ -81,39 +90,66 @@ export const useCreateCommunityTopic = () => {
         console.error('❌ No authenticated user for topic creation');
         throw new Error('User not authenticated');
       }
-      const { data, error } = await supabase
-        .from('community_topics')
-        .insert(topicData)
-        .select()
-        .single();
-      if (error) {
-        console.error('❌ Error creating community topic:', error);
+      
+      try {
+        const { data, error } = await supabase
+          .from('community_topics')
+          .insert(topicData)
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('❌ Error creating community topic:', error);
+          throw error;
+        }
+        
+        console.log('✅ Community topic created successfully:', data.id);
+        
+        // Após criar o tópico, atribuir pontos
+        if (studentProfile?.id) {
+          try {
+            await awardPointsToStudent({
+              studentId: studentProfile.id,
+              points: GAMIFICATION_RULES.community_topic_created,
+              actionType: 'community_topic_created',
+              description: `Criou um tópico: ${topicData.title}`,
+              referenceId: data.id,
+              meta: { topicId: data.id, title: topicData.title },
+              checkLimit: true,
+              limitPerDay: DAILY_LIMITS.community_topic_created,
+              uniquePerReference: true,
+            });
+            console.log('✅ Points awarded for topic creation');
+          } catch (pointsError) {
+            console.warn('⚠️ Error awarding points for topic creation:', pointsError);
+            // Não falhar a criação do tópico se a pontuação falhar
+          }
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('❌ Error in topic creation process:', error);
         throw error;
       }
-      // Após criar o tópico, atribuir pontos
-      if (studentProfile?.id) {
-        await awardPointsToStudent({
-          studentId: studentProfile.id,
-          points: GAMIFICATION_RULES.community_topic_created,
-          actionType: 'community_topic_created',
-          description: `Criou um tópico: ${topicData.title}`,
-          referenceId: data.id,
-          meta: { topicId: data.id, title: topicData.title },
-          checkLimit: true,
-          limitPerDay: DAILY_LIMITS.community_topic_created,
-          uniquePerReference: true,
-        });
-      }
-      console.log('✅ Community topic created successfully:', data.id);
-      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🔄 Invalidating queries after topic creation');
+      // Invalidar todas as queries relacionadas a tópicos
       queryClient.invalidateQueries({ queryKey: ['community-topics'] });
+      queryClient.invalidateQueries({ queryKey: ['community-topic'] });
+      queryClient.invalidateQueries({ queryKey: ['topic-likes'] });
+      // Invalidar queries relacionadas a pontos e gamificação
+      queryClient.invalidateQueries({ queryKey: ['points-history'] });
+      queryClient.invalidateQueries({ queryKey: ['student-points'] });
+      queryClient.invalidateQueries({ queryKey: ['student-profile'] });
+      // Invalidar queries relacionadas a conquistas
+      queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['available-achievements'] });
       toast.success('Tópico criado com sucesso!');
     },
     onError: (error) => {
       console.error('❌ Error creating community topic:', error);
-      toast.error('Erro ao criar tópico');
+      toast.error('Erro ao criar tópico. Verifique suas permissões e tente novamente.');
     },
   });
 };

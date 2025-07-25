@@ -4,6 +4,7 @@ export { useStudentPoints } from './useStudentPoints';
 export { useStudentAchievements } from './useStudentAchievements';
 export { useAvailableAchievements } from './useAvailableAchievements';
 export { usePointsHistory } from './usePointsHistory';
+export { useAchievementNotification } from './useAchievementNotification';
 export type { 
   StudentPoints, 
   StudentAchievement, 

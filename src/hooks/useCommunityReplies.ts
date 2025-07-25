@@ -46,6 +46,13 @@ export const useCreateCommunityReply = () => {
       }
       // Pontuar resposta se for completa (>100 caracteres) e primeira resposta do usuário no tópico
       if (studentProfile?.id && replyData.content && replyData.content.length > 100) {
+        // Buscar o título do tópico para a descrição
+        const { data: topic } = await supabase
+          .from('community_topics')
+          .select('title')
+          .eq('id', replyData.topic_id)
+          .maybeSingle();
+        
         // Checar se já existe resposta pontuada desse usuário nesse tópico
         const { data: existing } = await supabase
           .from('points_history')
@@ -59,9 +66,9 @@ export const useCreateCommunityReply = () => {
             studentId: studentProfile.id,
             points: GAMIFICATION_RULES.community_reply_created,
             actionType: 'community_reply_created',
-            description: `Respondeu tópico: ${replyData.topic_id}`,
+            description: `Respondeu tópico: ${topic?.title || 'Tópico'}`,
             referenceId: replyData.topic_id,
-            meta: { reply_id: data.id, topic_id: replyData.topic_id },
+            meta: { reply_id: data.id, topic_id: replyData.topic_id, topic_title: topic?.title },
             checkLimit: true,
             limitPerDay: DAILY_LIMITS.community_reply_created,
             uniquePerReference: true
@@ -74,6 +81,13 @@ export const useCreateCommunityReply = () => {
       queryClient.invalidateQueries({ queryKey: ['community-replies', variables.topic_id] });
       queryClient.invalidateQueries({ queryKey: ['community-topics'] });
       queryClient.invalidateQueries({ queryKey: ['community-topic', variables.topic_id] });
+      // Invalidar queries relacionadas a pontos e gamificação
+      queryClient.invalidateQueries({ queryKey: ['points-history'] });
+      queryClient.invalidateQueries({ queryKey: ['student-points'] });
+      queryClient.invalidateQueries({ queryKey: ['student-profile'] });
+      // Invalidar queries relacionadas a conquistas
+      queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['available-achievements'] });
       toast.success('Resposta criada com sucesso!');
     },
     onError: (error) => {
@@ -178,6 +192,13 @@ export const useToggleReplyLike = () => {
     },
     onSuccess: (_, { replyId }) => {
       queryClient.invalidateQueries({ queryKey: ['community-replies'] });
+      // Invalidar queries relacionadas a pontos e gamificação
+      queryClient.invalidateQueries({ queryKey: ['points-history'] });
+      queryClient.invalidateQueries({ queryKey: ['student-points'] });
+      queryClient.invalidateQueries({ queryKey: ['student-profile'] });
+      // Invalidar queries relacionadas a conquistas
+      queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['available-achievements'] });
     },
     onError: (error) => {
       console.error('Error toggling reply like:', error);

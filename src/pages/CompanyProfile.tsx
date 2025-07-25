@@ -20,6 +20,10 @@ const CompanyProfile = () => {
     <Button 
       onClick={() => setIsEditing(!isEditing)}
       variant={isEditing ? "default" : "outline"}
+      className={isEditing 
+        ? "!bg-gradient-to-r !from-blue-500 !to-cyan-600 !text-white" 
+        : "!bg-gray-800 !border-gray-600 !text-gray-300 hover:!bg-gray-700 hover:!text-white"
+      }
     >
       {isEditing ? (
         <>
@@ -40,8 +44,14 @@ const CompanyProfile = () => {
       title="Perfil da Empresa"
       subtitle="Gerencie as informações da sua empresa"
       headerContent={headerContent}
+      background="dark"
+      className="dark-theme-override"
+      style={{
+        backgroundColor: '#0f172a',
+        color: '#e2e8f0'
+      }}
     >
-      <div className="space-y-6">
+      <div className="space-y-6" style={{ backgroundColor: '#0f172a' }}>
         {/* Profile Overview */}
         <PageSection>
           <ProfileHeader
@@ -55,10 +65,10 @@ const CompanyProfile = () => {
         {/* Profile Tabs */}
         <PageSection transparent>
           <Tabs defaultValue="info" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="info">Informações</TabsTrigger>
-              <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
-              <TabsTrigger value="settings">Configurações</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 !bg-gray-800 !border-gray-700" style={{ backgroundColor: '#1f2937', borderColor: '#374151' }}>
+              <TabsTrigger value="info" className="!text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white" style={{ color: '#d1d5db' }}>Informações</TabsTrigger>
+              <TabsTrigger value="collaborators" className="!text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white" style={{ color: '#d1d5db' }}>Colaboradores</TabsTrigger>
+              <TabsTrigger value="settings" className="!text-gray-300 data-[state=active]:!bg-gray-700 data-[state=active]:!text-white" style={{ color: '#d1d5db' }}>Configurações</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="space-y-6">

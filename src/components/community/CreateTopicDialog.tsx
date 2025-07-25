@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { useCreateCommunityTopic } from '@/hooks/useCommunityTopics';
 import { useAuth } from '@/hooks/auth';
+import { toast } from 'sonner';
 
 interface CreateTopicDialogProps {
   open: boolean;
@@ -33,19 +34,31 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
   const [category, setCategory] = useState('general');
   const [tags, setTags] = useState('');
 
-  const { user } = useAuth();
+  const { user, companyUserData } = useAuth();
   const { mutate: createTopic, isPending } = useCreateCommunityTopic();
 
-  const handleSubmit = () => {
-    if (!title.trim() || !content.trim() || !user) return;
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      setTitle('');
+      setContent('');
+      setCategory('general');
+      setTags('');
+    }
+  }, [open]);
 
-    // Get user data - we'll need to fetch this from the user's profile
+  const handleSubmit = () => {
+    if (!title.trim() || !content.trim() || !user) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Get user data with fallbacks
     const userData = {
       id: user.id,
       email: user.email || '',
-      // For now, we'll use email as name, but this should come from user profile
-      name: user.email?.split('@')[0] || 'Usuário',
-      companyName: undefined // This should come from user's company data
+      name: companyUserData?.name || user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário',
+      companyName: companyUserData?.companies?.name || companyUserData?.company_name || undefined
     };
 
     const topicData = {
@@ -61,19 +74,33 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
       tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
     };
 
+    console.log('📝 Submitting topic data:', topicData);
+
     createTopic(topicData, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        console.log('✅ Topic created successfully:', data);
+        toast.success('Tópico criado com sucesso!');
         setTitle('');
         setContent('');
         setCategory('general');
         setTags('');
         onOpenChange(false);
       },
+      onError: (error) => {
+        console.error('❌ Error creating topic:', error);
+        toast.error('Erro ao criar tópico. Tente novamente.');
+      },
     });
   };
 
+  const handleClose = () => {
+    if (!isPending) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[525px] !bg-gray-900 !border-gray-700">
         <DialogHeader>
           <DialogTitle className="!text-white">Criar Novo Tópico</DialogTitle>
@@ -83,18 +110,19 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title" className="!text-gray-300">Título</Label>
+            <Label htmlFor="title" className="!text-gray-300">Título *</Label>
             <Input
               id="title"
               placeholder="Digite o título do tópico..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="!bg-gray-800 !border-gray-600 !text-white !placeholder-gray-400 focus:!border-blue-500 focus:!ring-blue-500"
+              disabled={isPending}
             />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="category" className="!text-gray-300">Categoria</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={setCategory} disabled={isPending}>
               <SelectTrigger className="!bg-gray-800 !border-gray-600 !text-white focus:!border-blue-500 focus:!ring-blue-500">
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
@@ -109,7 +137,7 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="content" className="!text-gray-300">Conteúdo</Label>
+            <Label htmlFor="content" className="!text-gray-300">Conteúdo *</Label>
             <Textarea
               id="content"
               placeholder="Descreva seu tópico em detalhes..."
@@ -117,6 +145,7 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
               onChange={(e) => setContent(e.target.value)}
               rows={6}
               className="!bg-gray-800 !border-gray-600 !text-white !placeholder-gray-400 focus:!border-blue-500 focus:!ring-blue-500"
+              disabled={isPending}
             />
           </div>
           <div className="grid gap-2">
@@ -127,13 +156,15 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               className="!bg-gray-800 !border-gray-600 !text-white !placeholder-gray-400 focus:!border-blue-500 focus:!ring-blue-500"
+              disabled={isPending}
             />
           </div>
         </div>
         <DialogFooter>
           <Button 
             variant="outline" 
-            onClick={() => onOpenChange(false)}
+            onClick={handleClose}
+            disabled={isPending}
             className="!bg-gray-800 !border-gray-600 !text-gray-300 hover:!bg-gray-700 hover:!text-white"
           >
             Cancelar
@@ -143,7 +174,14 @@ export const CreateTopicDialog = ({ open, onOpenChange }: CreateTopicDialogProps
             disabled={!title.trim() || !content.trim() || isPending}
             className="!bg-gradient-to-r !from-blue-600 !to-purple-600 hover:!from-blue-700 hover:!to-purple-700 !text-white"
           >
-            {isPending ? 'Criando...' : 'Criar Tópico'}
+            {isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Criando...
+              </>
+            ) : (
+              'Criar Tópico'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

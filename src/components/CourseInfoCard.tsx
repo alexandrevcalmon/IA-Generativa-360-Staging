@@ -66,7 +66,7 @@ export const CourseInfoCard = ({ course, modules }: CourseInfoCardProps) => {
             </div>
             <div>
               <p className="text-sm font-medium text-white">0</p>
-              <p className="text-xs text-gray-300">Alunos</p>
+              <p className="text-xs text-gray-300">Colaboradores</p>
             </div>
           </div>
         </div>

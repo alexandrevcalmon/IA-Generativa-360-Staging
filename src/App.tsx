@@ -27,6 +27,7 @@ const LoginProdutor = lazy(() => import('@/pages/LoginProdutor'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Planos = lazy(() => import('@/pages/Planos'));
 const ActivateAccount = lazy(() => import('@/pages/ActivateAccount'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const CompanyData = lazy(() => import('@/pages/checkout/company-data'));
 const CheckoutSuccess = lazy(() => import('@/pages/checkout/success'));
@@ -132,13 +133,24 @@ const checkActivationToken = () => {
     
     // Verificar hash no formato #access_token=xxx
     const hash = window.location.hash;
-    const hasActivationParams = (token && (type === 'invite' || type === 'recovery')) || 
+    const hasActivationParams = (token && type === 'invite') || 
                                (hash && hash.includes('access_token'));
+    
+    const hasRecoveryParams = (token && type === 'recovery') || 
+                             (hash && hash.includes('recovery_token'));
     
     if (hasActivationParams) {
       console.log('🔄 Detectado token de ativação na página principal, redirecionando...');
       // Construir URL de ativação
       const redirectUrl = `/activate-account${token ? `?token=${token}&type=${type || 'invite'}` : ''}${hash || ''}`;
+      window.location.href = redirectUrl;
+      return true;
+    }
+    
+    if (hasRecoveryParams) {
+      console.log('🔄 Detectado token de recuperação na página principal, redirecionando...');
+      // Construir URL de recuperação
+      const redirectUrl = `/reset-password${token ? `?token=${token}&type=${type || 'recovery'}` : ''}${hash || ''}`;
       window.location.href = redirectUrl;
       return true;
     }
@@ -166,6 +178,7 @@ function App() {
                 <Route path="/login-produtor" element={<LoginProdutor />} />
                 <Route path="/planos" element={<Planos />} />
                 <Route path="/activate-account" element={<ActivateAccount />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/checkout/company-data" element={<CompanyData />} />
                 <Route path="/checkout/success" element={<CheckoutSuccess />} />
 

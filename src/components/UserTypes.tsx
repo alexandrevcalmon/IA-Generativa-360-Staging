@@ -51,12 +51,12 @@ export function UserTypes() {
             </Button>
           </div>
 
-          {/* Aluno */}
+          {/* Colaborador */}
           <div className="bg-gradient-to-br from-calmon-200 to-calmon-300 rounded-2xl p-6 sm:p-8 text-center hover:shadow-lg transition-shadow border border-calmon-400 w-full max-w-sm">
             <div className="w-16 h-16 bg-calmon-700 rounded-full flex items-center justify-center mx-auto mb-6">
               <GraduationCap className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Sou Aluno</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Sou Colaborador</h3>
             <p className="text-gray-600 mb-6 text-sm sm:text-base">
               Acesse cursos, trilhas e desenvolva suas habilidades
             </p>
@@ -70,7 +70,7 @@ export function UserTypes() {
               onClick={handleStudentClick}
               className="w-full bg-calmon-800 hover:bg-calmon-900 text-white h-12 sm:h-14 text-base sm:text-lg font-medium touch-manipulation"
             >
-              Acessar Área do Aluno →
+              Acessar Área do Colaborador →
             </Button>
           </div>
         </div>

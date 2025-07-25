@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const getRedirectUrl = () => `${window.location.origin}/`;
 
-export const getResetPasswordRedirectUrl = () => `${window.location.origin}/auth?reset=true`;
+export const getResetPasswordRedirectUrl = () => `${window.location.origin}/reset-password`;
 
 export const checkCompanyUser = async (userId: string) => {
   const { data: collaborator, error: collaboratorError } = await supabase

@@ -136,6 +136,13 @@ export const useToggleTopicLike = () => {
       console.log('🔄 Invalidating queries after like toggle');
       queryClient.invalidateQueries({ queryKey: ['community-topics'] });
       queryClient.invalidateQueries({ queryKey: ['topic-likes'] });
+      // Invalidar queries relacionadas a pontos e gamificação
+      queryClient.invalidateQueries({ queryKey: ['points-history'] });
+      queryClient.invalidateQueries({ queryKey: ['student-points'] });
+      queryClient.invalidateQueries({ queryKey: ['student-profile'] });
+      // Invalidar queries relacionadas a conquistas
+      queryClient.invalidateQueries({ queryKey: ['student-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['available-achievements'] });
     },
     onError: (error) => {
       console.error('❌ Error toggling topic like:', error);
