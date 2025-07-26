@@ -6,10 +6,10 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useCreateLesson, useUpdateLesson, Lesson } from "@/hooks/useLessons";
 import { LessonBasicFields } from "./LessonBasicFields";
-import { LessonFileFields } from "./LessonFileFields";
+import { LessonFileFields, LessonFileFieldsRef } from "./LessonFileFields";
 import { LessonSettingsFields } from "./LessonSettingsFields";
 import { LessonFormData } from "./types";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { GenerateQuizDialog } from '@/components/producer/GenerateQuizDialog';
 import { useState } from 'react';
@@ -57,6 +57,9 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
   const createQuizMutation = useCreateQuiz();
   const { toast } = useToast();
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
+  
+  // Ref para acessar as funções do LessonFileFields
+  const lessonFileFieldsRef = useRef<LessonFileFieldsRef | null>(null);
 
   const form = useForm<LessonFormData>({
     resolver: zodResolver(lessonSchema),
@@ -77,46 +80,31 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
     },
   });
 
-  // Reset form values when lesson changes
+  // Preencher formulário com dados da aula existente
   useEffect(() => {
-    console.log('🎯🎯🎯 LessonForm useEffect TRIGGERED 🎯🎯🎯');
-    console.log('lesson prop:', lesson);
-    console.log('lesson?.title:', lesson?.title);
-    console.log('lesson?.duration_minutes:', lesson?.duration_minutes);
-    console.log('lesson?.bunny_video_id:', lesson?.bunny_video_id);
-    
     if (lesson) {
-      console.log('📝📝📝 PREPARANDO PARA RESETAR FORMULÁRIO 📝📝📝');
-      
-      const formData = {
-        title: lesson?.title || "",
-        content: lesson?.content || "",
-        video_url: lesson?.video_url || "",
-        duration_minutes: lesson?.duration_minutes || 0, // Já está em minutos
-        is_free: lesson?.is_free || false,
-        image_url: lesson?.image_url || "",
-        video_file_url: lesson?.video_file_url || "",
-        material_url: lesson?.material_url || "",
+      console.log('🎯🎯🎯 PREENCHENDO FORMULÁRIO COM AULA EXISTENTE 🎯🎯🎯');
+      console.log('lesson:', lesson);
+      console.log('lesson.id:', lesson.id);
+      console.log('lesson.title:', lesson.title);
+      console.log('lesson.duration_minutes:', lesson.duration_minutes);
+      console.log('lesson.bunny_video_id:', lesson.bunny_video_id);
+      console.log('🎯🎯🎯 FIM PREENCHIMENTO 🎯🎯🎯');
+
+      form.reset({
+        title: lesson.title || "",
+        content: lesson.content || "",
+        video_url: lesson.video_url || "",
+        duration_minutes: lesson.duration_minutes || 0,
+        is_free: lesson.is_free || false,
+        image_url: lesson.image_url || "",
+        video_file_url: lesson.video_file_url || "",
+        material_url: lesson.material_url || "",
         // Campos do Bunny.net
-        bunny_video_id: lesson?.bunny_video_id || "",
-        bunny_library_id: lesson?.bunny_library_id || undefined,
-        bunny_video_status: lesson?.bunny_video_status || undefined,
-        bunny_embed_url: lesson?.bunny_embed_url || "",
-      };
-      
-      console.log('📋📋📋 DADOS PARA RESETAR: 📋📋📋');
-      console.log('formData:', formData);
-      
-      // Usar requestAnimationFrame para garantir que o DOM esteja pronto
-      requestAnimationFrame(() => {
-        // Verificar se o formulário está pronto
-        if (form && typeof form.reset === 'function') {
-          form.reset(formData);
-          console.log('✅✅✅ FORMULÁRIO RESETADO ✅✅✅');
-          console.log('Form values após reset:', form.getValues());
-        } else {
-          console.error('❌❌❌ FORMULÁRIO NÃO ESTÁ PRONTO ❌❌❌');
-        }
+        bunny_video_id: lesson.bunny_video_id || "",
+        bunny_library_id: lesson.bunny_library_id || undefined,
+        bunny_video_status: lesson.bunny_video_status || undefined,
+        bunny_embed_url: lesson.bunny_embed_url || "",
       });
     } else {
       console.log('❌❌❌ NENHUMA AULA PARA EDITAR ❌❌❌');
@@ -148,12 +136,27 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
 
       console.log('Lesson data to submit:', lessonData);
 
+      let createdLessonId: string;
+
       if (lesson) {
         console.log('Updating existing lesson:', lesson.id);
-        await updateLessonMutation.mutateAsync({ id: lesson.id, ...lessonData });
+        const updatedLesson = await updateLessonMutation.mutateAsync({ id: lesson.id, ...lessonData });
+        createdLessonId = updatedLesson.id;
       } else {
         console.log('Creating new lesson');
-        await createLessonMutation.mutateAsync(lessonData);
+        const createdLesson = await createLessonMutation.mutateAsync(lessonData);
+        createdLessonId = createdLesson.id;
+      }
+
+      // Após criar/atualizar a aula, criar o registro do material se houver
+      if (lessonFileFieldsRef.current && data.material_url) {
+        try {
+          await lessonFileFieldsRef.current.createMaterialRecord(createdLessonId);
+          console.log('Material record created successfully');
+        } catch (materialError) {
+          console.error('Error creating material record:', materialError);
+          // Não falhar o processo se o material falhar
+        }
       }
       
       form.reset();
@@ -206,7 +209,7 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
       >
         <div className="dark-theme-override">
           <LessonBasicFields control={form.control} />
-          <LessonFileFields />
+          <LessonFileFields ref={lessonFileFieldsRef} />
           <LessonSettingsFields control={form.control} />
         </div>
 
@@ -223,33 +226,21 @@ export const LessonForm = ({ moduleId, lesson, onClose }: LessonFormProps) => {
             <Button 
               type="submit" 
               disabled={createLessonMutation.isPending || updateLessonMutation.isPending}
-              className="!bg-gradient-to-r !from-blue-500 !to-cyan-600 hover:!from-blue-600 hover:!to-cyan-700 !text-white !border-0 !shadow-lg"
-              onClick={() => {
-                console.log('Submit button clicked');
-                console.log('Form state:', form.getValues());
-                console.log('Form errors:', form.formState.errors);
-              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {createLessonMutation.isPending || updateLessonMutation.isPending ? 'Salvando...' : (lesson ? "Atualizar" : "Criar") + " Aula"}
+              {createLessonMutation.isPending || updateLessonMutation.isPending ? "Salvando..." : lesson ? "Atualizar Aula" : "Criar Aula"}
             </Button>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setQuizDialogOpen(true)}
-            className="self-end !bg-gray-700 !text-gray-300 hover:!text-white hover:!bg-gray-600"
-          >
-            Gerar Quiz com IA
-          </Button>
         </div>
       </form>
+
+      {/* Quiz Generation Dialog */}
       <GenerateQuizDialog
         open={quizDialogOpen}
         onOpenChange={setQuizDialogOpen}
-        content={form.getValues('content') || ''}
-        lessonId={lesson?.id}
-        moduleId={moduleId}
         onQuizApproved={handleQuizApproved}
+        lessonTitle={lesson?.title || ""}
+        lessonContent={lesson?.content || ""}
       />
     </Form>
   );

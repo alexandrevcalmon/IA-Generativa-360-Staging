@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUploadField } from '@/components/FileUploadField';
@@ -8,12 +8,29 @@ import { BunnyVideoIdField } from '@/components/BunnyVideoIdField';
 import { BunnyVideoInfo } from '@/hooks/useBunnyVideoGet';
 import { useFormContext } from 'react-hook-form';
 import { LessonFormData } from './types';
+import { useCreateLessonMaterial } from '@/hooks/useLessonMaterials';
+import { useAuth } from '@/hooks/useAuth';
 
-export const LessonFileFields: React.FC = () => {
+export interface LessonFileFieldsRef {
+  createMaterialRecord: (lessonId: string) => Promise<void>;
+}
+
+interface FileUploadInfo {
+  file: File;
+  url: string;
+  storageFileId: string;
+}
+
+export const LessonFileFields = forwardRef<LessonFileFieldsRef>((props, ref) => {
   const { setValue, watch } = useFormContext<LessonFormData>();
+  const { user } = useAuth();
+  const createLessonMaterial = useCreateLessonMaterial();
   const bunnyLibraryId = import.meta.env.VITE_BUNNY_LIBRARY_ID;
+  
+  const [materialFileInfo, setMaterialFileInfo] = useState<FileUploadInfo | null>(null);
+  const [bunnyVideoInfo, setBunnyVideoInfo] = useState<BunnyVideoInfo | null>(null);
 
-  // Observar mudanças nos campos do Bunny.net
+  const materialUrl = watch('material_url');
   const bunnyVideoId = watch('bunny_video_id');
   const bunnyLibraryIdWatch = watch('bunny_library_id');
   const bunnyEmbedUrl = watch('bunny_embed_url');
@@ -48,6 +65,42 @@ export const LessonFileFields: React.FC = () => {
       }
     }
   };
+
+  const handleMaterialUpload = (file: File, url: string, storageFileId: string) => {
+    console.log('Material uploaded:', { file, url, storageFileId });
+    setMaterialFileInfo({ file, url, storageFileId });
+    // Atualizar o campo material_url no formulário
+    setValue('material_url', url);
+  };
+
+  const createMaterialRecord = async (lessonId: string) => {
+    if (!materialFileInfo || !user) {
+      console.log('No material file info or user not authenticated');
+      return;
+    }
+
+    try {
+      console.log('Creating material record for lesson:', lessonId);
+      
+      await createLessonMaterial.mutateAsync({
+        lesson_id: lessonId,
+        file_name: materialFileInfo.file.name,
+        file_url: materialFileInfo.url,
+        file_type: materialFileInfo.file.type,
+        file_size_bytes: materialFileInfo.file.size,
+        storage_file_id: materialFileInfo.storageFileId,
+      });
+
+      console.log('Material record created successfully');
+    } catch (error) {
+      console.error('Error creating material record:', error);
+      throw error;
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    createMaterialRecord,
+  }));
 
   return (
     <Card>
@@ -113,12 +166,18 @@ export const LessonFileFields: React.FC = () => {
         </Tabs>
 
         <div className="mt-6">
-          <h4 className="text-sm font-medium mb-2">Material de Apoio</h4>
           <FileUploadField
             label="Material de Apoio"
             description="Formatos aceitos: PDF, DOC, PPT, XLS, TXT, ZIP, RAR. Tamanho máximo: 50MB"
-            value={watch('material_file_url')}
-            onChange={(url) => setValue('material_file_url', url)}
+            value={watch('material_url')}
+            onChange={(url) => {
+              setValue('material_url', url);
+              // Se não há URL, limpar as informações do arquivo
+              if (!url) {
+                setMaterialFileInfo(null);
+              }
+            }}
+            onFileUpload={handleMaterialUpload}
             uploadOptions={{
               bucket: 'lesson-materials',
               maxSize: 50 * 1024 * 1024, // 50MB
@@ -142,4 +201,6 @@ export const LessonFileFields: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
+});
+
+LessonFileFields.displayName = 'LessonFileFields';

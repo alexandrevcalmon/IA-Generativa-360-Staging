@@ -9,22 +9,27 @@ export interface FileUploadOptions {
   allowedTypes?: string[];
 }
 
+export interface FileUploadResult {
+  url: string;
+  storageFileId: string;
+}
+
 export const useFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes >= 1024 * 1024 * 1024) {
-      return `${Math.round(bytes / (1024 * 1024 * 1024) * 10) / 10}GB`;
-    } else {
-      return `${Math.round(bytes / (1024 * 1024))}MB`;
-    }
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const uploadFile = async (
     file: File,
     options: FileUploadOptions
-  ): Promise<string | null> => {
+  ): Promise<FileUploadResult | null> => {
     try {
       setIsUploading(true);
 
@@ -52,13 +57,13 @@ export const useFileUpload = () => {
 
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const storageFileId = `${crypto.randomUUID()}.${fileExt}`;
 
-      console.log('Uploading file:', fileName, 'to bucket:', options.bucket);
+      console.log('Uploading file:', storageFileId, 'to bucket:', options.bucket);
 
       const { data, error } = await supabase.storage
         .from(options.bucket)
-        .upload(fileName, file);
+        .upload(storageFileId, file);
 
       if (error) {
         console.error('Upload error:', error);
@@ -75,14 +80,17 @@ export const useFileUpload = () => {
         .from(options.bucket)
         .getPublicUrl(data.path);
 
-      console.log('File uploaded successfully:', publicUrl);
+      console.log('File uploaded successfully:', publicUrl, 'Storage ID:', storageFileId);
 
       toast({
         title: "Sucesso",
         description: "Arquivo enviado com sucesso!",
       });
 
-      return publicUrl;
+      return {
+        url: publicUrl,
+        storageFileId: storageFileId
+      };
     } catch (error) {
       console.error('Upload error:', error);
       toast({

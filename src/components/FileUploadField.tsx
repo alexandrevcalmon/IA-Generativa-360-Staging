@@ -11,6 +11,7 @@ interface FileUploadFieldProps {
   description?: string;
   value?: string;
   onChange: (url: string | null) => void;
+  onFileUpload?: (file: File, url: string, storageFileId: string) => void;
   uploadOptions: FileUploadOptions;
   accept?: string;
   preview?: boolean;
@@ -22,145 +23,156 @@ export const FileUploadField = ({
   description,
   value,
   onChange,
+  onFileUpload,
   uploadOptions,
   accept,
   preview = false,
   className = "",
 }: FileUploadFieldProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, deleteFile, isUploading } = useFileUpload();
 
-  const handleFileSelect = async (file: File) => {
-    const url = await uploadFile(file, uploadOptions);
-    if (url) {
-      onChange(url);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileSelect(file);
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      await handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = async (file: File) => {
+    const result = await uploadFile(file, uploadOptions);
+    if (result) {
+      onChange(result.url);
+      if (onFileUpload) {
+        onFileUpload(file, result.url, result.storageFileId);
+      }
     }
   };
 
   const handleRemove = async () => {
     if (value) {
-      await deleteFile(value, uploadOptions.bucket);
-      onChange(null);
+      const success = await deleteFile(value, uploadOptions.bucket);
+      if (success) {
+        onChange(null);
+      }
     }
   };
 
   const getFileIcon = () => {
-    if (uploadOptions.bucket === 'module-images' || uploadOptions.bucket === 'lesson-images') {
+    if (!value) return <Upload className="h-8 w-8" />;
+    
+    const extension = value.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) {
       return <Image className="h-8 w-8" />;
-    } else if (uploadOptions.bucket === 'lesson-videos') {
+    } else if (['mp4', 'avi', 'mov', 'wmv'].includes(extension || '')) {
       return <Video className="h-8 w-8" />;
     } else {
       return <FileText className="h-8 w-8" />;
     }
   };
 
-  const isImage = uploadOptions.bucket.includes('images');
-  const isVideo = uploadOptions.bucket === 'lesson-videos';
+  const getFileName = () => {
+    if (!value) return '';
+    const urlParts = value.split('/');
+    return urlParts[urlParts.length - 1];
+  };
 
   return (
-    <div className={className}>
-      <Label className="text-sm font-medium text-gray-300">{label}</Label>
+    <div className={`space-y-2 ${className}`}>
+      <Label htmlFor="file-upload">{label}</Label>
       {description && (
-        <p className="text-sm text-gray-400 mt-1 mb-2">{description}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       )}
       
-      {!value ? (
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            isDragging
-              ? 'border-blue-500 bg-blue-500/10'
-              : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
-          }`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-gray-400">
-              {getFileIcon()}
-            </div>
-            <div className="text-sm text-gray-300">
-              <p>Arraste e solte ou</p>
+      <div
+        className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+          dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+        } ${value ? 'bg-muted/50' : ''}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        {!value ? (
+          <div className="flex flex-col items-center justify-center space-y-4">
+            {getFileIcon()}
+            <div className="text-center">
+              <p className="text-sm font-medium">
+                Arraste e solte um arquivo aqui ou
+              </p>
               <Button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
+                variant="link"
+                className="p-0 h-auto"
+                onClick={() => inputRef.current?.click()}
                 disabled={isUploading}
-                className="mt-2 !border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-700 !bg-transparent"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                {isUploading ? 'Enviando...' : 'Selecionar arquivo'}
+                clique para selecionar
               </Button>
             </div>
+            {accept && (
+              <p className="text-xs text-muted-foreground">
+                Tipos aceitos: {accept}
+              </p>
+            )}
           </div>
-          <Input
-            ref={fileInputRef}
-            type="file"
-            onChange={handleFileChange}
-            accept={accept}
-            className="hidden"
-          />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {preview && isImage && (
-            <div className="relative">
-              <img
-                src={value}
-                alt="Preview"
-                className="w-full max-w-xs h-32 object-cover rounded border border-gray-600"
-              />
-            </div>
-          )}
-          {preview && isVideo && (
-            <div className="relative">
-              <video
-                src={value}
-                controls
-                className="w-full max-w-xs h-32 rounded border border-gray-600"
-              />
-            </div>
-          )}
-          <div className="flex items-center gap-2 p-2 bg-gray-800 rounded border border-gray-600">
-            <div className="text-gray-400">
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
               {getFileIcon()}
+              <div>
+                <p className="text-sm font-medium">{getFileName()}</p>
+                <p className="text-xs text-muted-foreground">Arquivo enviado</p>
+              </div>
             </div>
-            <span className="text-sm flex-1 truncate text-gray-300">
-              {value.split('/').pop()?.split('?')[0]}
-            </span>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleRemove}
-              className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-gray-700"
+              disabled={isUploading}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        )}
+        
+        <Input
+          ref={inputRef}
+          type="file"
+          id="file-upload"
+          className="hidden"
+          onChange={handleChange}
+          accept={accept}
+          disabled={isUploading}
+        />
+      </div>
+      
+      {isUploading && (
+        <p className="text-sm text-muted-foreground">
+          Enviando arquivo...
+        </p>
       )}
     </div>
   );
