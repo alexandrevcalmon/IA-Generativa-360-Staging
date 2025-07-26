@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Download } from 'lucide-react';
 import { StudentLesson } from '@/hooks/useStudentCourses';
-import { LessonMaterialsSection } from '@/components/lesson/LessonMaterialsSection';
 import { LessonMaterialUpload } from '@/components/lesson/LessonMaterialUpload';
 import { useAuth } from '@/hooks/auth';
 
@@ -65,9 +64,6 @@ export const LessonContent = ({ currentLesson, currentModule }: LessonContentPro
           )}
         </CardContent>
       </Card>
-
-      {/* Lesson Materials Section */}
-      <LessonMaterialsSection lessonId={currentLesson.id} />
 
       {/* Material Upload Section - Only for authorized users */}
       {canUploadMaterials && (
