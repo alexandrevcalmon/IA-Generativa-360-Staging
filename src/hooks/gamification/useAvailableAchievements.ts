@@ -51,15 +51,37 @@ export const useAvailableAchievements = () => {
         throw unlockedError;
       }
 
+      // Get user's lesson progress to check real progress
+      const { data: lessonProgress, error: lessonProgressError } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id, completed')
+        .eq('user_id', user.id)
+        .eq('completed', true);
+
+      if (lessonProgressError) {
+        console.error('Error fetching lesson progress:', lessonProgressError);
+        // Don't throw error, just continue without lesson progress data
+      }
+
+      const hasCompletedFirstLesson = (lessonProgress || []).length > 0;
+
       // Create a set of unlocked achievement IDs for fast lookup
       const unlockedAchievementIds = new Set(
         unlockedAchievements?.map(a => a.achievement_id) || []
       );
 
-      // Filter out already unlocked achievements
-      const availableAchievements = allAchievements?.filter(
-        achievement => !unlockedAchievementIds.has(achievement.id)
-      ) || [];
+      // Filter out already unlocked achievements, considering real progress
+      const availableAchievements = allAchievements?.filter(achievement => {
+        const nameLower = achievement.name.toLowerCase();
+        
+        // Special logic for "Primeira Lição" - only show as available if not completed
+        if (nameLower.includes('primeira lição') || nameLower.includes('first lesson')) {
+          return !hasCompletedFirstLesson;
+        }
+        
+        // For other achievements, use the standard logic
+        return !unlockedAchievementIds.has(achievement.id);
+      }) || [];
 
       return availableAchievements;
     },

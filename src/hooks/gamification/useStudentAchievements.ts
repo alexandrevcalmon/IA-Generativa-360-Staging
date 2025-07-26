@@ -28,6 +28,20 @@ export const useStudentAchievements = () => {
         return [];
       }
 
+      // Get user's lesson progress to check real progress
+      const { data: lessonProgress, error: lessonProgressError } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id, completed')
+        .eq('user_id', user.id)
+        .eq('completed', true);
+
+      if (lessonProgressError) {
+        console.error('Error fetching lesson progress:', lessonProgressError);
+        // Don't throw error, just continue without lesson progress data
+      }
+
+      const hasCompletedFirstLesson = (lessonProgress || []).length > 0;
+
       const { data, error } = await supabase
         .from('student_achievements')
         .select(`
@@ -49,7 +63,49 @@ export const useStudentAchievements = () => {
         throw error;
       }
 
-      return data || [];
+      // Filter achievements based on real progress
+      const filteredAchievements = (data || []).filter(achievement => {
+        const nameLower = achievement.achievements?.name?.toLowerCase() || '';
+        
+        // Special logic for "Primeira Lição" - only show if user actually completed a lesson
+        if (nameLower.includes('primeira lição') || nameLower.includes('first lesson')) {
+          return hasCompletedFirstLesson;
+        }
+        
+        // For other achievements, show them normally
+        return true;
+      });
+
+      // If user completed first lesson but doesn't have the achievement record, add it virtually
+      if (hasCompletedFirstLesson) {
+        const hasFirstLessonAchievement = filteredAchievements.some(achievement => {
+          const nameLower = achievement.achievements?.name?.toLowerCase() || '';
+          return nameLower.includes('primeira lição') || nameLower.includes('first lesson');
+        });
+
+        if (!hasFirstLessonAchievement) {
+          // Get the "Primeira Lição" achievement from the database
+          const { data: firstLessonAchievement } = await supabase
+            .from('achievements')
+            .select('*')
+            .or('name.ilike.%primeira lição%,name.ilike.%first lesson%')
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (firstLessonAchievement) {
+            // Add it virtually to the results
+            filteredAchievements.unshift({
+              id: `virtual-${firstLessonAchievement.id}`,
+              student_id: studentRecord.id,
+              achievement_id: firstLessonAchievement.id,
+              earned_at: new Date().toISOString(),
+              achievements: firstLessonAchievement
+            } as StudentAchievement);
+          }
+        }
+      }
+
+      return filteredAchievements;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutos

@@ -70,7 +70,31 @@ export const StudentAchievements = ({
         return [];
       }
 
-      return data || [];
+      return (data || []) as { achievement_id: string }[];
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+
+  // Buscar progresso de lições para verificar conquistas baseadas em progresso real
+  const { data: lessonProgress = [], isLoading: isLoadingLessonProgress } = useQuery({
+    queryKey: ['lesson-progress-achievements', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id, completed')
+        .eq('user_id', user.id)
+        .eq('completed', true);
+
+      if (error) {
+        console.error('Error fetching lesson progress:', error);
+        return [];
+      }
+
+      return (data || []) as { lesson_id: string; completed: boolean }[];
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -79,14 +103,27 @@ export const StudentAchievements = ({
 
   // Criar um Set com os IDs das conquistas já conquistadas
   const unlockedAchievementIds = new Set(
-    studentAchievements.map(sa => sa.achievement_id)
+    studentAchievements.map((sa: { achievement_id: string }) => sa.achievement_id)
   );
 
+  // Verificar conquistas baseadas em progresso real
+  const hasCompletedFirstLesson = lessonProgress.length > 0;
+
   // Combinar todas as conquistas com informação de status
-  const achievementsWithStatus = allAchievements.map(achievement => ({
-    ...achievement,
-    isUnlocked: unlockedAchievementIds.has(achievement.id)
-  }));
+  const achievementsWithStatus = allAchievements.map((achievement: any) => {
+    const nameLower = achievement.name.toLowerCase();
+    let isUnlocked = unlockedAchievementIds.has(achievement.id);
+    
+    // Lógica especial para "Primeira Lição" - só desbloqueia se realmente completou uma lição
+    if (nameLower.includes('primeira lição') || nameLower.includes('first lesson')) {
+      isUnlocked = hasCompletedFirstLesson;
+    }
+    
+    return {
+      ...achievement,
+      isUnlocked
+    };
+  });
 
   // Definir cores e ícones baseados no nome da conquista e status
   const getAchievementStyle = (name: string, index: number, isUnlocked: boolean) => {
@@ -207,7 +244,7 @@ export const StudentAchievements = ({
   };
 
   // Mostrar loading se estiver carregando
-  if (isLoadingAchievements || isLoadingStudentAchievements) {
+  if (isLoadingAchievements || isLoadingStudentAchievements || isLoadingLessonProgress) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-3 p-3 rounded-lg border bg-slate-800/50 border-slate-600 animate-pulse">
@@ -235,7 +272,7 @@ export const StudentAchievements = ({
 
   return (
     <div className="space-y-2">
-      {achievementsWithStatus.slice(0, 5).map((achievement, index) => {
+      {achievementsWithStatus.slice(0, 5).map((achievement: any, index: number) => {
         const style = getAchievementStyle(achievement.name, index, achievement.isUnlocked);
         
         return (
