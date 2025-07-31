@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Recuperação de Senha - Calmon Academy</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset básico para todos os clientes */
+        body, table, td, p, a, li, blockquote { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; margin: 0; padding: 0; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; }
+        
+        /* Estilos base */
+        body { margin: 0 !important; padding: 0 !important; font-family: Arial, Helvetica, sans-serif !important; font-size: 16px; line-height: 1.6; color: #333333; background-color: #f4f4f4; width: 100% !important; height: 100% !important; }
+        
+        /* Container wrapper */
+        .email-wrapper { background-color: #f4f4f4; width: 100%; }
+        
+        /* Container principal */
+        .email-container { margin: 0 auto; background-color: #ffffff; max-width: 600px; width: 100%; }
+        
+        /* Header */
+        .header-cell { background-color: #d49c3d; padding: 30px 20px; text-align: center; }
+        .logo { width: 120px; height: auto; margin: 0 auto 15px; }
+        .header-title { color: #ffffff; font-size: 28px; font-weight: bold; margin: 0 0 5px 0; font-family: Arial, Helvetica, sans-serif; line-height: 1.2; }
+        .header-subtitle { color: #ffffff; font-size: 16px; margin: 0; font-family: Arial, Helvetica, sans-serif; line-height: 1.3; }
+        
+        /* Conteúdo principal */
+        .content-cell { padding: 30px 20px; background-color: #ffffff; }
+        .greeting { font-size: 22px; color: #d49c3d; margin: 0 0 20px 0; font-weight: bold; text-align: center; font-family: Arial, Helvetica, sans-serif; line-height: 1.3; }
+        .message { font-size: 16px; color: #333333; margin: 0 0 25px 0; line-height: 1.6; text-align: center; font-family: Arial, Helvetica, sans-serif; }
+        
+        /* Benefícios */
+        .benefit-wrapper { width: 100%; margin-bottom: 15px; }
+        .benefit-cell { background-color: #f8f9fa; border: 2px solid #d49c3d; border-radius: 8px; padding: 20px; text-align: center; width: 100%; }
+        .benefit-icon { width: 50px; height: 50px; background-color: #d49c3d; border-radius: 50%; margin: 0 auto 12px; font-size: 20px; color: #ffffff; line-height: 50px; text-align: center; font-family: Arial, Helvetica, sans-serif; }
+        .benefit-title { color: #d49c3d; font-size: 16px; font-weight: bold; margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; line-height: 1.3; }
+        .benefit-description { color: #666666; font-size: 14px; margin: 0; font-family: Arial, Helvetica, sans-serif; line-height: 1.5; }
+        
+        /* Botão CTA - Apenas para referência, o estilo inline é mais importante */
+        .cta-button { background-color: #d49c3d; color: #ffffff !important; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; font-size: 16px; font-family: Arial, Helvetica, sans-serif; display: inline-block; }
+        
+        /* Seção de passos */
+        .steps-wrapper { width: 100%; margin-top: 25px; }
+        .steps-cell { background-color: #f8f9fa; padding: 25px 20px; border-radius: 8px; }
+        .steps-title { color: #d49c3d; font-size: 18px; font-weight: bold; text-align: center; margin: 0 0 15px 0; font-family: Arial, Helvetica, sans-serif; line-height: 1.3; }
+        .step-wrapper { width: 100%; margin-bottom: 12px; }
+        .step-number-cell { width: 30px; vertical-align: top; padding-right: 10px; }
+        .step-number { width: 20px; height: 20px; background-color: #d49c3d; color: #ffffff; border-radius: 50%; text-align: center; line-height: 20px; font-size: 12px; font-weight: bold; font-family: Arial, Helvetica, sans-serif; display: inline-block; }
+        .step-text-cell { vertical-align: top; }
+        .step-text { color: #333333; font-size: 14px; font-family: Arial, Helvetica, sans-serif; line-height: 1.5; margin: 0; }
+        
+        /* Nota de segurança */
+        .security-wrapper { width: 100%; margin-top: 25px; }
+        .security-cell { background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; text-align: center; }
+        .security-text { color: #856404; margin: 0; font-size: 13px; font-family: Arial, Helvetica, sans-serif; line-height: 1.4; }
+        .security-strong { color: #856404; font-weight: bold; }
+        
+        /* Footer */
+        .footer-cell { background-color: #333333; color: #ffffff; padding: 25px 20px; text-align: center; }
+        .footer-text { font-size: 13px; line-height: 1.5; margin: 0 0 5px 0; font-family: Arial, Helvetica, sans-serif; }
+        .footer-link { color: #d49c3d; text-decoration: none; margin: 0 8px; }
+        .footer-copyright { margin-top: 15px; font-size: 11px; color: #cccccc; font-family: Arial, Helvetica, sans-serif; }
+        
+        @media only screen and (max-width: 600px) {
+            .email-container { width: 100% !important; max-width: 100% !important; }
+            .content-cell, .header-cell, .benefit-cell, .steps-cell { padding-left: 15px !important; padding-right: 15px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+    <center>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="email-wrapper">
+            <tr>
+                <td align="center" style="padding: 20px 10px;">
+                    <!--[if mso | IE]>
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" align="center" style="width:600px;">
+                    <tr>
+                    <td>
+                    <![endif]-->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="email-container" style="max-width: 600px;">
+                        <!-- Header -->
+                        <tr>
+                            <td class="header-cell">
+                                <img src="https://academy.grupocalmon.com/Logomarca%20Calmon%20Academy.png" alt="Calmon Academy" class="logo" width="120" style="width: 120px; max-width: 120px; height: auto;">
+                                <h1 class="header-title">CALMON ACADEMY</h1>
+                                <p class="header-subtitle">Programa IA Generativa 360°</p>
+                            </td>
+                        </tr>
+                        <!-- Conteúdo Principal -->
+                        <tr>
+                            <td class="content-cell">
+                                <h2 class="greeting">Olá! 👋 Recupere sua senha!</h2>
+                                <p class="message">Recebemos uma solicitação para redefinir sua senha na plataforma Calmon Academy. Clique no botão abaixo para criar uma nova senha segura!</p>
+                                
+                                <!-- Benefícios -->
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="benefit-wrapper" width="100%"><tr><td class="benefit-cell"><div class="benefit-icon">🔐</div><h3 class="benefit-title">Segurança Garantida</h3><p class="benefit-description">Processo seguro e criptografado para proteger seus dados</p></td></tr></table>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="benefit-wrapper" width="100%"><tr><td class="benefit-cell"><div class="benefit-icon">⚡</div><h3 class="benefit-title">Processo Rápido</h3><p class="benefit-description">Redefina sua senha em poucos cliques e volte a acessar sua conta</p></td></tr></table>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="benefit-wrapper" width="100%"><tr><td class="benefit-cell"><div class="benefit-icon">🎯</div><h3 class="benefit-title">Acesso Imediato</h3><p class="benefit-description">Retome seus estudos e continue sua jornada de aprendizado</p></td></tr></table>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="benefit-wrapper" width="100%"><tr><td class="benefit-cell"><div class="benefit-icon">🛡️</div><h3 class="benefit-title">Proteção Total</h3><p class="benefit-description">Sua conta permanece segura durante todo o processo</p></td></tr></table>
+                                
+                                <!-- Botão CTA -->
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                    <tr>
+                                        <td align="center" style="padding: 20px 0 30px 0;">
+                                            <!--[if mso]>
+                                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:50px; v-text-anchor:middle; width:250px;" arcsize="15%" strokecolor="#d49c3d" fillcolor="#d49c3d">
+                                                <w:anchorlock/>
+                                                <center style="color:#ffffff; font-family:Arial,sans-serif; font-size:16px; font-weight:bold;">
+                                                    Redefinir Senha
+                                                </center>
+                                            </v:roundrect>
+                                            <![endif]-->
+                                            <!--[if !mso]><!-->
+                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td align="center" style="border-radius: 8px; background: #d49c3d;">
+                                                        <a href="{{ .ConfirmationURL }}" target="_blank" style="font-size: 16px; font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #ffffff; text-decoration: none; padding: 15px 30px; border-radius: 8px; border: 1px solid #d49c3d; display: inline-block;">
+                                                            Redefinir Senha
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <!--<![endif]-->
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <!-- Passos -->
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="steps-wrapper" width="100%"><tr><td class="steps-cell"><h3 class="steps-title">Como redefinir sua senha:</h3><table role="presentation" cellspacing="0" cellpadding="0" border="0" class="step-wrapper"><tr><td class="step-number-cell"><div class="step-number">1</div></td><td class="step-text-cell"><p class="step-text">Clique no botão "Redefinir Senha" acima</p></td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" border="0" class="step-wrapper"><tr><td class="step-number-cell"><div class="step-number">2</div></td><td class="step-text-cell"><p class="step-text">Digite sua nova senha segura</p></td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" border="0" class="step-wrapper"><tr><td class="step-number-cell"><div class="step-number">3</div></td><td class="step-text-cell"><p class="step-text">Confirme a nova senha e acesse sua conta</p></td></tr></table></td></tr></table>
+                                
+                                <!-- Nota de Segurança -->
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="security-wrapper" width="100%"><tr><td class="security-cell"><p class="security-text"><span class="security-strong">🔒 Segurança:</span> Este link é válido por 1 hora e é exclusivo para você. Se você não solicitou esta recuperação, ignore este email.</p></td></tr></table>
+                            </td>
+                        </tr>
+                        <!-- Footer -->
+                        <tr>
+                            <td class="footer-cell">
+                                <p class="footer-text"><strong>Calmon Academy</strong></p>
+                                <p class="footer-text">Programa IA Generativa 360°</p>
+                                <p class="footer-text">Transformando o futuro através da educação em IA</p>
+                                <p class="footer-text" style="margin-top: 15px;"><a href="https://academy.grupocalmon.com" class="footer-link">Visitar Site</a><a href="mailto:contato@grupocalmon.com" class="footer-link">Contato</a></p>
+                                <p class="footer-copyright">© 2025 Calmon Academy. Todos os direitos reservados.</p>
+                            </td>
+                        </tr>
+                    </table>
+                    <!--[if mso | IE]>
+                    </td>
+                    </tr>
+                    </table>
+                    <![endif]-->
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>
