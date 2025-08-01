@@ -1,9 +1,9 @@
-local-- Adicionar campos do Stripe à tabela subscription_plans
+-- Adicionar campos do Stripe à tabela subscription_plans
 ALTER TABLE subscription_plans 
 ADD COLUMN IF NOT EXISTS stripe_product_id TEXT,
 ADD COLUMN IF NOT EXISTS stripe_price_id TEXT;
 
--- Inserir os planos com os IDs do Stripe fornecidos
+-- Inserir os planos com os IDs do Stripe de produção
 INSERT INTO subscription_plans (
   id,
   name,
@@ -13,15 +13,15 @@ INSERT INTO subscription_plans (
   stripe_price_id,
   created_at,
   updated_at
-) VALUES 
+) VALUES
 -- Starter 5 - Semestral (6 meses)
 (
   'starter_5_semestral',
   'Starter 5',
   5,
   180,
-  'prod_SedYxAWeBjaMM0',
-  'price_1RjKHe4gaE84sNi0O6fUvTgq',
+  'prod_SlSXMZzwJie1z0',
+  'price_1RpvcJG3mvaBriwAQt5eIhjf',
   NOW(),
   NOW()
 ),
@@ -31,8 +31,8 @@ INSERT INTO subscription_plans (
   'Starter 5',
   5,
   365,
-  'prod_SeddHsdOwwbtyI',
-  'price_1RjKMM4gaE84sNi0zAzsXkAk',
+  'prod_SeegAgglteTV3Y',
+  'price_1RjLNCG3mvaBriwAwt0Tr4Pu',
   NOW(),
   NOW()
 ),
@@ -42,8 +42,8 @@ INSERT INTO subscription_plans (
   'Starter 10',
   10,
   180,
-  'prod_SedjWSI3Hrmmb9',
-  'price_1RjKRd4gaE84sNi0TCQ4mWkK',
+  'prod_SeegxTbksUGavj',
+  'price_1RjLNHG3mvaBriwAfbOvy4XD',
   NOW(),
   NOW()
 ),
@@ -53,8 +53,8 @@ INSERT INTO subscription_plans (
   'Starter 10',
   10,
   365,
-  'prod_SedlCkXK4ZQjHl',
-  'price_1RjKTx4gaE84sNi0VhePmv8M',
+  'prod_SeegmF465rIMxT',
+  'price_1RjLNUG3mvaBriwAn78cshYc',
   NOW(),
   NOW()
 ),
@@ -64,8 +64,8 @@ INSERT INTO subscription_plans (
   'Starter 25',
   25,
   180,
-  'prod_Sedo2OcgsH2hj1',
-  'price_1RjKWn4gaE84sNi0yjqw2fMQ',
+  'prod_SeegmDnsywdYwm',
+  'price_1RjLNbG3mvaBriwAosM1k7IB',
   NOW(),
   NOW()
 ),
@@ -75,8 +75,8 @@ INSERT INTO subscription_plans (
   'Starter 25',
   25,
   365,
-  'prod_SedqKdKa09qAb9',
-  'price_1RjKYv4gaE84sNi0qdDSgHZX',
+  'prod_SeehITtgNnhCZ5',
+  'price_1RjLNeG3mvaBriwASQHMVYnj',
   NOW(),
   NOW()
 ),
@@ -86,8 +86,8 @@ INSERT INTO subscription_plans (
   'Starter 50',
   50,
   180,
-  'prod_SedtiC1kEgAcMd',
-  'price_1RjKbN4gaE84sNi0V5j1Yurq',
+  'prod_SeehHLfbATlxqV',
+  'price_1RjLNjG3mvaBriwAfLSVMkjg',
   NOW(),
   NOW()
 ),
@@ -97,8 +97,8 @@ INSERT INTO subscription_plans (
   'Starter 50',
   50,
   365,
-  'prod_SedveLSteTQwQW',
-  'price_1RjKdQ4gaE84sNi0qC1LKMZJ',
+  'prod_Seehy5v0DyXnlO',
+  'price_1RjLNmG3mvaBriwAh4CDDaVA',
   NOW(),
   NOW()
 ),
@@ -108,8 +108,8 @@ INSERT INTO subscription_plans (
   'Starter 100',
   100,
   180,
-  'prod_Sedx0hLJDjrbdo',
-  'price_1RjKfV4gaE84sNi0tqJWMmwV',
+  'prod_SeehKE0a5mWimp',
+  'price_1RjLNqG3mvaBriwAF1jnjSpI',
   NOW(),
   NOW()
 ),
@@ -119,12 +119,12 @@ INSERT INTO subscription_plans (
   'Starter 100',
   100,
   365,
-  'prod_SedzGgwgO66Xj7',
-  'price_1RjKhu4gaE84sNi05XaH5wij',
+  'prod_SeehCdIDn2a7ok',
+  'price_1RjLNtG3mvaBriwA15U62gXm',
   NOW(),
   NOW()
 )
 ON CONFLICT (id) DO UPDATE SET
   stripe_product_id = EXCLUDED.stripe_product_id,
   stripe_price_id = EXCLUDED.stripe_price_id,
-  updated_at = NOW(); 
+  updated_at = NOW();

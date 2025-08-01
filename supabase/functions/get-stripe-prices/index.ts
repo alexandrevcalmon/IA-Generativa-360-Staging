@@ -18,9 +18,54 @@ serve(async (req) => {
 
   try {
     // Initialize Stripe
-    const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || ''
+    console.log(`Stripe key length: ${stripeKey.length}`)
+    console.log(`Stripe key starts with: ${stripeKey.substring(0, 10)}...`)
+    
+    const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(stripeKey, {
       apiVersion: '2024-12-18.acacia',
     })
+
+    // Test Stripe connectivity
+    let diagnosticInfo = {
+      stripeKeyLength: stripeKey.length,
+      stripeKeyPrefix: stripeKey.substring(0, 10),
+      accountId: null,
+      availableProducts: [],
+      testProductFound: false,
+      testProductPrices: [],
+      connectionError: null
+    }
+    
+    try {
+      const account = await stripe.accounts.retrieve()
+      diagnosticInfo.accountId = account.id
+      console.log(`Connected to Stripe account: ${account.id}`)
+      
+      // List available products to debug
+      const products = await stripe.products.list({ limit: 10 })
+      diagnosticInfo.availableProducts = products.data.map(p => ({ id: p.id, name: p.name }))
+      console.log(`Available products:`, products.data.map(p => ({ id: p.id, name: p.name })))
+      
+      // Test retrieving a specific product
+      try {
+        const testProduct = await stripe.products.retrieve('prod_SlSXMZzwJie1z0')
+        diagnosticInfo.testProductFound = true
+        console.log(`Test product found:`, testProduct.name)
+        
+        // List prices for this product
+        const prices = await stripe.prices.list({ product: 'prod_SlSXMZzwJie1z0' })
+        diagnosticInfo.testProductPrices = prices.data.map(p => ({ id: p.id, unit_amount: p.unit_amount }))
+        console.log(`Prices for product:`, prices.data.map(p => ({ id: p.id, unit_amount: p.unit_amount })))
+      } catch (productError) {
+        diagnosticInfo.connectionError = productError.message
+        console.error(`Error retrieving test product:`, productError.message)
+      }
+      
+    } catch (accountError) {
+      diagnosticInfo.connectionError = accountError.message
+      console.error('Error connecting to Stripe:', accountError.message)
+    }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -54,36 +99,28 @@ serve(async (req) => {
       )
     }
 
-    // Fetch prices for each plan from Stripe
-    const plansWithPrices = await Promise.all(
-      plans.map(async (plan) => {
-        try {
-          if (plan.stripe_price_id) {
-            const price = await stripe.prices.retrieve(plan.stripe_price_id)
-            return {
-              ...plan,
-              price: price.unit_amount ? price.unit_amount / 100 : 0, // Convert from cents to reais
-              currency: price.currency?.toUpperCase() || 'BRL'
-            }
-          }
-          return {
-            ...plan,
-            price: 0,
-            currency: 'BRL'
-          }
-        } catch (error) {
-          console.error(`Error fetching price for plan ${plan.id}:`, error)
-          return {
-            ...plan,
-            price: 0,
-            currency: 'BRL'
-          }
+    // Use prices directly from database (already synced with Stripe)
+    const plansWithPrices = plans.map(plan => {
+      // Use the price from database (already in monthly format)
+      const monthlyPrice = plan.price ? parseFloat(plan.price) : 0
+      
+      return {
+        ...plan,
+        price: monthlyPrice, // Monthly price
+        monthlyPrice: monthlyPrice,
+        currency: 'BRL',
+        debug: {
+          usingDatabasePrice: true,
+          originalPrice: plan.price
         }
-      })
-    )
+      }
+    })
 
     return new Response(
-      JSON.stringify({ plans: plansWithPrices }),
+      JSON.stringify({ 
+        plans: plansWithPrices,
+        diagnostic: diagnosticInfo
+      }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
