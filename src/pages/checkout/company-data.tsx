@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+
 import { ArrowLeft, Building2, CreditCard, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CompanyAddressFields } from '@/components/company/CompanyAddressFields';
+import { validateCNPJ, formatCNPJ } from '@/utils/cnpj-validator';
 
-interface CompanyData {
+interface CompanyFormData {
   name: string;
   official_name: string;
   cnpj: string;
@@ -49,8 +50,9 @@ export default function CompanyData() {
   const [loading, setLoading] = useState(false);
   const [planInfo, setPlanInfo] = useState<PlanData | null>(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
+  const [cnpjError, setCnpjError] = useState<string>('');
 
-  const [formData, setFormData] = useState<CompanyData>({
+  const [formData, setFormData] = useState<CompanyFormData>({
     name: '',
     official_name: '',
     cnpj: '',
@@ -123,7 +125,7 @@ export default function CompanyData() {
     fetchPlanData();
   }, [planId, navigate, toast]);
 
-  const handleInputChange = (field: keyof CompanyData, value: string) => {
+  const handleInputChange = (field: keyof CompanyFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -141,17 +143,7 @@ export default function CompanyData() {
     }
   };
 
-  // Função utilitária para formatar CNPJ
-  function formatCNPJ(value: string) {
-    // Remove tudo que não for dígito
-    value = value.replace(/\D/g, "");
-    // Aplica a máscara
-    value = value.replace(/(\d{2})(\d)/, "$1.$2");
-    value = value.replace(/(\d{3})(\d)/, "$1.$2");
-    value = value.replace(/(\d{3})(\d)/, "$1/$2");
-    value = value.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
-    return value;
-  }
+
 
   const validateForm = () => {
     const requiredFields = [
@@ -163,7 +155,7 @@ export default function CompanyData() {
     ];
 
     for (const field of requiredFields) {
-      if (!formData[field as keyof CompanyData]?.trim()) {
+      if (!formData[field as keyof CompanyFormData]?.trim()) {
         toast({
           title: "Campos obrigatórios",
           description: `Por favor, preencha todos os campos obrigatórios.`,
@@ -171,6 +163,26 @@ export default function CompanyData() {
         });
         return false;
       }
+    }
+
+    // Validar CNPJ
+    if (!validateCNPJ(formData.cnpj)) {
+      toast({
+        title: "CNPJ inválido",
+        description: "Por favor, insira um CNPJ válido.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Verificar se há erro de CNPJ
+    if (cnpjError) {
+      toast({
+        title: "CNPJ inválido",
+        description: "Por favor, corrija o CNPJ antes de continuar.",
+        variant: "destructive",
+      });
+      return false;
     }
 
     // Validar email
@@ -339,13 +351,29 @@ export default function CompanyData() {
                         onChange={(e) => {
                           const formatted = formatCNPJ(e.target.value);
                           setFormData(prev => ({ ...prev, cnpj: formatted }));
+                          
+                          // Validação em tempo real
+                          if (formatted.length === 18) { // CNPJ completo formatado
+                            if (!validateCNPJ(formatted)) {
+                              setCnpjError('CNPJ inválido');
+                            } else {
+                              setCnpjError('');
+                            }
+                          } else {
+                            setCnpjError('');
+                          }
                         }}
                         placeholder="00.000.000/0000-00"
-                        className="!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500"
+                        className={`!bg-gray-700 !border-gray-600 !text-white placeholder:!text-gray-400 focus:!border-blue-500 ${
+                          cnpjError ? '!border-red-500 focus:!border-red-500' : ''
+                        }`}
                         required
                         maxLength={18}
                         inputMode="numeric"
                       />
+                      {cnpjError && (
+                        <p className="text-sm text-red-400">{cnpjError}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email" className="!text-gray-300">Email da Empresa *</Label>
@@ -401,7 +429,7 @@ export default function CompanyData() {
                   <Button
                     type="submit"
                     className="w-full !bg-blue-600 hover:!bg-blue-700 !text-white"
-                    disabled={loading}
+                    disabled={loading || !!cnpjError}
                   >
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />

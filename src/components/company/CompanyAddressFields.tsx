@@ -1,7 +1,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CompanyData } from "@/hooks/useCompanies";
+import { CompanyData } from "@/hooks/companies/types";
 import { useState } from "react";
 
 interface CompanyAddressFieldsProps {
