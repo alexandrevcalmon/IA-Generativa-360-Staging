@@ -87,7 +87,7 @@ export default function CompanyData() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbHhlYmhua2F5aXdrc2lwdnljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NDA2NTMsImV4cCI6MjA2NzIxNjY1M30.XTc1M64yGVGuY4FnOsy9D3q5Ov1HAoyuZAV8IPwYEZ0'}`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
         });
 
@@ -213,22 +213,34 @@ export default function CompanyData() {
       };
       
       console.log('Enviando dados para create-stripe-checkout:', requestData);
+      console.log('Plan ID:', planInfo.id);
+      console.log('Company Data:', formData);
       
       const response = await fetch('https://ldlxebhnkayiwksipvyc.supabase.co/functions/v1/create-stripe-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbHhlYmhua2F5aXdrc2lwdnljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NDA2NTMsImV4cCI6MjA2NzIxNjY1M30.XTc1M64yGVGuY4FnOsy9D3q5Ov1HAoyuZAV8IPwYEZ0'}`,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify(requestData),
       });
 
-      const data = await response.json();
-      console.log('Resposta da função create-stripe-checkout:', data);
+      let data;
+      try {
+        data = await response.json();
+        console.log('Resposta da função create-stripe-checkout:', data);
+      } catch (parseError) {
+        console.error('Erro ao fazer parse da resposta:', parseError);
+        console.error('Response status:', response.status);
+        console.error('Response statusText:', response.statusText);
+        throw new Error(`Erro de comunicação com o servidor (${response.status})`);
+      }
 
       if (!response.ok) {
         console.error('Erro na resposta:', data);
-        throw new Error(data.error || 'Erro ao criar sessão de checkout');
+        console.error('Detalhes do erro:', data.details);
+        console.error('Stack do erro:', data.stack);
+        throw new Error(data.error || data.details || 'Erro ao criar sessão de checkout');
       }
 
       // Redirecionar para o Stripe Checkout

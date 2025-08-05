@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Scripts com chaves sensíveis
+scripts/check-webhook-config.js
+scripts/update-env.js
+scripts/verify-env-variables.js
+scripts/check-webhook-secret.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

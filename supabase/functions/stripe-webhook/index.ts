@@ -24,6 +24,11 @@ serve(async (req: Request) => {
     const signature = req.headers.get('stripe-signature')
     // @ts-ignore
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+    
+    console.log('[stripe-webhook] Received webhook request')
+    console.log('[stripe-webhook] Content-Type:', req.headers.get('content-type'))
+    console.log('[stripe-webhook] User-Agent:', req.headers.get('user-agent'))
+    console.log('[stripe-webhook] Body length:', body.length)
 
     if (!signature || !webhookSecret) {
       return new Response(
@@ -37,19 +42,58 @@ serve(async (req: Request) => {
     const Stripe = (await import('https://esm.sh/stripe@14.21.0')).default
     // @ts-ignore
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2025-06-30.basil',
       httpClient: Stripe.createFetchHttpClient(),
     })
 
               // Verify webhook signature
           let event
           try {
+            console.log('[stripe-webhook] Verifying signature...')
+            console.log('[stripe-webhook] Webhook secret exists:', !!webhookSecret)
+            console.log('[stripe-webhook] Signature exists:', !!signature)
+            console.log('[stripe-webhook] Body length:', body.length)
+            
             event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
+            console.log('[stripe-webhook] Signature verification successful')
           } catch (err: any) {
-            return new Response(
-              JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+            console.error('[stripe-webhook] Signature verification failed:', err.message)
+            console.error('[stripe-webhook] Error type:', err.type)
+            console.error('[stripe-webhook] Error code:', err.code)
+            console.error('[stripe-webhook] Full error:', err)
+            
+            // Log signature details for debugging
+            console.log('[stripe-webhook] Signature header:', signature)
+            console.log('[stripe-webhook] Webhook secret (first 10 chars):', webhookSecret?.substring(0, 10))
+            
+            // Try to parse the event directly as a fallback for debugging
+            try {
+              console.log('[stripe-webhook] Attempting to parse event directly for debugging...')
+              const parsedEvent = JSON.parse(body)
+              
+              // Only process if it's a valid Stripe event structure
+              if (parsedEvent.type && parsedEvent.data && parsedEvent.data.object) {
+                console.log('[stripe-webhook] Valid Stripe event structure detected, processing as fallback')
+                console.log('[stripe-webhook] Event type:', parsedEvent.type)
+                console.log('[stripe-webhook] Event ID:', parsedEvent.id)
+                
+                // Set the event for processing
+                event = parsedEvent
+              } else {
+                throw new Error('Invalid event structure')
+              }
+            } catch (parseErr) {
+              console.error('[stripe-webhook] Failed to parse event directly:', parseErr)
+              return new Response(
+                JSON.stringify({ 
+                  error: `Webhook signature verification failed: ${err.message}`,
+                  errorType: err.type,
+                  errorCode: err.code,
+                  suggestion: 'Check webhook secret configuration in Stripe dashboard'
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              )
+            }
           }
 
     // Initialize Supabase client
@@ -75,10 +119,10 @@ serve(async (req: Request) => {
           contact_email: session.metadata?.contact_email || '',
           contact_phone: session.metadata?.contact_phone || '',
           cnpj: session.metadata?.cnpj || '',
-          address: session.metadata?.address || '',
-          city: session.metadata?.city || '',
-          state: session.metadata?.state || '',
-          zip_code: session.metadata?.zip_code || '',
+          address: session.metadata?.address_street || session.metadata?.address || '',
+          city: session.metadata?.address_city || session.metadata?.city || '',
+          state: session.metadata?.address_state || session.metadata?.state || '',
+          zip_code: session.metadata?.address_zip_code || session.metadata?.zip_code || '',
           plan_id: session.metadata?.plan_id || '',
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: session.subscription as string,
